@@ -36,22 +36,38 @@ export default function HomePage() {
       <Navbar />
 
       {/* ── Hero ────────────────────────────────────────── */}
-      <section className="pt-36 pb-28 px-4 text-center max-w-4xl mx-auto">
+      <section className="pt-32 pb-24 px-4 text-center max-w-5xl mx-auto">
         {/* Badge */}
         <div className="inline-flex items-center gap-2 border border-[#C9A84C]/30 bg-[#C9A84C]/6 text-[#C9A84C] text-[11px] uppercase tracking-[.15em] px-3.5 py-1.5 rounded-full mb-8">
           <span className="w-1.5 h-1.5 rounded-full bg-[#C9A84C] animate-pulse" />
           AI Virtual Try-On — Beta
         </div>
 
-        {/* Headline — 2 lines: subject on top, gold-shimmer question below.
-            line-height roomy enough for stacked VN marks (Ặ, Ợ, Ẫ) so they
-            never clip the line above; size dialled down so 2 lines fit. */}
-        <h1 className="font-black leading-[1.18] tracking-tight mb-8 pb-2" style={{ fontSize: 'clamp(2.25rem,7vw,4.75rem)' }}>
-          <span className="block text-[#F5F5F5]">NÓN NÀO</span>
-          <span className="block shimmer">HỢP MẶT BẠN?</span>
-        </h1>
+        {/* Before / After hero — the headline is now a live demonstration of
+            the product: same person on the left, then AI-generated try-on on
+            the right. Square 1:1 cards so they line up visually; the arrow
+            sits between on desktop and rotates 90° on mobile (cards stack). */}
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 sm:gap-5 items-center max-w-3xl mx-auto mb-8">
+          <HeroBeforeAfterCard
+            src="/z7883411256974_182e7cda88b23af3da59f2197c769018.jpg"
+            label="Ảnh gốc"
+            accent="muted"
+            priority
+          />
+          <div className="flex items-center justify-center text-[#C9A84C]">
+            <svg className="w-8 h-8 sm:w-10 sm:h-10 rotate-90 sm:rotate-0" viewBox="0 0 32 32" fill="none">
+              <path d="M6 16h20M20 9l7 7-7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <HeroBeforeAfterCard
+            src="/z7883411250849_f036a210fd504ef13541ba1e74128238.jpg"
+            label="AI Try-On"
+            accent="gold"
+            priority
+          />
+        </div>
 
-        <p className="text-[#F5F5F5]/45 text-base md:text-lg max-w-2xl mx-auto leading-relaxed mb-10">
+        <p className="text-[#F5F5F5]/55 text-base md:text-lg max-w-2xl mx-auto leading-relaxed mb-10">
           Upload selfie — AI phân tích khuôn mặt &amp; đội nón TCAPS lên đầu bạn.
           Realistic, đúng tỉ lệ.
         </p>
@@ -185,6 +201,44 @@ export default function HomePage() {
           <span>© 2025 TCAPS — Nón Thời Trang</span>
         </div>
       </footer>
+    </div>
+  )
+}
+
+// Square 1:1 card used in the hero before/after pair. `accent="gold"` lights
+// the border in gold for the AI result side; `muted` is the neutral side
+// for the original photo. priority=true so the first paint includes both
+// images (this IS the hero — no above-the-fold deferral makes sense).
+function HeroBeforeAfterCard({
+  src, label, accent, priority,
+}: { src: string; label: string; accent: 'gold' | 'muted'; priority?: boolean }) {
+  return (
+    <div
+      className={[
+        'relative aspect-square rounded-2xl overflow-hidden border-2 bg-[#0A0A0A] transition-all duration-300',
+        accent === 'gold'
+          ? 'border-[#C9A84C]/60 shadow-[0_0_40px_rgba(201,168,76,.25)] hover:shadow-[0_0_60px_rgba(201,168,76,.4)]'
+          : 'border-[#222] hover:border-[#444]',
+      ].join(' ')}
+    >
+      <Image
+        src={src}
+        alt={label}
+        fill
+        sizes="(max-width:640px) 90vw, 380px"
+        priority={priority}
+        className="object-cover"
+      />
+      <span
+        className={[
+          'absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-[.15em] backdrop-blur-sm',
+          accent === 'gold'
+            ? 'bg-[#C9A84C] text-black'
+            : 'bg-[#0A0A0A]/80 text-[#F5F5F5] border border-[#2A2A2A]',
+        ].join(' ')}
+      >
+        {label}
+      </span>
     </div>
   )
 }
