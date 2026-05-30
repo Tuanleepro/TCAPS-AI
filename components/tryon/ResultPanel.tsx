@@ -21,7 +21,6 @@ interface Props {
   renderMs?:   number | null
   qc?:         QcScore | null     // Gemini Vision QC scores — only shown when present (passed)
   onDownload:  () => void
-  onShare:     () => void
   onRetry:     () => void
   onReset:     () => void
   onTryProduct?: (product: Product) => void   // try a recommended hat in-place
@@ -29,7 +28,7 @@ interface Props {
 
 export function ResultPanel({
   resultUrl, originalUrl, product, faceShape, faceScores, enhanced, renderMs, qc,
-  onDownload, onShare, onRetry, onReset, onTryProduct,
+  onDownload, onRetry, onReset, onTryProduct,
 }: Props) {
   // Real face data only: a % is shown ONLY when there is a measured distribution.
   const hasFaceData   = !!(faceShape && faceScores)
@@ -267,9 +266,8 @@ export function ResultPanel({
       )}
 
       {/* ── Action buttons ────────────────────────────────────── */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <ActionBtn onClick={onDownload} icon={<DownloadIcon />} label="TẢI ẢNH" />
-        <ActionBtn onClick={onShare}    icon={<ShareIcon />}    label="CHIA SẺ KẾT QUẢ" />
         <ActionBtn onClick={onReset}    icon={<SwapIcon />}     label="ĐỔI ẢNH KHÁC" />
       </div>
 
@@ -360,14 +358,6 @@ function ShieldIcon() {
 const DownloadIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
     <path d="M8 2v8M5 7l3 3 3-3M2 12.5h12" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-  </svg>
-)
-const ShareIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <circle cx="12" cy="3.5" r="1.5" stroke="currentColor" strokeWidth="1.2"/>
-    <circle cx="12" cy="12.5" r="1.5" stroke="currentColor" strokeWidth="1.2"/>
-    <circle cx="3.5" cy="8" r="1.5" stroke="currentColor" strokeWidth="1.2"/>
-    <path d="M5 7.2L10.5 4.2M5 8.8l5.5 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
   </svg>
 )
 const RetryIcon = () => (

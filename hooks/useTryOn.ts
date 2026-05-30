@@ -120,6 +120,10 @@ export function useTryOn() {
   const hatRef   = useRef<File | null>(null)
   const skuRef   = useRef<string | null>(null)
   const abortRef = useRef(false)
+  // Live mirror of state so callbacks (e.g. download) can read the current
+  // resultUrl without becoming stale closures or re-creating every render.
+  const stateRef = useRef<TryOnState>(state)
+  stateRef.current = state
 
   const setFaceFile = useCallback((file: File) => {
     faceRef.current = file
@@ -312,36 +316,61 @@ export function useTryOn() {
     skuRef.current  = null
   }, [])
 
-  const download = useCallback(() => {
-    setState(prev => {
-      if (!prev.resultUrl) return prev
-      const a = document.createElement('a')
-      a.href = prev.resultUrl
-      if (prev.resultUrl.startsWith('http')) {
-        window.open(prev.resultUrl, '_blank')
-      } else {
-        a.download = `tcaps-tryon-${Date.now()}.jpg`
-        document.body.appendChild(a); a.click(); document.body.removeChild(a)
-      }
-      return prev
-    })
-  }, [])
+  // Robust download: works on desktop AND mobile (including iOS Safari /
+  // in-app browsers where the plain <a download> trick is unreliable).
+  //
+  //   1. Data URL (the Gemini try-on result) → decode to a Blob.
+  //   2. If the browser supports Web Share API with files (iOS 15+, modern
+  //      Android), open the native share sheet — that's the path that lets
+  //      the customer pick "Save to Photos" on iOS where direct download is
+  //      blocked. Cancellation just falls through to step 3.
+  //   3. Otherwise create an object URL and trigger an <a download> click —
+  //      the standard desktop / Android Chrome path.
+  //
+  // Remote http URLs (we don't use this today but the codepath stays for
+  // safety) open in a new tab so the user can long-press / right-click → Save.
+  const download = useCallback(async () => {
+    const url = stateRef.current?.resultUrl
+    if (!url) return
+    if (!url.startsWith('data:')) {
+      window.open(url, '_blank')
+      return
+    }
+    try {
+      const blob = await (await fetch(url)).blob()
+      const fname = `tcaps-tryon-${Date.now()}.jpg`
 
-  const share = useCallback(() => {
-    const url = typeof window !== 'undefined' ? window.location.href : ''
-    const text = 'Xem mình thử nón TCAPS này nè! 🧢 #tcapsnonthoitrang'
-    if (navigator.share) {
-      navigator.share({ title: 'TCAPS Try-On', text, url }).catch(() => {})
-    } else {
-      window.open(
-        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-        '_blank'
-      )
+      const file = new File([blob], fname, { type: blob.type || 'image/jpeg' })
+      const canShareFile =
+        typeof navigator !== 'undefined' &&
+        typeof navigator.canShare === 'function' &&
+        navigator.canShare({ files: [file] })
+      if (canShareFile) {
+        try {
+          await navigator.share({ files: [file], title: 'TCAPS Try-On' })
+          return                  // shared (or saved via sheet) — done
+        } catch (e) {
+          // User cancelled or the share sheet failed — fall through to <a download>.
+          if ((e as Error)?.name !== 'AbortError') console.warn('[download] share fallback:', e)
+        }
+      }
+
+      const objUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = objUrl
+      a.download = fname
+      a.rel = 'noopener'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(objUrl), 1000)
+    } catch (e) {
+      console.error('[download] failed:', e)
     }
   }, [])
 
   return {
-    state, setFaceFile, setHatFile, runTryOn, retry, reset, download, share,
+    state, setFaceFile, setHatFile, runTryOn, retry, reset, download,
     canRun: !!state.faceFile && !!state.hatFile && !state.isProcessing,
   }
 }

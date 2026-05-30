@@ -58,7 +58,7 @@ function MainFallback() {
 }
 
 function TryOnMain() {
-  const { state, setFaceFile, setHatFile, runTryOn, retry, reset, download, share, canRun } = useTryOn()
+  const { state, setFaceFile, setHatFile, runTryOn, retry, reset, download, canRun } = useTryOn()
   const searchParams = useSearchParams()
   const skuParam = searchParams.get('sku')
 
@@ -137,7 +137,6 @@ function TryOnMain() {
             renderMs={state.renderMs}
             qc={state.qc}
             onDownload={download}
-            onShare={share}
             onRetry={retry}
             onReset={reset}
             onTryProduct={tryProduct}
