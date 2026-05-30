@@ -18,18 +18,29 @@ const TRYON_PROMPT =
   'must stay EXACTLY as in image 1. ' +
 
   'RULE 1 — FREEZE THE HEAD & FACE (most important, non-negotiable): treat the entire head as a FIXED ' +
-  'region copied pixel-for-pixel from image 1. The face, facial features (eyes, eye spacing, eyebrows, ' +
-  'nose, mouth, lips, jawline, chin, cheekbones), face shape and proportions, skin tone, skin TEXTURE, ' +
-  'expression, hair and hairline, head size, head angle/pose and head position in the frame MUST be ' +
-  'IDENTICAL to image 1. Preserve EVERY facial detail EXACTLY: acne, blemishes, freckles, moles, scars, ' +
-  'eye-bags, dark circles, pores, slight asymmetries, oiliness — ALL stay. Do NOT smooth skin, do NOT ' +
-  'whiten skin, do NOT add makeup. Do NOT slim, sharpen or sculpt the jawline. Do NOT enlarge or open ' +
-  'the eyes. Do NOT plump, thin or reshape the lips. Do NOT narrow or reshape the nose. Do NOT raise or ' +
-  'reshape the eyebrows. Do NOT redraw, age, change gender, or swap the face. Do NOT make the person ' +
-  'look more model-like, more handsome, more idealised, or a "glow-up" / beauty-app / TikTok-filter ' +
-  'version of themselves — that is the most common failure and it is FORBIDDEN. A viewer must INSTANTLY ' +
-  'recognise the SAME exact selfie face — not a polished look-alike. NO blemish or acne cleanup is ' +
-  'allowed. ' +
+  'region copied pixel-for-pixel from image 1. ' +
+
+  '(1.a) HEAD ROTATION & POSE — preserve EXACTLY. The head\'s rotation along all three axes (yaw, ' +
+  'pitch, roll) MUST be IDENTICAL to image 1. If image 1 shows the person at a 3/4 turn (head ' +
+  'rotated partly to one side), the output MUST be at the SAME 3/4 turn — do NOT rotate the head ' +
+  'to face the camera frontally. If image 1 is frontal, keep it frontal. If image 1 is in profile, ' +
+  'keep it in profile. If the head is tilted up/down/sideways, keep the EXACT same tilt. Do NOT ' +
+  '"studio-fy" the pose into a centred portrait. Do NOT straighten a tilted head. Do NOT turn a ' +
+  '3/4 selfie into a front-facing pose. The eyes must look in the SAME direction as image 1. The ' +
+  'head must occupy the SAME position in the frame at the SAME size and SAME angle. This is the ' +
+  '#1 failure mode: Gemini commonly re-poses the head when the background changes — that is ' +
+  'FORBIDDEN. ' +
+
+  '(1.b) FACIAL IDENTITY & FEATURES — preserve EXACTLY. The face, facial features (eyes, eye ' +
+  'spacing, eyebrows, nose, mouth, lips, jawline, chin, cheekbones), face shape and proportions, ' +
+  'skin tone, skin TEXTURE, expression, hair and hairline MUST be IDENTICAL to image 1. Preserve ' +
+  'EVERY facial detail: acne, blemishes, freckles, moles, scars, eye-bags, dark circles, pores, ' +
+  'slight asymmetries, oiliness — ALL stay. Do NOT smooth skin, whiten skin, or add makeup. Do NOT ' +
+  'slim/sharpen/sculpt the jawline. Do NOT enlarge or open the eyes. Do NOT plump, thin or reshape ' +
+  'the lips. Do NOT narrow or reshape the nose. Do NOT raise or reshape the eyebrows. Do NOT ' +
+  'redraw, age, change gender, or swap the face. Do NOT make the person look more model-like, ' +
+  'handsome, or "glow-up" / TikTok-filter version of themselves. A viewer must INSTANTLY recognise ' +
+  'the SAME exact selfie face — not a polished look-alike. NO blemish or acne cleanup is allowed. ' +
 
   'RULE 2 — IMAGES 2+ ARE CAP-ONLY REFERENCES (anti-scene-swap, non-negotiable): images 2 and ' +
   'onward show the SAME cap from different angles (front / side / back / detail). These reference ' +
@@ -76,12 +87,16 @@ const TRYON_PROMPT =
   'RULE 6 — KEEP THE FRAMING: same camera angle, same crop/zoom and same orientation as image 1, with ' +
   "the person's head in the SAME position and SAME size as image 1 (this is what keeps the identity intact). " +
 
-  'AVOID: a different or more model-like face, slimming/reshaping the face or head, a plastic/over-' +
+  'AVOID: re-posing the head (turning a 3/4 selfie frontal, straightening a tilt, "studio-fying" ' +
+  'a casual angle), changing the head rotation along ANY axis, changing the gaze direction, a ' +
+  'different or more model-like face, slimming/reshaping the face or head, a plastic/over-' +
   'airbrushed look, 3D/CGI/render or video-game look, an over-glossy commercial-ad look, moving or ' +
   'resizing the head, an oversized or floating cap, distorted hands, added text or watermark. ' +
 
-  'OUTPUT: exactly ONE realistic photo, same orientation/framing/head-position as image 1. ' +
-  'Priority order (highest first): SAME face & head identity > exact cap design & fit > restyled outfit/scene.'
+  'OUTPUT: exactly ONE realistic photo. The head — including its EXACT rotation (yaw/pitch/roll), ' +
+  'position, size and gaze direction — must look as if it were lifted pixel-for-pixel from image 1. ' +
+  'Priority order (highest first): SAME head pose & angle > SAME face identity > exact cap design ' +
+  '& fit > restyled outfit/scene.'
 
 function assertDataUrl(v: unknown, label: string): string {
   if (typeof v !== 'string' || !/^data:image\/(jpe?g|png|webp);base64,/.test(v)) {
