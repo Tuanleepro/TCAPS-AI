@@ -43,19 +43,20 @@ export default function HomePage() {
           AI Virtual Try-On — Beta
         </div>
 
-        {/* Before / After hero — the headline is now a live demonstration of
-            the product: same person on the left, then AI-generated try-on on
-            the right. Square 1:1 cards so they line up visually; the arrow
-            sits between on desktop and rotates 90° on mobile (cards stack). */}
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 sm:gap-5 items-center max-w-3xl mx-auto mb-8">
+        {/* Before / After hero — same person on the left, then AI-generated
+            try-on on the right. Square 1:1 cards in one row on every screen
+            (mobile shrinks the cards rather than stacking); a gold arrow
+            points from original → AI result so the storytelling reads
+            left-to-right. */}
+        <div className="grid grid-cols-[1fr_auto_1fr] gap-2 sm:gap-5 items-center max-w-3xl mx-auto mb-8">
           <HeroBeforeAfterCard
             src="/z7883411256974_182e7cda88b23af3da59f2197c769018.jpg"
             label="Ảnh gốc"
             accent="muted"
             priority
           />
-          <div className="flex items-center justify-center text-[#C9A84C]">
-            <svg className="w-8 h-8 sm:w-10 sm:h-10 rotate-90 sm:rotate-0" viewBox="0 0 32 32" fill="none">
+          <div className="flex items-center justify-center text-[#C9A84C] shrink-0">
+            <svg className="w-5 h-5 sm:w-10 sm:h-10" viewBox="0 0 32 32" fill="none">
               <path d="M6 16h20M20 9l7 7-7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
@@ -231,7 +232,7 @@ function HeroBeforeAfterCard({
       />
       <span
         className={[
-          'absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-[.15em] backdrop-blur-sm',
+          'absolute top-1.5 left-1.5 sm:top-3 sm:left-3 px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-black uppercase tracking-[.1em] sm:tracking-[.15em] backdrop-blur-sm',
           accent === 'gold'
             ? 'bg-[#C9A84C] text-black'
             : 'bg-[#0A0A0A]/80 text-[#F5F5F5] border border-[#2A2A2A]',
