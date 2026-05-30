@@ -62,7 +62,7 @@ export function ResultPanel({
           {enhanced ? (
             <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-[#C9A84C]/12 text-[#C9A84C] border border-[#C9A84C]/30">
               <span className="w-1.5 h-1.5 rounded-full bg-[#C9A84C] pulse-gold" />
-              Tạo bởi Gemini AI{renderMs ? ` · ${(renderMs / 1000).toFixed(1)}s` : ''}
+              Tạo bởi AI TCAPS{renderMs ? ` · ${(renderMs / 1000).toFixed(1)}s` : ''}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest px-3 py-1 rounded-full bg-[#1E1E1E] text-[#6B6B6B] border border-[#2A2A2A]">

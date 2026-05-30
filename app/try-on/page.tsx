@@ -211,7 +211,7 @@ function TryOnMain() {
             <div className="rounded-xl border border-[#C9A84C]/25 bg-[#C9A84C]/6 px-4 py-3">
               <p className="text-sm text-[#C9A84C] font-semibold mb-0.5">Sẵn sàng!</p>
               <p className="text-sm text-[#F5F5F5]/50">
-                Gemini AI sẽ đội nón lên đầu bạn và render lại thành ảnh thật.
+                AI TCAPS sẽ đội nón lên đầu bạn và render lại thành ảnh thật.
               </p>
             </div>
           )}

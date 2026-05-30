@@ -20,7 +20,7 @@ const MESSAGES: Partial<Record<TryOnStep, string[]>> = {
 }
 
 const STEP_LABELS: Partial<Record<TryOnStep, string>> = {
-  processing:   'Gemini AI Active',
+  processing:   'AI TCAPS Đang Tạo',
   detecting:    'Nhận diện khuôn mặt',
   compositing:  'Đang tạo ảnh ghép',
 }

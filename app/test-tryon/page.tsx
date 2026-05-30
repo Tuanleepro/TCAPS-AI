@@ -230,7 +230,7 @@ export default function TestTryOnPage() {
       {mode === 'api' && busy && (
         <div className="mb-4 px-4 py-3 rounded-lg border border-[#C9A84C]/30 bg-[#C9A84C]/8 flex items-center gap-2 text-[11px]">
           <span className="w-1.5 h-1.5 rounded-full bg-[#C9A84C] animate-pulse" />
-          <span className="text-[#C9A84C] font-bold uppercase tracking-widest">Gemini AI Active</span>
+          <span className="text-[#C9A84C] font-bold uppercase tracking-widest">AI TCAPS Active</span>
         </div>
       )}
 
