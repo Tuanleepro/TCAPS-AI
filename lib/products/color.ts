@@ -31,6 +31,15 @@ const COLOR_TABLE: ColorTag[] = [
   { vn: 'BE',     en: 'BEIGE'  },
 ]
 
+// ─── Brim shape ────────────────────────────────────────────────────────────
+// NGANG = flat snapback brim, CONG = curved baseball brim. Pancake variant
+// names use these tokens (e.g. "NGANG / TRẮNG"). Filtering by brim stops the
+// AI from swapping flat for curved when the gallery contains both.
+
+export type BrimShape = 'FLAT' | 'CURVED'
+
+const BRIM_VN: Record<BrimShape, string> = { FLAT: 'NGANG', CURVED: 'CONG' }
+
 const wordBoundaryRegex = (token: string) =>
   // Vietnamese diacritics aren't word characters in JS regex, so use spaces /
   // slashes / dashes / string boundaries as separators instead of \b.
@@ -46,27 +55,61 @@ export function detectColor(name: string | null | undefined): ColorTag | null {
   return null
 }
 
+/** Detect brim shape from a name. NGANG → FLAT, CONG → CURVED. */
+export function detectBrim(name: string | null | undefined): BrimShape | null {
+  if (!name) return null
+  const upper = name.toUpperCase()
+  if (wordBoundaryRegex(BRIM_VN.FLAT).test(upper))   return 'FLAT'
+  if (wordBoundaryRegex(BRIM_VN.CURVED).test(upper)) return 'CURVED'
+  return null
+}
+
 /**
- * Return the subset of the product's gallery URLs whose corresponding variant
- * matches the given colour. Falls back to the original gallery if no variant
- * info exists or no images match (so try-on still works for un-tagged products).
+ * Two-axis variant filter (colour + brim). Returns only the gallery URLs whose
+ * variant name matches BOTH axes. Falls back to colour-only if no variant
+ * matches both, then to the full gallery — try-on must always have SOMETHING.
  *
- * The product thumbnail (`imageUrl`) is always kept first so Gemini sees the
- * canonical primary-variant photo at index 0.
+ * The product thumbnail leads the list when it's part of the matches.
  */
-export function filterImagesByColor(product: Product, color: ColorTag): string[] {
+export function filterImagesByVariant(
+  product: Product,
+  color: ColorTag | null,
+  brim:  BrimShape | null,
+): string[] {
   const allImages = product.images?.filter(u => /^https?:\/\//.test(u)) ?? []
-  if (allImages.length === 0) return product.imageUrl ? [product.imageUrl] : []
+  const fallback  = allImages.length
+    ? allImages
+    : product.imageUrl ? [product.imageUrl] : []
+  if (!product.variants?.length) return fallback
 
-  if (!product.variants || product.variants.length === 0) return allImages
+  const matchesName = (token: string, name: unknown) =>
+    typeof name === 'string' && wordBoundaryRegex(token).test(name.toUpperCase())
 
-  const matchingImages = product.variants
-    .filter(v => typeof v.name === 'string' && wordBoundaryRegex(color.vn).test(v.name.toUpperCase()))
+  let matching = product.variants.filter(v => {
+    if (color && !matchesName(color.vn,         v.name)) return false
+    if (brim  && !matchesName(BRIM_VN[brim],    v.name)) return false
+    return true
+  })
+  if (matching.length === 0 && color) {
+    matching = product.variants.filter(v => matchesName(color.vn, v.name))
+  }
+  if (matching.length === 0) return fallback
+
+  const matchingImages = matching
     .map(v => v.image)
     .filter((u): u is string => typeof u === 'string' && /^https?:\/\//.test(u))
+  if (matchingImages.length === 0) return fallback
 
-  if (matchingImages.length === 0) return allImages   // safe fallback
+  const head = product.imageUrl && matchingImages.includes(product.imageUrl)
+    ? product.imageUrl
+    : matchingImages[0]
+  return Array.from(new Set([head, ...matchingImages]))
+}
 
-  // Dedupe + keep the product thumbnail (canonical primary) first.
-  return Array.from(new Set([product.imageUrl, ...matchingImages].filter(Boolean)))
+/**
+ * Backwards-compat colour-only filter. New code should call `filterImagesByVariant`
+ * with both axes (colour + brim) for tighter results.
+ */
+export function filterImagesByColor(product: Product, color: ColorTag): string[] {
+  return filterImagesByVariant(product, color, null)
 }

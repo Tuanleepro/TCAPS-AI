@@ -31,10 +31,19 @@ const TRYON_PROMPT =
   'recognise the SAME exact selfie face — not a polished look-alike. NO blemish or acne cleanup is ' +
   'allowed. ' +
 
-  'RULE 2 — REPRODUCE THE CAP FROM IMAGES 2+ WITH EVERY DETAIL INTACT (most critical for the cap): ' +
-  'images 2 and onward are the SAME cap shown from different angles (front / side / back / detail). ' +
-  'Study ALL of them together. The cap in the output must match the product cap pixel-faithfully — ' +
-  'NOTHING about its design may change. Reproduce EXACTLY: ' +
+  'RULE 2 — IMAGES 2+ ARE CAP-ONLY REFERENCES (anti-scene-swap, non-negotiable): images 2 and ' +
+  'onward show the SAME cap from different angles (front / side / back / detail). These reference ' +
+  'photos MAY contain a model wearing the cap, a styled studio or street scene, a brick wall, ' +
+  'graffiti, denim or other props. IGNORE every one of those non-cap elements. Do NOT copy the ' +
+  "model's face, the model's body, the model's outfit, the model's pose, the model's hair, OR the " +
+  "background, lighting and scene from the cap reference photos. Image 1 is the ONLY source for " +
+  'the PERSON (face, hair, head pose). The cap references are the ONLY source for the CAP. Mixing ' +
+  'them up — drawing the model from the cap reference instead of the user from image 1 — is the ' +
+  'most severe failure mode and is FORBIDDEN. ' +
+
+  'RULE 3 — REPRODUCE THE CAP FROM IMAGES 2+ WITH EVERY DETAIL INTACT (most critical for the cap): ' +
+  'study ALL the cap references together. The cap in the output must match the product cap ' +
+  'pixel-faithfully — NOTHING about its design may change. Reproduce EXACTLY: ' +
   '(i) silhouette and crown shape (height, panel count, structured vs unstructured); ' +
   '(ii) BRIM SHAPE — flat/straight (snapback "lưỡi ngang") vs curved (baseball "lưỡi cong") is a ' +
   'defining feature; do NOT swap one for the other under any circumstances; ' +
@@ -49,20 +58,22 @@ const TRYON_PROMPT =
   'Treat the cap design as INTELLECTUAL PROPERTY — the customer is buying this exact cap and the ' +
   'output must be recognisably the SAME product. ' +
 
-  'RULE 3 — FIT THE CAP NATURALLY (critical for realism): size it correctly to the head so it looks ' +
+  'RULE 4 — FIT THE CAP NATURALLY (critical for realism): size it correctly to the head so it looks ' +
   'genuinely worn — it sits snugly on the crown, the brim rests just above the eyebrows, proportional ' +
   'to the head width, angle matching the head. It must NOT be oversized, NOT float above the hair, ' +
   'NOT sit too high or too tilted. Add a soft natural contact shadow under the brim and where the ' +
   'cap meets the hair. The cap is added ON TOP of the existing head — it must not push, resize, or ' +
   'reshape the head/face underneath. ' +
 
-  'RULE 4 — CLOTHING & BACKGROUND (you MAY restyle, BELOW THE NECK ONLY): you may change the outfit, ' +
-  'its colours, the background and lighting into one cohesive, stylish streetwear look that coordinates ' +
-  'with the cap. This freedom applies ONLY to the body below the neck and the scene behind the person — ' +
-  'it must NEVER touch the head, face, hair, or head pose (see RULE 1). Keep it a believable real ' +
-  'photograph — natural skin and fabric, real lighting. ' +
+  'RULE 5 — CLOTHING & BACKGROUND (you MAY restyle, BELOW THE NECK ONLY, from image 1 — NOT from ' +
+  'the cap references): you may change the outfit, its colours, the background and lighting into a ' +
+  'cohesive streetwear look that coordinates with the cap. But the restyle must be a CREATIVE choice ' +
+  '— do NOT copy the model/scene from the cap reference photos (see RULE 2). This freedom applies ' +
+  'ONLY to the body below the neck and the scene behind the person — it must NEVER touch the head, ' +
+  'face, hair, or head pose (see RULE 1). Keep it a believable real photograph — natural fabric, ' +
+  'real lighting. ' +
 
-  'RULE 5 — KEEP THE FRAMING: same camera angle, same crop/zoom and same orientation as image 1, with ' +
+  'RULE 6 — KEEP THE FRAMING: same camera angle, same crop/zoom and same orientation as image 1, with ' +
   "the person's head in the SAME position and SAME size as image 1 (this is what keeps the identity intact). " +
 
   'AVOID: a different or more model-like face, slimming/reshaping the face or head, a plastic/over-' +
@@ -202,7 +213,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => null) as
       | { person?: unknown; garment?: unknown; garments?: unknown; garmentUrls?: unknown; prompt?: unknown
           personWidth?: unknown; personHeight?: unknown
-          productColor?: unknown; productName?: unknown }
+          productColor?: unknown; productName?: unknown; productBrim?: unknown }
       | null
     if (!body) return NextResponse.json({ error: 'Body JSON không hợp lệ' }, { status: 400 })
 
@@ -247,7 +258,21 @@ export async function POST(req: NextRequest) {
     const colourLock = productColor
       ? ` MANDATORY COLOUR LOCK: the cap's base colour is ${productColor}. The cap in the OUTPUT MUST be ${productColor} — NOT black, NOT a darker shade, NOT a different colourway, NOT recoloured to match the outfit or scene. This overrides any visual ambiguity in the reference images: if any reference appears to show a different colour variant, IGNORE that — the cap is ${productColor}.`
       : ''
-    const prompt = basePrompt + colourLock
+
+    // ── Brim shape lock ──────────────────────────────────────────────────────
+    // Snapback brim (FLAT/lưỡi ngang) vs baseball brim (CURVED/lưỡi cong) is a
+    // defining feature the customer chose. Gemini was swapping them when the
+    // product gallery contained both variants. Text-locking the brim shape
+    // prevents that drift.
+    const productBrim =
+      body.productBrim === 'FLAT' || body.productBrim === 'CURVED'
+        ? body.productBrim
+        : null
+    const brimLock = productBrim
+      ? ` MANDATORY BRIM LOCK: the cap's brim is ${productBrim === 'FLAT' ? 'FLAT and STRAIGHT (lưỡi ngang) — completely horizontal, NOT curved, NOT bent down at the sides' : 'CURVED (lưỡi cong) — bent down at the sides like a traditional baseball cap, NOT flat'}. The brim shape in the OUTPUT MUST be ${productBrim}. If any reference image appears to show the opposite brim shape, IGNORE that — this cap is ${productBrim}.`
+      : ''
+
+    const prompt = basePrompt + colourLock + brimLock
 
     // ── Exact size/dimensions of the PERSON image actually sent to Gemini ──
     const personWidth  = typeof body.personWidth  === 'number' ? body.personWidth  : null
@@ -257,6 +282,7 @@ export async function POST(req: NextRequest) {
     console.log('PERSON_IMAGE_DIMENSIONS', personWidth ?? '?', personHeight ?? '?')
     console.log('CAP_REFERENCE_IMAGES', garments.length)
     console.log('CAP_COLOUR_LOCK', productColor ?? 'none', productName ? `(${productName})` : '')
+    console.log('CAP_BRIM_LOCK  ', productBrim  ?? 'none')
 
     const { dataUrl, elapsedMs, modelText } = await runGeminiTryOn(person, garments, prompt)
 

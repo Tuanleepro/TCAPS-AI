@@ -4,7 +4,7 @@ import { useState, useCallback, useRef } from 'react'
 import type { TryOnState, TryOnStep } from '@/types'
 import type { QcScore } from '@/lib/gemini/qcScore'
 import { PRODUCT_MAP } from '@/constants/products'
-import { detectColor, filterImagesByColor } from '@/lib/products/color'
+import { detectColor, detectBrim, filterImagesByVariant, type BrimShape } from '@/lib/products/color'
 
 const INIT: TryOnState = {
   step: 'idle',
@@ -198,8 +198,12 @@ export function useTryOn() {
       // SKU's gallery contains photos of both colours (e.g. TC67's gallery has
       // TRẮNG + ĐEN; without filtering the result sometimes comes back black).
       const detectedColor = product ? detectColor(product.name) : null
+      // Brim: if the parent SKU name doesn't carry NGANG/CONG, default to FLAT
+      // (NGANG) — snapbacks ship with a flat brim and that's the most common
+      // request. Variant picker UI (future) will let the user override.
+      const detectedBrim: BrimShape = (product ? detectBrim(product.name) : null) ?? 'FLAT'
       const sourceImages = product
-        ? (detectedColor ? filterImagesByColor(product, detectedColor) : (product.images ?? []))
+        ? filterImagesByVariant(product, detectedColor, detectedBrim)
         : []
       const garmentUrls = sourceImages
         .filter(u => /^https?:\/\//.test(u))
@@ -211,6 +215,7 @@ export function useTryOn() {
       console.log('[TryOn] PERSON sent     :', `${person.sentWidth}×${person.sentHeight}px`, `${dataUrlKB(person.dataUrl)}KB`, `(${person.mode})`)
       console.log('[TryOn] CAP references  :', garmentUrls.length ? `${garmentUrls.length} url(s) (server-fetched)` : '1 uploaded file')
       console.log('[TryOn] CAP colour-lock :', detectedColor ? `${detectedColor.vn} → ${detectedColor.en}` : 'none detected (no name colour token)')
+      console.log('[TryOn] CAP brim-lock   :', `${detectedBrim} (${detectedBrim === 'FLAT' ? 'NGANG' : 'CONG'})`)
 
       type GeminiResp = {
         resultUrl?: string; error?: string; model?: string
@@ -236,6 +241,7 @@ export function useTryOn() {
               personWidth: person.sentWidth, personHeight: person.sentHeight,
               productColor: detectedColor?.en ?? null,
               productName:  product?.name ?? null,
+              productBrim:  detectedBrim,
             }),
           })
           const d = await res.json() as GeminiResp
