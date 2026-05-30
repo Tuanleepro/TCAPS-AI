@@ -74,20 +74,53 @@ export function OrderModal({ open, product, onClose }: Props) {
     }
   }, [open, initialItem])
 
-  // Body scroll lock + Esc-to-close while the modal is open. Also flips a
-  // `data-modal-open` flag on <body> so the floating Zalo/Messenger bubbles
-  // can hide themselves via CSS (their fixed positioning otherwise composites
-  // on top of the modal in some iOS in-app browsers).
+  // Body scroll lock + Esc-to-close while the modal is open.
+  //
+  // The iOS Safari / in-app browser quirk: a plain `overflow: hidden` on
+  // <body> doesn't fully lock the page AND it leaves `position: fixed`
+  // elements anchored to the layout viewport instead of the visual viewport.
+  // When the page is scrolled and the modal opens, the modal renders at the
+  // PAGE's bottom (where the MUA NGAY button was) instead of at the viewport
+  // bottom. The customer then sees only the modal header peeking up.
+  //
+  // The reliable workaround: store the current scroll position, then pin
+  // <body> with `position: fixed; top: -scrollY` (which freezes the page at
+  // its current scroll position visually) and let the modal layer take the
+  // viewport. When the modal closes, undo the body styles and restore the
+  // scroll position so the page doesn't jump.
+  //
+  // Also flips a `data-modal-open` flag on <body> so the floating Zalo /
+  // Messenger bubbles can hide themselves via CSS (their fixed positioning
+  // otherwise composites on top of the modal in some in-app browsers).
   useEffect(() => {
     if (!open) return
-    const prevOverflow = document.body.style.overflow
+    const scrollY = window.scrollY
+    const prev = {
+      overflow: document.body.style.overflow,
+      position: document.body.style.position,
+      top:      document.body.style.top,
+      left:     document.body.style.left,
+      right:    document.body.style.right,
+      width:    document.body.style.width,
+    }
     document.body.style.overflow = 'hidden'
+    document.body.style.position = 'fixed'
+    document.body.style.top      = `-${scrollY}px`
+    document.body.style.left     = '0'
+    document.body.style.right    = '0'
+    document.body.style.width    = '100%'
     document.body.dataset.modalOpen = 'true'
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)
     return () => {
-      document.body.style.overflow = prevOverflow
+      document.body.style.overflow = prev.overflow
+      document.body.style.position = prev.position
+      document.body.style.top      = prev.top
+      document.body.style.left     = prev.left
+      document.body.style.right    = prev.right
+      document.body.style.width    = prev.width
       delete document.body.dataset.modalOpen
+      window.scrollTo(0, scrollY)
       window.removeEventListener('keydown', onKey)
     }
   }, [open, onClose])
