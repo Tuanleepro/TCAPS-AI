@@ -172,17 +172,12 @@ export function OrderModal({ open, product, onClose }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify(payload),
       })
-      const d = await r.json().catch(() => null) as { ok?: boolean; orderId?: string; error?: string } | null
+      const d = await r.json().catch(() => null) as { ok?: boolean; error?: string } | null
       if (!r.ok || !d?.ok) throw new Error(d?.error || `HTTP ${r.status}`)
-
-      // Auto-copy a human summary so the customer can paste it into Zalo on
-      // the confirmation screen for the fastest possible reply from TCAPS.
-      const summary = buildOrderText(payload, d.orderId)
-      try { await navigator.clipboard.writeText(summary) } catch { /* unsupported */ }
       setStatus('success')
     } catch (e) {
       setStatus('error')
-      setStatusErr(e instanceof Error ? e.message : 'Gửi đơn lỗi, vui lòng thử lại.')
+      setStatusErr(e instanceof Error ? e.message : 'Không thể gửi đơn hàng. Vui lòng thử lại.')
     }
   }, [canSubmit, allItems, name, phone, address, province, note, subtotal, shipping, total, totalQty])
 
@@ -359,7 +354,10 @@ export function OrderModal({ open, product, onClose }: Props) {
         {status !== 'success' && (
           <div className="border-t border-[#C9A84C]/15 px-5 pt-3 pb-[calc(0.875rem+env(safe-area-inset-bottom))] shrink-0 bg-gradient-to-t from-[#0D0D0D] to-[#0A0A0A]">
             {statusErr && (
-              <p className="text-[12px] text-[#E05252] mb-2 text-center">{statusErr}</p>
+              <div className="mb-2 text-center">
+                <p className="text-[13px] text-[#E05252] font-bold">❌ Không thể gửi đơn hàng</p>
+                <p className="text-[11px] text-[#C8C8C8]">Vui lòng thử lại.</p>
+              </div>
             )}
             <button
               type="button"
@@ -525,63 +523,20 @@ function FieldTextarea({
 function SuccessPanel({ onClose, qty, total }: { onClose: () => void; qty: number; total: number }) {
   return (
     <div className="flex flex-col items-center text-center gap-4 py-10 fade-in-up">
-      <div className="w-20 h-20 rounded-full bg-[#C9A84C]/15 border-2 border-[#C9A84C]/50 flex items-center justify-center shadow-[0_0_40px_rgba(201,168,76,.25)]">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
-          <path d="M5 12.5l4 4 10-10" stroke="#C9A84C" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </div>
+      <div className="text-6xl select-none" aria-hidden>🎉</div>
       <div>
-        <h4 className="text-xl sm:text-2xl font-black text-[#F5F5F5] mb-1">Đơn hàng đã được ghi nhận!</h4>
-        <p className="text-sm text-[#C9A84C] font-bold">{qty} nón · {fmt(total)} (đã gồm ship)</p>
+        <h4 className="text-xl sm:text-2xl font-black text-[#F5F5F5] mb-1.5">Đặt hàng thành công</h4>
+        <p className="text-[13px] text-[#C9A84C] font-bold font-mono">{qty} nón · {fmt(total)}</p>
       </div>
-      <p className="text-[13px] text-[#C8C8C8] leading-relaxed max-w-sm">
-        TCAPS đã nhận thông tin và sẽ <strong className="text-[#F5F5F5]">gọi xác nhận qua Zalo</strong> trong vài phút.
-        Thông tin đơn cũng đã được copy — bạn có thể paste vào chat TCAPS để xác nhận nhanh hơn.
+      <p className="text-sm text-[#C8C8C8] leading-relaxed max-w-sm">
+        TCAPS sẽ liên hệ xác nhận đơn hàng trong thời gian sớm nhất.
       </p>
-      <div className="flex flex-col sm:flex-row gap-2 w-full max-w-sm mt-2">
-        <a
-          href="https://zalo.me/0972284146"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1 h-12 rounded-xl bg-[#0068FF] hover:bg-[#0084FF] text-white font-black text-sm flex items-center justify-center gap-2 transition-all"
-        >
-          <span>Mở Zalo TCAPS</span>
-        </a>
-        <button
-          onClick={onClose}
-          className="flex-1 h-12 rounded-xl border border-[#C9A84C]/40 hover:bg-[#C9A84C]/10 text-[#C9A84C] font-bold text-xs uppercase tracking-widest"
-        >
-          Đóng
-        </button>
-      </div>
+      <button
+        onClick={onClose}
+        className="mt-2 h-12 px-8 rounded-xl bg-[#C9A84C] hover:bg-[#E8C96A] text-black font-black text-xs uppercase tracking-widest transition-all"
+      >
+        Đóng
+      </button>
     </div>
   )
-}
-
-// ── Order text builder (for clipboard) ─────────────────────────────────────
-
-interface OrderPayload {
-  items:    Array<{ sku: string; name: string; unit: number; qty: number }>
-  customer: { name: string; phone: string; address: string; province: string; note: string }
-  totals:   { subtotal: number; shipping: number; total: number; qty: number }
-}
-
-function buildOrderText(p: OrderPayload, orderId?: string): string {
-  const lines = [
-    `🧢 ĐƠN HÀNG TCAPS${orderId ? ` #${orderId}` : ''}`,
-    '',
-    '— Sản phẩm —',
-    ...p.items.map(it => `• ${it.qty}× ${it.name} — ${fmt(it.unit * it.qty)}`),
-    '',
-    `Tạm tính (${p.totals.qty} nón): ${fmt(p.totals.subtotal)}`,
-    `Phí ship: ${p.totals.shipping === 0 ? 'Miễn phí' : fmt(p.totals.shipping)}`,
-    `TỔNG: ${fmt(p.totals.total)}`,
-    '',
-    '— Người nhận —',
-    `Họ tên: ${p.customer.name}`,
-    `SĐT: ${p.customer.phone}`,
-    `Địa chỉ: ${p.customer.address}, ${p.customer.province}`,
-  ]
-  if (p.customer.note) lines.push(`Ghi chú: ${p.customer.note}`)
-  return lines.join('\n')
 }

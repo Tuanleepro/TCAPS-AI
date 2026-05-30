@@ -1,25 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { google } from 'googleapis'
 
 export const runtime = 'nodejs'
 
 /**
  * POST /api/order
  *
- * Receives a checkout payload from the try-on result modal, validates it and
- * (optionally) forwards it to a notifier so the shop owner sees the order
- * immediately. By default the notifier is just the Vercel function log — set
- * `ORDER_WEBHOOK_URL` in Vercel env to forward to Telegram, Discord, Slack,
- * Make.com, etc. (URL pattern detected automatically; see webhookForUrl).
+ * Appends one row to the TCAPS Google Sheet — that's the entire order
+ * pipeline. No database, no Telegram, no email. The shop owner watches the
+ * sheet for new rows and updates column I (Trạng thái) as they process.
  *
- * Recompute totals SERVER-SIDE: never trust prices coming from the browser.
+ * Sheet layout (one row per order, append to bottom):
+ *   A  Thời gian          — VN locale timestamp
+ *   B  Họ tên
+ *   C  Số điện thoại      — leading 0 preserved (we send as text)
+ *   D  Địa chỉ            — street + province joined
+ *   E  Sản phẩm chính     — "TC67 × 1 (160.000₫)"
+ *   F  Sản phẩm mua thêm  — "TC68 × 1 (160.000₫); TC66 × 1 (160.000₫)"
+ *   G  Tổng tiền          — number, so Sheets can SUM / filter
+ *   H  Ghi chú
+ *   I  Trạng thái         — defaults to "Chưa xử lý"
+ *   J  Nguồn              — always "TCAPS AI"
+ *
+ * Required env:
+ *   GOOGLE_SHEET_ID       — the spreadsheet ID from the URL
+ *   GOOGLE_CLIENT_EMAIL   — service account email
+ *   GOOGLE_PRIVATE_KEY    — service account PEM (newlines as \n)
+ *
+ * See GOOGLE_SHEET_SETUP.md for the one-time setup walkthrough.
  */
 export async function POST(req: NextRequest) {
   try {
+    // ── 1. Parse + validate payload ───────────────────────────────────────
     const body = await req.json().catch(() => null) as
-      | {
-          items?: unknown
-          customer?: unknown
-        }
+      | { items?: unknown; customer?: unknown }
       | null
 
     if (!body) {
@@ -50,97 +64,88 @@ export async function POST(req: NextRequest) {
       province: typeof c.province === 'string' ? c.province.trim() : '',
       note:     typeof c.note     === 'string' ? c.note.trim()     : '',
     }
-    if (customer.name.length     < 2) return NextResponse.json({ ok: false, error: 'Họ tên quá ngắn' },             { status: 400 })
-    if (customer.phone.length    < 8) return NextResponse.json({ ok: false, error: 'Số điện thoại không hợp lệ' }, { status: 400 })
-    if (customer.address.length  < 5) return NextResponse.json({ ok: false, error: 'Địa chỉ quá ngắn' },           { status: 400 })
-    if (customer.province.length < 2) return NextResponse.json({ ok: false, error: 'Tỉnh / Thành phố quá ngắn' },  { status: 400 })
+    if (customer.name.length    < 2) return NextResponse.json({ ok: false, error: 'Họ tên quá ngắn' },             { status: 400 })
+    if (customer.phone.length   < 8) return NextResponse.json({ ok: false, error: 'Số điện thoại không hợp lệ' }, { status: 400 })
+    if (customer.address.length < 5) return NextResponse.json({ ok: false, error: 'Địa chỉ quá ngắn' },           { status: 400 })
 
-    // Server-side totals.
+    // ── 2. Recompute totals server-side (never trust browser prices) ─────
     const subtotal = items.reduce((s, it) => s + it.unit * it.qty, 0)
     const shipping = subtotal >= 250_000 ? 0 : 30_000
     const total    = subtotal + shipping
-    const qty      = items.reduce((s, it) => s + it.qty, 0)
 
-    // Short, customer-friendly id. Not cryptographic — just enough for the
-    // shop to reference the order in chat.
-    const orderId = `TC${Math.floor(Math.random() * 36 ** 5).toString(36).toUpperCase().padStart(5, '0')}`
+    // ── 3. Build the row to append ───────────────────────────────────────
+    const fmt = (n: number) => `${Math.round(n).toLocaleString('vi-VN')}₫`
+    const timestamp = new Intl.DateTimeFormat('vi-VN', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      day:    '2-digit', month: '2-digit', year:  'numeric',
+      hour:   '2-digit', minute:'2-digit', second:'2-digit',
+      hour12: false,
+    }).format(new Date())
 
-    const order = {
-      orderId,
-      items,
-      customer,
-      totals: { subtotal, shipping, total, qty },
-      createdAt: new Date().toISOString(),
+    const [first, ...rest] = items
+    const mainProduct = `${first.name} × ${first.qty} (${fmt(first.unit * first.qty)})`
+    const addProducts = rest.length
+      ? rest.map(it => `${it.name} × ${it.qty} (${fmt(it.unit * it.qty)})`).join('; ')
+      : ''
+    const fullAddress = customer.province
+      ? `${customer.address}, ${customer.province}`
+      : customer.address
+
+    // Column order MUST match the spec exactly so the sheet's existing
+    // header row keeps aligning.
+    const row: Array<string | number> = [
+      timestamp,            // A — Thời gian
+      customer.name,        // B — Họ tên
+      customer.phone,       // C — Số điện thoại (text, leading zero kept)
+      fullAddress,          // D — Địa chỉ
+      mainProduct,          // E — Sản phẩm chính
+      addProducts,          // F — Sản phẩm mua thêm
+      total,                // G — Tổng tiền (number)
+      customer.note,        // H — Ghi chú
+      'Chưa xử lý',         // I — Trạng thái
+      'TCAPS AI',           // J — Nguồn
+    ]
+
+    // ── 4. Append to Google Sheet ────────────────────────────────────────
+    const sheetId = process.env.GOOGLE_SHEET_ID?.trim()
+    const clientEmail = process.env.GOOGLE_CLIENT_EMAIL?.trim()
+    // The private key is stored with literal "\n" sequences in env vars;
+    // restore the real newlines before handing it to the JWT signer.
+    const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+
+    if (!sheetId || !clientEmail || !privateKey) {
+      console.error('[order] Google Sheets env vars missing', {
+        hasSheetId: !!sheetId, hasEmail: !!clientEmail, hasKey: !!privateKey,
+      })
+      return NextResponse.json(
+        { ok: false, error: 'Không thể gửi đơn hàng. Vui lòng thử lại.' },
+        { status: 500 },
+      )
     }
 
-    console.log('[order] received', JSON.stringify(order, null, 2))
+    const auth = new google.auth.JWT({
+      email:  clientEmail,
+      key:    privateKey,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    })
+    const sheets = google.sheets({ version: 'v4', auth })
 
-    const webhookUrl = process.env.ORDER_WEBHOOK_URL?.trim()
-    if (webhookUrl) {
-      try {
-        const text = formatOrderForWebhook(order)
-        const payload = webhookForUrl(webhookUrl, text, order)
-        const r = await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-        if (!r.ok) console.warn(`[order] webhook returned HTTP ${r.status}`)
-      } catch (e) {
-        // Don't fail the customer's order if the webhook is down.
-        console.warn('[order] webhook forward failed:', e instanceof Error ? e.message : e)
-      }
-    }
+    await sheets.spreadsheets.values.append({
+      spreadsheetId:    sheetId,
+      range:            'A:J',            // append to the first sheet's columns A through J
+      valueInputOption: 'USER_ENTERED',   // lets Sheets parse the timestamp as a real date
+      insertDataOption: 'INSERT_ROWS',
+      requestBody: { values: [row] },
+    })
 
-    return NextResponse.json({ ok: true, orderId })
+    console.log('[order] sheet append OK', { timestamp, customer: customer.name, total })
+    return NextResponse.json({ ok: true })
 
   } catch (err) {
     console.error('[order] ✗', err)
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : String(err) },
+      { ok: false, error: 'Không thể gửi đơn hàng. Vui lòng thử lại.' },
       { status: 500 },
     )
   }
-}
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-interface ServerOrder {
-  orderId:   string
-  items:     Array<{ sku: string; name: string; unit: number; qty: number }>
-  customer:  { name: string; phone: string; address: string; province: string; note: string }
-  totals:    { subtotal: number; shipping: number; total: number; qty: number }
-  createdAt: string
-}
-
-function formatOrderForWebhook(o: ServerOrder): string {
-  const fmt = (n: number) => `${Math.round(n).toLocaleString('vi-VN')}₫`
-  const lines = [
-    `🧢 ĐƠN MỚI #${o.orderId}`,
-    '',
-    ...o.items.map(it => `• ${it.qty}× ${it.name} — ${fmt(it.unit * it.qty)}`),
-    '',
-    `Tổng: ${fmt(o.totals.total)} (ship ${o.totals.shipping === 0 ? 'free' : fmt(o.totals.shipping)})`,
-    '',
-    `${o.customer.name} · ${o.customer.phone}`,
-    `${o.customer.address}, ${o.customer.province}`,
-  ]
-  if (o.customer.note) lines.push(`Ghi chú: ${o.customer.note}`)
-  return lines.join('\n')
-}
-
-// Different webhook services want different payload shapes. Detect by URL.
-function webhookForUrl(url: string, text: string, raw: ServerOrder): Record<string, unknown> {
-  if (url.includes('api.telegram.org/bot')) {
-    const chatId = process.env.ORDER_WEBHOOK_CHAT_ID?.trim()
-    return { chat_id: chatId, text }
-  }
-  if (url.includes('discord.com/api/webhooks')) {
-    return { content: text }
-  }
-  if (url.includes('hooks.slack.com')) {
-    return { text }
-  }
-  // Make.com / Zapier / generic.
-  return { text, order: raw }
 }
