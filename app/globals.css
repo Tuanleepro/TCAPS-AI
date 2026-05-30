@@ -120,6 +120,16 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* Hide floating chat bubbles while any modal is open. iOS in-app browsers
+   (Messenger / Zalo / TikTok) sometimes composite `position:fixed` elements
+   into their own layer and ignore the z-index ordering, so even a z-[100]
+   modal can't reliably cover them. Explicitly removing them from the layout
+   while the modal is up is the only fully reliable fix. */
+body[data-modal-open="true"] [data-floating-contact] {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* Horizontal marquee — duplicate the children inline; the track scrolls by 50%
    so the seam between the original set and the duplicate is invisible. Pauses
    on hover so a customer can read a specific photo. */

@@ -69,15 +69,20 @@ export function OrderModal({ open, product, onClose }: Props) {
     }
   }, [open, initialItem])
 
-  // Body scroll lock + Esc-to-close while the modal is open.
+  // Body scroll lock + Esc-to-close while the modal is open. Also flips a
+  // `data-modal-open` flag on <body> so the floating Zalo/Messenger bubbles
+  // can hide themselves via CSS (their fixed positioning otherwise composites
+  // on top of the modal in some iOS in-app browsers).
   useEffect(() => {
     if (!open) return
-    const prev = document.body.style.overflow
+    const prevOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
+    document.body.dataset.modalOpen = 'true'
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)
     return () => {
-      document.body.style.overflow = prev
+      document.body.style.overflow = prevOverflow
+      delete document.body.dataset.modalOpen
       window.removeEventListener('keydown', onKey)
     }
   }, [open, onClose])
@@ -162,15 +167,24 @@ export function OrderModal({ open, product, onClose }: Props) {
   if (!open) return null
 
   return (
+    // z-[100] keeps the modal above the floating Zalo/Messenger bubbles
+    // (z-40). Some iOS in-app browsers (Messenger / Zalo / TikTok) compose
+    // fixed elements onto their own layers and a 10-step gap isn't always
+    // enough, so use a big margin. The overlay's onClick closes; inner
+    // onClick stops propagation.
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label="Đặt hàng TCAPS"
     >
+      {/* Mobile: full-height sheet (h-[88vh]) with internal scroll. Desktop:
+          auto-height card capped at 92vh. Using `vh` (not `dvh`) for safe
+          fallback in iOS webviews / Messenger / Zalo in-app browsers where
+          dynamic viewport units silently drop the max-height. */}
       <div
-        className="w-full sm:max-w-md bg-[#0D0D0D] border-t sm:border border-[#2A2A2A] sm:rounded-2xl shadow-[0_-12px_48px_rgba(0,0,0,.6)] max-h-[92dvh] flex flex-col"
+        className="w-full h-[88vh] sm:h-auto sm:max-w-md sm:max-h-[92vh] bg-[#0D0D0D] border-t sm:border border-[#2A2A2A] sm:rounded-2xl shadow-[0_-12px_48px_rgba(0,0,0,.6)] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Sticky header */}
@@ -190,8 +204,11 @@ export function OrderModal({ open, product, onClose }: Props) {
           </button>
         </div>
 
-        {/* Scrollable body */}
-        <div className="overflow-y-auto px-4 py-4 flex flex-col gap-5 flex-1">
+        {/* Scrollable body. `min-h-0` is critical: without it, the flex item
+            defaults to `min-height: auto` and refuses to shrink below content
+            size, so the overflow-y-auto never triggers and the form / footer
+            get pushed out of the modal. */}
+        <div className="overflow-y-auto px-4 py-4 flex flex-col gap-5 flex-1 min-h-0">
 
           {submit === 'success' ? (
             <SuccessPanel onClose={onClose} subtotal={subtotal} qty={totalQty} />

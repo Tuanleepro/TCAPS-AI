@@ -16,7 +16,11 @@ export function FloatingContact() {
   const liftForCta = pathname?.startsWith('/try-on')
   const bottomClass = liftForCta ? 'bottom-24' : 'bottom-4'
   return (
+    // data-floating-contact lets OrderModal (or any future modal) hide these
+    // bubbles via a body[data-modal-open] CSS rule — fixed-position bubbles
+    // otherwise composite on top of the modal in some iOS in-app browsers.
     <div
+      data-floating-contact=""
       aria-label="Liên hệ TCAPS"
       className={`fixed ${bottomClass} right-4 z-40 flex flex-col gap-2.5 transition-all`}
     >
