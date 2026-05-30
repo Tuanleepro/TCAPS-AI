@@ -3,7 +3,6 @@
 import type { FaceShape } from '@/types'
 import type { Product }   from '@/constants/products'
 import type { QcScore }   from '@/lib/gemini/qcScore'
-import { evaluateQc, QC_PASS_THRESHOLD } from '@/lib/gemini/qcScore'
 import { FACE_SHAPE_LABELS, PRODUCTS } from '@/constants/products'
 import { scoreCompatibility, rankCompatibility } from '@/lib/recommendation-engine'
 import type { FaceShapeProbabilities } from '@/lib/face-analysis'
@@ -270,57 +269,29 @@ export function ResultPanel({
 // ── Sub-components ─────────────────────────────────────────
 
 function QcChecklist({ qc }: { qc: QcScore }) {
-  // 7 weighted dimensions + total. Two visual states:
-  //   PASS     (gold) — `evaluateQc` returns 'pass'
-  //   FALLBACK (amber) — every retry failed; we surfaced the best-scored
-  //                      attempt anyway. Header explains that to the user.
-  const passed = evaluateQc(qc) === 'pass'
-  const accent = passed ? '#C9A84C' : '#E08C2C'    // gold vs amber-orange
-  const rows: Array<{ label: string; pct: number; weight: number }> = [
-    { label: 'Khuôn mặt',          pct: qc.face,       weight: 30 },
-    { label: 'Góc mặt',            pct: qc.faceAngle,  weight: 20 },
-    { label: 'Biểu cảm',           pct: qc.expression, weight: 15 },
-    { label: 'Tóc',                pct: qc.hair,       weight: 10 },
-    { label: 'Ánh sáng',           pct: qc.lighting,   weight: 10 },
-    { label: 'Background',         pct: qc.background, weight:  5 },
-    { label: 'Độ chính xác nón',   pct: qc.hat,        weight: 10 },
+  // 3 rows: face / hat / realism. Each rendered ONLY when ≥ its pass threshold,
+  // so a fail never shows up here (the API blocks the result before it reaches
+  // this panel — this is a defence-in-depth check).
+  const rows: Array<{ label: string; pct: number }> = [
+    { label: 'Giữ khuôn mặt', pct: qc.face_similarity },
+    { label: 'Đúng sản phẩm', pct: qc.hat_similarity  },
+    { label: 'Độ chân thực',  pct: qc.realism         },
   ]
   return (
-    <div
-      className="rounded-2xl border p-3 mb-4"
-      style={{ borderColor: `${accent}40`, background: `${accent}10` }}
-    >
-      <div className="flex items-baseline justify-between mb-2">
-        <p className="text-[10px] font-bold uppercase tracking-[.18em]" style={{ color: accent }}>
-          {passed
-            ? `Đã kiểm định AI · TỔNG ${qc.total}/100`
-            : `Kết quả tốt nhất · TỔNG ${qc.total}/100`
-          }
-        </p>
-        <span className="text-[9px] font-mono opacity-70" style={{ color: accent }}>
-          ≥ {QC_PASS_THRESHOLD} = ĐẠT
-        </span>
-      </div>
-      {!passed && (
-        <p className="text-[11px] text-[#C8C8C8] mb-2 leading-snug">
-          Đã thử 4 lần — chọn ảnh có điểm cao nhất. Bấm <strong>Tạo lại kết quả</strong> để thử thêm.
-        </p>
-      )}
-      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+    <div className="rounded-2xl border border-[#C9A84C]/25 bg-[#C9A84C]/6 p-3 mb-4">
+      <p className="text-[10px] font-bold uppercase tracking-[.18em] text-[#C9A84C] mb-2">
+        Đã kiểm định AI
+      </p>
+      <ul className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
         {rows.map(r => (
-          <li key={r.label} className="flex items-center gap-2 text-[13px] text-[#F5F5F5]">
-            <span
-              aria-hidden
-              className="w-3.5 h-3.5 rounded-full text-black flex items-center justify-center shrink-0"
-              style={{ background: accent }}
-            >
-              <svg width="9" height="9" viewBox="0 0 14 14" fill="none">
+          <li key={r.label} className="flex items-center gap-2 text-sm text-[#F5F5F5]">
+            <span aria-hidden className="w-4 h-4 rounded-full bg-[#C9A84C] text-black flex items-center justify-center shrink-0">
+              <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
                 <path d="M3 7.5l2.5 2.5L11 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </span>
-            <span className="flex-1">{r.label}</span>
-            <span className="text-[10px] text-[#6B6B6B] font-mono tabular-nums">×{r.weight}%</span>
-            <span className="font-mono font-bold tabular-nums w-9 text-right" style={{ color: accent }}>{r.pct}</span>
+            <span className="flex-1">{r.label}:</span>
+            <span className="font-mono font-bold text-[#C9A84C] tabular-nums">{r.pct}%</span>
           </li>
         ))}
       </ul>

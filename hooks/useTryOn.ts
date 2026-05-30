@@ -4,7 +4,7 @@ import { useState, useCallback, useRef } from 'react'
 import type { TryOnState, TryOnStep } from '@/types'
 import type { QcScore } from '@/lib/gemini/qcScore'
 import { PRODUCT_MAP } from '@/constants/products'
-import { detectColor, detectBrim, filterImagesByVariant, type BrimShape } from '@/lib/products/color'
+import { detectColor, filterImagesByColor } from '@/lib/products/color'
 
 const INIT: TryOnState = {
   step: 'idle',
@@ -27,14 +27,10 @@ function nextStep(hasFace: boolean, hasHat: boolean): TryOnStep {
   return 'idle'
 }
 
-// Per spec (May 2026, revised): up to 4 attempts per click. We auto-retry
-// BOTH on network/Gemini errors AND on QC verdict = fail. If every attempt's
-// QC fails, we DON'T show an error — we surface the attempt with the highest
-// QC total as a best-effort fallback (graceful degradation: user always gets
-// SOMETHING usable, just flagged in the UI as "not above threshold").
-const MAX_ATTEMPTS         = 4
-const RETRY_DELAY_NETWORK  = 7000   // back-off for rate-limit / Gemini error
-const RETRY_DELAY_QC       = 1000   // tighter — QC fails are not rate-limited
+// Gemini can hiccup (rate-limit, or returns text instead of an image). Auto-retry
+// the call a few times before surfacing an error — retry, not silent fallback.
+const MAX_ATTEMPTS   = 3
+const RETRY_DELAY_MS = 7000
 
 // ── Image payload limits ─────────────────────────────────────
 // Keep the PERSON photo at full quality. Only downscale when the longest side
@@ -196,20 +192,14 @@ export function useTryOn() {
       // no product gallery do we fall back to sending the hat file itself as a data
       // URL (via FileReader — no canvas, reliable on mobile).
       const product = skuRef.current ? PRODUCT_MAP[skuRef.current] : null
-      // Colour + brim lock: a single parent SKU often groups multiple variants
-      // (TC67 has TRẮNG + ĐEN colourways AND NGANG + CONG brim shapes). Without
-      // filtering, Gemini was picking the wrong colourway OR the wrong brim
-      // from the multi-variant gallery. We detect both axes from the product
-      // name and filter the gallery to the matching variant's image(s) only.
-      //
-      // Default brim when the parent name doesn't specify one: FLAT (NGANG) —
-      // streetwear customers buying a snapback expect a flat brim by default,
-      // and that matches the product owner's preference for TC67. Future: add
-      // a variant picker UI that lets the user choose explicitly.
+      // Colour-lock: if the product name tells us the cap colour (e.g. "TRẮNG"),
+      // only send the gallery images whose variant name matches that colour.
+      // Stops Gemini from "picking" the wrong colourway when a multi-variant
+      // SKU's gallery contains photos of both colours (e.g. TC67's gallery has
+      // TRẮNG + ĐEN; without filtering the result sometimes comes back black).
       const detectedColor = product ? detectColor(product.name) : null
-      const detectedBrim: BrimShape = (product ? detectBrim(product.name) : null) ?? 'FLAT'
       const sourceImages = product
-        ? filterImagesByVariant(product, detectedColor, detectedBrim)
+        ? (detectedColor ? filterImagesByColor(product, detectedColor) : (product.images ?? []))
         : []
       const garmentUrls = sourceImages
         .filter(u => /^https?:\/\//.test(u))
@@ -221,7 +211,6 @@ export function useTryOn() {
       console.log('[TryOn] PERSON sent     :', `${person.sentWidth}×${person.sentHeight}px`, `${dataUrlKB(person.dataUrl)}KB`, `(${person.mode})`)
       console.log('[TryOn] CAP references  :', garmentUrls.length ? `${garmentUrls.length} url(s) (server-fetched)` : '1 uploaded file')
       console.log('[TryOn] CAP colour-lock :', detectedColor ? `${detectedColor.vn} → ${detectedColor.en}` : 'none detected (no name colour token)')
-      console.log('[TryOn] CAP brim-lock   :', `${detectedBrim} (${detectedBrim === 'FLAT' ? 'lưỡi ngang' : 'lưỡi cong'})`)
 
       type GeminiResp = {
         resultUrl?: string; error?: string; model?: string
@@ -231,11 +220,6 @@ export function useTryOn() {
       }
       let data: GeminiResp | null = null
       let lastErr = ''
-      // Track the QC-failed attempt with the HIGHEST total — if every attempt
-      // in the cycle fails QC, we surface this as the best-effort result
-      // rather than an error. Only candidates that have a `qc` object can be
-      // compared (an infra error has no scores → not a candidate).
-      let bestFail: { resultUrl: string; qc: QcScore; elapsedMs?: number } | null = null
 
       for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         if (abortRef.current) return
@@ -252,7 +236,6 @@ export function useTryOn() {
               personWidth: person.sentWidth, personHeight: person.sentHeight,
               productColor: detectedColor?.en ?? null,
               productName:  product?.name ?? null,
-              productBrim:  detectedBrim,
             }),
           })
           const d = await res.json() as GeminiResp
@@ -262,32 +245,12 @@ export function useTryOn() {
             model: d.model, hasImage: !!d.resultUrl, modelText: d.modelText, error: d.error,
             qc: d.qc, qcFailed: d.qcFailed,
           })
-          // QC verdict = fail: auto-regenerate (up to MAX_ATTEMPTS). Each fail
-          // also competes for "best fallback" — we keep the highest-total
-          // attempt in case every attempt fails.
+          // QC verdict = fail is a DISTINCT outcome from network/Gemini errors —
+          // per spec, no auto-regen. Surface the standard "thử lại" message and
+          // let the user retry manually.
           if (d.qcFailed) {
             lastErr = d.error || 'Ảnh tạo chưa đạt chất lượng mong muốn. Vui lòng thử lại.'
-            if (d.resultUrl && d.qc && (!bestFail || d.qc.total > bestFail.qc.total)) {
-              bestFail = { resultUrl: d.resultUrl, qc: d.qc, elapsedMs: d.elapsedMs }
-              console.warn(`[TryOn] ⚠ QC fail attempt ${attempt}/${MAX_ATTEMPTS} (total=${d.qc.total}) — NEW best fallback`)
-            } else {
-              console.warn(`[TryOn] ⚠ QC fail attempt ${attempt}/${MAX_ATTEMPTS} (total=${d.qc?.total ?? '?'})`)
-            }
-            if (attempt < MAX_ATTEMPTS) {
-              await new Promise(r => setTimeout(r, RETRY_DELAY_QC))
-              continue
-            }
-            // Final attempt failed too — fall back to the best fail candidate.
-            if (bestFail) {
-              console.warn(`[TryOn] ⤵ all ${MAX_ATTEMPTS} attempts failed QC — using best-effort fallback (total=${bestFail.qc.total})`)
-              data = {
-                resultUrl: bestFail.resultUrl,
-                qc:        bestFail.qc,
-                elapsedMs: bestFail.elapsedMs,
-              }
-            } else {
-              data = null
-            }
+            data = null
             break
           }
           if (!res.ok || d.error || !d.resultUrl) throw new Error(d.error ?? `HTTP ${res.status}`)
@@ -297,8 +260,8 @@ export function useTryOn() {
           lastErr = e instanceof Error ? e.message : String(e)
           console.warn(`[TryOn] ✗ attempt ${attempt}/${MAX_ATTEMPTS} failed: ${lastErr}`)
           if (attempt < MAX_ATTEMPTS) {
-            console.log(`[TryOn] ⏳ retry in ${RETRY_DELAY_NETWORK / 1000}s…`)
-            await new Promise(r => setTimeout(r, RETRY_DELAY_NETWORK))
+            console.log(`[TryOn] ⏳ retry in ${RETRY_DELAY_MS / 1000}s…`)
+            await new Promise(r => setTimeout(r, RETRY_DELAY_MS))
           }
         }
       }

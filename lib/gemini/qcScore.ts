@@ -1,49 +1,22 @@
-// Quality-control pass for AI try-on results. Spec (May 2026):
-//
-//   The model must perform a PURE HAT SWAP: only the cap is added/changed;
-//   the face, pose, expression, gaze, hair, skin, outfit, background and
-//   lighting must stay identical to the original selfie.
-//
-// QC compares (A) the original selfie, (B) the product cap photo and (C) the
-// generated try-on, then scores 7 weighted dimensions plus 5 hard-fail flags.
-// The business-rule evaluator decides pass/fail — the model's `verdict` field
-// is advisory only.
+// Quality-control pass for AI try-on results — runs ONCE after Gemini generates
+// the image. Uses Gemini Vision (gemini-2.5-flash) to compare the original
+// selfie, the product cap photo and the generated try-on, and returns numeric
+// scores. The business-rule thresholds (see `evaluateQc`) decide pass/fail —
+// the model's own verdict field is advisory and logged but not authoritative.
 
 export interface QcScore {
-  // Per-dimension scores, 0–100. The Vietnamese label is the user-facing name.
-  /** Khuôn mặt (identity) — weight 30% */
-  face:        number
-  /** Góc mặt (head angle / pose) — weight 20% */
-  faceAngle:   number
-  /** Biểu cảm (expression + gaze) — weight 15% */
-  expression:  number
-  /** Tóc — weight 10% */
-  hair:        number
-  /** Ánh sáng — weight 10% */
-  lighting:    number
-  /** Background — weight 5% */
-  background:  number
-  /** Độ chính xác nón (form, brim, colour, logo) — weight 10% */
-  hat:         number
-
-  // Hard-fail flags. ANY one true → auto-fail regardless of scores.
-  /** Head pose / face angle visibly changed */
-  faceAngleChanged:  boolean
-  /** Eyes are looking in a different direction */
-  gazeChanged:       boolean
-  /** Smile / mouth shape / expression changed */
-  expressionChanged: boolean
-  /** Hair colour, length, hairline or style changed */
-  hairChanged:       boolean
-  /** Cap form, brim shape, logo, OR colour does not match the product */
-  hatChanged:        boolean
-
-  /** Computed weighted total (0–100). Set by `evaluateQc`, NOT by Gemini. */
-  total:    number
-  /** Model's own (advisory) verdict — not used as source of truth. */
-  verdict:  'pass' | 'fail'
-  /** Short Vietnamese explanation from the model. */
-  reason:   string
+  /** 0–100: how well the person's face/identity from the selfie is preserved */
+  face_similarity: number
+  /** 0–100: how well the cap in the result matches the product photo */
+  hat_similarity:  number
+  /** 0–100: how realistic / photographic the result looks */
+  realism:         number
+  /** model-detected sign of beautification or face/identity change */
+  face_changed:    boolean
+  /** model's own (advisory) verdict — not used as source of truth */
+  verdict:         'pass' | 'fail'
+  /** short Vietnamese explanation from the model */
+  reason:          string
 }
 
 interface QcInput {
@@ -59,72 +32,41 @@ interface QcInput {
 
 const QC_MODEL_DEFAULT = 'gemini-2.5-flash'
 const QC_TIMEOUT_MS    = 10_000           // hard cap — spec: do not add >10s
-const QC_MAX_TOKENS    = 512              // 7 numbers + 5 booleans + reason
+const QC_MAX_TOKENS    = 256              // JSON is small
 
-// Weights per spec (sum = 1.00).
-const WEIGHTS = {
-  face:        0.30,
-  faceAngle:   0.20,
-  expression:  0.15,
-  hair:        0.10,
-  lighting:    0.10,
-  background:  0.05,
-  hat:         0.10,
-} as const
+// QC prompt — extends the spec wording with an explicit beautification anchor
+// on items 1 and 4. Gemini Vision tends to over-score face_similarity when the
+// person is the SAME individual but visibly "glow-up'd" (smoother skin, slimmer
+// jaw, larger eyes), which is exactly the failure mode we need to catch — so we
+// tell the rater to penalise that case directly.
+const QC_PROMPT = `Bạn là hệ thống kiểm định ảnh thử nón.
 
-/** Pass threshold for the weighted total. Below this → fail. */
-export const QC_PASS_THRESHOLD = 85
+So sánh:
 
-// QC prompt — asks Gemini Vision to score 7 dimensions and flag 5 hard-fails.
-const QC_PROMPT = `Bạn là hệ thống kiểm duyệt chất lượng ảnh thử nón TCAPS.
+A = ảnh gốc
+B = ảnh sản phẩm
+C = ảnh kết quả
 
-Bạn nhận 3 ảnh:
-A = ảnh gốc (selfie người dùng)
-B = ảnh sản phẩm nón
-C = ảnh kết quả try-on do AI tạo
+Đánh giá:
 
-YÊU CẦU TUYỆT ĐỐI: Ảnh C phải GIỮ NGUYÊN mọi thứ ở ảnh A (góc mặt, biểu cảm, hướng nhìn, tóc, màu da, tư thế, background, ánh sáng, tỷ lệ khuôn mặt) và CHỈ thay/thêm chiếc nón từ ảnh B. Mọi thay đổi khác đều là LỖI.
+1. Mức độ giữ nguyên khuôn mặt người trong ảnh gốc. CHẤM THẤP (dưới 80) nếu khuôn mặt bị làm đẹp, làm thon hàm, làm mịn da, làm trắng da, làm to mắt, làm hồng môi, mất mụn/nốt ruồi/khuyết điểm, hoặc trông như phiên bản "glow-up" / dùng filter của người gốc — DÙ vẫn là cùng một người.
+2. Mức độ giống sản phẩm nón. CHẤM THẤP (dưới 70) nếu MÀU nón trong C khác MÀU nón trong B (ví dụ: B là nón TRẮNG nhưng C lại là nón ĐEN), kể cả khi hoạ tiết/logo/form vẫn giống.
+3. Mức độ chân thực.
+4. Có dấu hiệu AI làm đẹp, thay đổi mặt hoặc thay đổi người hay không. Bất kỳ dấu hiệu mịn da / thon hàm / to mắt / xoá mụn nào cũng phải đặt face_changed = true.
 
-Chấm 7 dimensions (mỗi cái 0–100, càng cao càng giống ảnh gốc):
-
-1. face        — Độ giống KHUÔN MẶT (danh tính). Cùng người? Nét mặt giống?
-2. faceAngle   — Độ giống GÓC MẶT / hướng đầu / pose. Đầu nghiêng cùng hướng?
-3. expression  — Độ giống BIỂU CẢM + hướng nhìn của mắt.
-4. hair        — Độ giống TÓC (màu, kiểu, độ dài, hairline).
-5. lighting    — Độ giống ÁNH SÁNG (hướng sáng, độ sáng, nhiệt độ màu).
-6. background  — Độ giống BACKGROUND phía sau người.
-7. hat         — Độ chính xác của NÓN trong C so với sản phẩm B (form, brim NGANG/CONG, màu, logo, hoạ tiết).
-
-Đặt 5 cờ HARD-FAIL = true khi có dấu hiệu rõ ràng:
-
-- faceAngleChanged   = true nếu GÓC MẶT trong C khác A (nghiêng khác / quay khác / tilt khác).
-- gazeChanged        = true nếu HƯỚNG NHÌN của mắt trong C khác A.
-- expressionChanged  = true nếu BIỂU CẢM khác (cười khác, miệng khác, mắt khác).
-- hairChanged        = true nếu TÓC khác (màu, kiểu, độ dài, hoặc hairline khác).
-- hatChanged         = true nếu NÓN trong C khác sản phẩm B (form sai, brim sai cong/ngang, logo sai, MÀU sai).
-
-reason: 1–2 câu tiếng Việt nêu lỗi chính (nếu fail) hoặc lý do đạt (nếu pass).
-
-verdict: "pass" nếu tất cả 5 cờ = false VÀ điểm trung bình bạn ước tính cao; "fail" ngược lại. (Hệ thống sẽ tính lại theo công thức riêng — đây chỉ là tham khảo.)
-
-Trả CHÍNH XÁC JSON này, không gì khác:
+Trả JSON:
 
 {
-  "face":              0-100,
-  "faceAngle":         0-100,
-  "expression":        0-100,
-  "hair":              0-100,
-  "lighting":          0-100,
-  "background":        0-100,
-  "hat":               0-100,
-  "faceAngleChanged":  true/false,
-  "gazeChanged":       true/false,
-  "expressionChanged": true/false,
-  "hairChanged":       true/false,
-  "hatChanged":        true/false,
-  "verdict":           "pass" | "fail",
-  "reason":            "..."
-}`
+"face_similarity": 0-100,
+"hat_similarity": 0-100,
+"realism": 0-100,
+"face_changed": true/false,
+"verdict": "pass" | "fail",
+"reason": "..."
+}
+
+Chỉ trả JSON hợp lệ.
+Không giải thích thêm.`
 
 function splitDataUrl(d: string): { mimeType: string; data: string } {
   const semi = d.indexOf(';')
@@ -140,9 +82,7 @@ function clampPct(v: unknown): number {
 
 /**
  * Run the QC check. Throws on infra failure (network, timeout, malformed JSON);
- * the caller decides whether to fail-open or fail-closed. The returned `total`
- * is computed locally from the weighted dimensions — Gemini's `verdict` is
- * advisory only.
+ * the caller decides whether to fail-open or fail-closed.
  */
 export async function scoreTryOn(input: QcInput): Promise<QcScore> {
   const model = process.env.GEMINI_VISION_MODEL?.trim() || QC_MODEL_DEFAULT
@@ -210,57 +150,39 @@ export async function scoreTryOn(input: QcInput): Promise<QcScore> {
   try {
     parsed = JSON.parse(text) as Record<string, unknown>
   } catch {
+    // Defensive: strip code fences / surrounding text if the model added any.
     const m = text.match(/\{[\s\S]*\}/)
     if (m) try { parsed = JSON.parse(m[0]) } catch { /* fall through */ }
   }
   if (!parsed) throw new Error(`QC JSON parse failed: ${text.slice(0, 200)}`)
 
-  const dim = {
-    face:       clampPct(parsed.face),
-    faceAngle:  clampPct(parsed.faceAngle),
-    expression: clampPct(parsed.expression),
-    hair:       clampPct(parsed.hair),
-    lighting:   clampPct(parsed.lighting),
-    background: clampPct(parsed.background),
-    hat:        clampPct(parsed.hat),
-  }
-  const total = Math.round(
-    dim.face       * WEIGHTS.face +
-    dim.faceAngle  * WEIGHTS.faceAngle +
-    dim.expression * WEIGHTS.expression +
-    dim.hair       * WEIGHTS.hair +
-    dim.lighting   * WEIGHTS.lighting +
-    dim.background * WEIGHTS.background +
-    dim.hat        * WEIGHTS.hat,
-  )
-
   const score: QcScore = {
-    ...dim,
-    faceAngleChanged:  parsed.faceAngleChanged  === true,
-    gazeChanged:       parsed.gazeChanged       === true,
-    expressionChanged: parsed.expressionChanged === true,
-    hairChanged:       parsed.hairChanged       === true,
-    hatChanged:        parsed.hatChanged        === true,
-    total,
-    verdict:           parsed.verdict === 'fail' ? 'fail' : 'pass',
-    reason:            typeof parsed.reason === 'string' ? parsed.reason : '',
+    face_similarity: clampPct(parsed.face_similarity),
+    hat_similarity:  clampPct(parsed.hat_similarity),
+    realism:         clampPct(parsed.realism),
+    face_changed:    parsed.face_changed === true,
+    verdict:         parsed.verdict === 'fail' ? 'fail' : 'pass',
+    reason:          typeof parsed.reason === 'string' ? parsed.reason : '',
   }
   console.log(`[QC] ${elapsedMs}ms`, score)
   return score
 }
 
 /**
- * Source-of-truth pass/fail. Pass requires BOTH:
- *   1. All 5 hard-fail flags are false (no auto-disqualifying drift), AND
- *   2. Weighted total ≥ QC_PASS_THRESHOLD (85).
+ * Source-of-truth pass/fail decision. Thresholds:
+ *   face_similarity < 82  → fail   (tightened from 75 — Gemini Vision over-scores
+ *                                   identity when the face is the same person
+ *                                   but visibly beautified, so we need a higher
+ *                                   bar to reject "glow-up" drift)
+ *   hat_similarity  < 75  → fail
+ *   realism         < 70  → fail
+ *   face_changed   = true → fail
  */
 export function evaluateQc(s: QcScore): 'pass' | 'fail' {
-  if (s.faceAngleChanged)   return 'fail'
-  if (s.gazeChanged)        return 'fail'
-  if (s.expressionChanged)  return 'fail'
-  if (s.hairChanged)        return 'fail'
-  if (s.hatChanged)         return 'fail'
-  if (s.total < QC_PASS_THRESHOLD) return 'fail'
+  if (s.face_changed)         return 'fail'
+  if (s.face_similarity < 82) return 'fail'
+  if (s.hat_similarity  < 75) return 'fail'
+  if (s.realism         < 70) return 'fail'
   return 'pass'
 }
 
