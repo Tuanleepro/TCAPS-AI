@@ -79,114 +79,125 @@ export function ResultPanel({
       {qc && <QcChecklist qc={qc} />}
 
       {/* ── Product info + compatibility card ────────────────── */}
-      <div className="rounded-2xl border border-[#1E1E1E] bg-[#111111] overflow-hidden mb-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-[#1E1E1E]">
+      {/* Top row (thumbnail + name/price + MUA NGAY) reads left-to-right at
+          every breakpoint, so the buy CTA sits beside the cap name on mobile.
+          The compatibility breakdown lives in a full-width row below, separated
+          by a hairline divider, instead of the old 3-column grid which pushed
+          the CTA to a stacked third row on mobile. */}
+      <div className="rounded-2xl border border-[#1E1E1E] bg-[#111111] overflow-hidden mb-3">
 
-          {/* Left: Product info */}
-          <div className="flex items-start gap-3 p-4">
-            {/* Hat thumbnail */}
-            <div className="w-[60px] h-[60px] rounded-xl border border-[#2A2A2A] bg-[#0D0D0D] flex items-center justify-center shrink-0 overflow-hidden">
-              {product?.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={proxyImg(product.imageUrl, 96)} alt={product.name} loading="lazy" decoding="async" className="w-full h-full object-contain p-1" />
-              ) : (
-                <HatPlaceholder />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                <span className="font-black text-[#F5F5F5] text-base leading-tight">
-                  {product?.name ?? 'Custom Hat'}
-                </span>
-                {product?.badge && (
-                  <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-[#C9A84C] text-black tracking-wider shrink-0">
-                    {product.badge}
-                  </span>
-                )}
-              </div>
-              <div className="text-[#C9A84C] font-bold text-sm font-mono mb-1.5">
-                {product ? `${product.priceBundle.toLocaleString('vi-VN')}đ` : '99.000đ'}
-              </div>
-              {product?.description && (
-                <p className="text-[13px] text-[#6B6B6B] leading-relaxed line-clamp-2">
-                  {product.description}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Center: Face compatibility — only REAL measured data is shown */}
-          <div className="p-4 flex flex-col justify-center gap-2">
-            <p className="text-[10px] font-bold uppercase tracking-[.18em] text-[#C9A84C] mb-1">
-              Phù hợp với khuôn mặt bạn
-            </p>
-
-            {!hasFaceData ? (
-              <p className="text-xs text-[#6B6B6B] leading-relaxed">
-                Chưa đủ dữ liệu để phân tích khuôn mặt.
-              </p>
+        {/* Top row: thumb + info + buy CTA */}
+        <div className="flex items-start gap-3 p-4">
+          {/* Hat thumbnail */}
+          <div className="w-[60px] h-[60px] rounded-xl border border-[#2A2A2A] bg-[#0D0D0D] flex items-center justify-center shrink-0 overflow-hidden">
+            {product?.imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={proxyImg(product.imageUrl, 96)} alt={product.name} loading="lazy" decoding="async" className="w-full h-full object-contain p-1" />
             ) : (
-              <>
-                {/* Detected shape + its measured probability */}
-                <div className="flex items-center gap-2">
-                  <FaceIcon />
-                  <span className="text-sm text-[#F5F5F5]">
-                    Khuôn mặt: <span className="font-semibold">{shapeLabel}</span>
-                    <span className="text-[#6B6B6B]"> · {shapeProb}%</span>
-                  </span>
-                </div>
-
-                {/* Top-3 measured distribution */}
-                <div className="flex flex-wrap gap-1">
-                  {topShapes.map(([s, p]) => (
-                    <span key={s} className="text-[9px] px-1.5 py-0.5 rounded-full border border-[#2A2A2A] text-[#8A8A8A]">
-                      {FACE_SHAPE_LABELS[s]} {p}%
-                    </span>
-                  ))}
-                </div>
-
-                {/* Compatibility — only when the product has usable metadata */}
-                {compatibility !== null ? (
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center gap-2">
-                      <ShieldIcon />
-                      <span className="text-sm text-[#F5F5F5]">
-                        Độ phù hợp:{' '}
-                        <span className="font-bold text-[#C9A84C]">{compatibility}%</span>
-                      </span>
-                    </div>
-                    <div className="h-1.5 bg-[#1E1E1E] rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-[#C9A84C] to-[#E8C96A] transition-all duration-1000"
-                        style={{ width: `${compatibility}%` }}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-[11px] text-[#6B6B6B] leading-relaxed">
-                    Chưa đủ dữ liệu để tính độ phù hợp.
-                  </p>
-                )}
-              </>
+              <HatPlaceholder />
             )}
           </div>
 
-          {/* Right: Buy CTA */}
-          <div className="p-4 flex items-center justify-center">
-            <a
-              href={product ? `/catalog` : '#'}
-              className="inline-flex items-center gap-2.5 h-12 px-7 rounded-xl bg-[#C9A84C] hover:bg-[#E8C96A] text-black font-bold text-sm transition-all duration-200 shadow-[0_0_20px_rgba(201,168,76,.3)] hover:shadow-[0_0_32px_rgba(201,168,76,.5)] whitespace-nowrap"
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M1.5 1.5h3l1.8 8h6l1.2-5.5H4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-                <circle cx="7.5" cy="13" r="1.2" fill="currentColor"/>
-                <circle cx="12" cy="13" r="1.2" fill="currentColor"/>
-              </svg>
-              MUA NGAY
-            </a>
+          {/* Name + price */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap mb-0.5">
+              <span className="font-black text-[#F5F5F5] text-sm sm:text-base leading-tight">
+                {product?.name ?? 'Custom Hat'}
+              </span>
+              {product?.badge && (
+                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-[#C9A84C] text-black tracking-wider shrink-0">
+                  {product.badge}
+                </span>
+              )}
+            </div>
+            <div className="text-[#C9A84C] font-bold text-sm font-mono">
+              {product ? `${product.priceBundle.toLocaleString('vi-VN')}đ` : '99.000đ'}
+            </div>
           </div>
+
+          {/* Buy CTA — pinned right of name */}
+          <a
+            href={product ? `/catalog` : '#'}
+            aria-label="Mua nón này"
+            className="shrink-0 inline-flex items-center gap-1.5 h-10 px-3 sm:px-5 rounded-xl bg-[#C9A84C] hover:bg-[#E8C96A] text-black font-black text-[11px] sm:text-xs tracking-wider transition-all duration-200 shadow-[0_0_20px_rgba(201,168,76,.3)] hover:shadow-[0_0_32px_rgba(201,168,76,.5)] whitespace-nowrap"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path d="M1.5 1.5h3l1.8 8h6l1.2-5.5H4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              <circle cx="7.5" cy="13" r="1.2" fill="currentColor"/>
+              <circle cx="12" cy="13" r="1.2" fill="currentColor"/>
+            </svg>
+            MUA NGAY
+          </a>
+        </div>
+
+        {/* Bottom row: face compatibility breakdown */}
+        <div className="border-t border-[#1E1E1E] p-4 flex flex-col gap-2">
+          <p className="text-[10px] font-bold uppercase tracking-[.18em] text-[#C9A84C] mb-1">
+            Phù hợp với khuôn mặt bạn
+          </p>
+
+          {!hasFaceData ? (
+            <p className="text-xs text-[#6B6B6B] leading-relaxed">
+              Chưa đủ dữ liệu để phân tích khuôn mặt.
+            </p>
+          ) : (
+            <>
+              {/* Detected shape + its measured probability */}
+              <div className="flex items-center gap-2">
+                <FaceIcon />
+                <span className="text-sm text-[#F5F5F5]">
+                  Khuôn mặt: <span className="font-semibold">{shapeLabel}</span>
+                  <span className="text-[#6B6B6B]"> · {shapeProb}%</span>
+                </span>
+              </div>
+
+              {/* Top-3 measured distribution */}
+              <div className="flex flex-wrap gap-1">
+                {topShapes.map(([s, p]) => (
+                  <span key={s} className="text-[9px] px-1.5 py-0.5 rounded-full border border-[#2A2A2A] text-[#8A8A8A]">
+                    {FACE_SHAPE_LABELS[s]} {p}%
+                  </span>
+                ))}
+              </div>
+
+              {/* Compatibility — only when the product has usable metadata */}
+              {compatibility !== null ? (
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2">
+                    <ShieldIcon />
+                    <span className="text-sm text-[#F5F5F5]">
+                      Độ phù hợp:{' '}
+                      <span className="font-bold text-[#C9A84C]">{compatibility}%</span>
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-[#1E1E1E] rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[#C9A84C] to-[#E8C96A] transition-all duration-1000"
+                      style={{ width: `${compatibility}%` }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[11px] text-[#6B6B6B] leading-relaxed">
+                  Chưa đủ dữ liệu để tính độ phù hợp.
+                </p>
+              )}
+            </>
+          )}
         </div>
       </div>
+
+      {/* ── Regenerate — moved ABOVE the analysis card. Reason: the user is
+          most likely to want another generation right after seeing the
+          result, so it should be the first action they can reach instead of
+          buried below recommendations. */}
+      <button
+        onClick={onRetry}
+        className="flex items-center justify-center gap-2 w-full h-11 mb-4 rounded-xl border border-[#C9A84C]/40 bg-[#C9A84C]/8 hover:bg-[#C9A84C]/14 text-[#C9A84C] font-bold text-xs uppercase tracking-widest transition-all duration-200"
+      >
+        <RetryIcon />
+        Tạo lại kết quả
+      </button>
 
       {/* ── Phân tích (data-grounded, no marketing) ───────────── */}
       {compat && (
@@ -246,15 +257,6 @@ export function ResultPanel({
           </div>
         </div>
       )}
-
-      {/* ── Regenerate (same images, new variation) ───────────── */}
-      <button
-        onClick={onRetry}
-        className="flex items-center justify-center gap-2 w-full h-11 mb-2 rounded-xl border border-[#C9A84C]/40 bg-[#C9A84C]/8 hover:bg-[#C9A84C]/14 text-[#C9A84C] font-bold text-xs uppercase tracking-widest transition-all duration-200"
-      >
-        <RetryIcon />
-        Tạo lại kết quả
-      </button>
 
       {/* ── Action buttons ────────────────────────────────────── */}
       <div className="grid grid-cols-3 gap-2">
