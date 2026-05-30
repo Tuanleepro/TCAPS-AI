@@ -176,7 +176,7 @@ function TryOnMain() {
 
       {/* ── Upload form ─────────────────────────────────── */}
       {isIdle && (
-        <div className="max-w-md mx-auto px-4 py-10 flex flex-col gap-6 fade-in-up">
+        <div className="max-w-md mx-auto px-4 pt-10 pb-32 flex flex-col gap-6 fade-in-up">
 
           {/* Hero text */}
           <div className="text-center pb-2">
@@ -217,10 +217,6 @@ function TryOnMain() {
             </div>
           )}
 
-          <Button variant="gold" size="lg" fullWidth disabled={!canRun} loading={state.isProcessing} onClick={runTryOn}>
-            {state.isProcessing ? 'Đang xử lý…' : 'Thử Nón Ngay'}
-          </Button>
-
           {/* Tips */}
           {state.step === 'idle' && (
             <ul className="space-y-1.5 pt-1">
@@ -236,6 +232,24 @@ function TryOnMain() {
               ))}
             </ul>
           )}
+        </div>
+      )}
+
+      {/* ── Sticky bottom CTA (idle/upload state only) ────── */}
+      {isIdle && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#1E1E1E] bg-[#0A0A0A]/95 backdrop-blur-md px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          <div className="max-w-md mx-auto">
+            <Button
+              variant="gold"
+              size="lg"
+              fullWidth
+              disabled={!canRun}
+              loading={state.isProcessing}
+              onClick={runTryOn}
+            >
+              {state.isProcessing ? 'Đang xử lý…' : 'Thử Nón Ngay'}
+            </Button>
+          </div>
         </div>
       )}
     </main>

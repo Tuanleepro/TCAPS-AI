@@ -2,14 +2,23 @@
 // Messenger chat with the shop. Brand colours match the official apps so the
 // affordance is instantly recognisable for Vietnamese users.
 
+'use client'
+
+import { usePathname } from 'next/navigation'
+
 const ZALO_PHONE = '0972284146'                  // 097 228 41 46 → digits only
 const MESSENGER_USER_ID = '61557869000489'       // m.me/<id>
 
 export function FloatingContact() {
+  // /try-on renders a fixed bottom "Thử Nón Ngay" CTA bar. Lift these chat
+  // bubbles above that bar so they're not hidden when the user scrolls.
+  const pathname = usePathname()
+  const liftForCta = pathname?.startsWith('/try-on')
+  const bottomClass = liftForCta ? 'bottom-24' : 'bottom-4'
   return (
     <div
       aria-label="Liên hệ TCAPS"
-      className="fixed bottom-4 right-4 z-40 flex flex-col gap-2.5"
+      className={`fixed ${bottomClass} right-4 z-40 flex flex-col gap-2.5 transition-all`}
     >
       <a
         href={`https://zalo.me/${ZALO_PHONE}`}
