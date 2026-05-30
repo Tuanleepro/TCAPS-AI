@@ -4,7 +4,7 @@ import { useState, useCallback, useRef } from 'react'
 import type { TryOnState, TryOnStep } from '@/types'
 import type { QcScore } from '@/lib/gemini/qcScore'
 import { PRODUCT_MAP } from '@/constants/products'
-import { detectColor, filterImagesByColor } from '@/lib/products/color'
+import { detectColor, detectBrim, filterImagesByVariant, type BrimShape } from '@/lib/products/color'
 
 const INIT: TryOnState = {
   step: 'idle',
@@ -192,14 +192,20 @@ export function useTryOn() {
       // no product gallery do we fall back to sending the hat file itself as a data
       // URL (via FileReader — no canvas, reliable on mobile).
       const product = skuRef.current ? PRODUCT_MAP[skuRef.current] : null
-      // Colour-lock: if the product name tells us the cap colour (e.g. "TRẮNG"),
-      // only send the gallery images whose variant name matches that colour.
-      // Stops Gemini from "picking" the wrong colourway when a multi-variant
-      // SKU's gallery contains photos of both colours (e.g. TC67's gallery has
-      // TRẮNG + ĐEN; without filtering the result sometimes comes back black).
+      // Colour + brim lock: a single parent SKU often groups multiple variants
+      // (TC67 has TRẮNG + ĐEN colourways AND NGANG + CONG brim shapes). Without
+      // filtering, Gemini was picking the wrong colourway OR the wrong brim
+      // from the multi-variant gallery. We detect both axes from the product
+      // name and filter the gallery to the matching variant's image(s) only.
+      //
+      // Default brim when the parent name doesn't specify one: FLAT (NGANG) —
+      // streetwear customers buying a snapback expect a flat brim by default,
+      // and that matches the product owner's preference for TC67. Future: add
+      // a variant picker UI that lets the user choose explicitly.
       const detectedColor = product ? detectColor(product.name) : null
+      const detectedBrim: BrimShape = (product ? detectBrim(product.name) : null) ?? 'FLAT'
       const sourceImages = product
-        ? (detectedColor ? filterImagesByColor(product, detectedColor) : (product.images ?? []))
+        ? filterImagesByVariant(product, detectedColor, detectedBrim)
         : []
       const garmentUrls = sourceImages
         .filter(u => /^https?:\/\//.test(u))
@@ -211,6 +217,7 @@ export function useTryOn() {
       console.log('[TryOn] PERSON sent     :', `${person.sentWidth}×${person.sentHeight}px`, `${dataUrlKB(person.dataUrl)}KB`, `(${person.mode})`)
       console.log('[TryOn] CAP references  :', garmentUrls.length ? `${garmentUrls.length} url(s) (server-fetched)` : '1 uploaded file')
       console.log('[TryOn] CAP colour-lock :', detectedColor ? `${detectedColor.vn} → ${detectedColor.en}` : 'none detected (no name colour token)')
+      console.log('[TryOn] CAP brim-lock   :', `${detectedBrim} (${detectedBrim === 'FLAT' ? 'lưỡi ngang' : 'lưỡi cong'})`)
 
       type GeminiResp = {
         resultUrl?: string; error?: string; model?: string
@@ -236,6 +243,7 @@ export function useTryOn() {
               personWidth: person.sentWidth, personHeight: person.sentHeight,
               productColor: detectedColor?.en ?? null,
               productName:  product?.name ?? null,
+              productBrim:  detectedBrim,
             }),
           })
           const d = await res.json() as GeminiResp

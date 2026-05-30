@@ -34,11 +34,13 @@ const QC_MODEL_DEFAULT = 'gemini-2.5-flash'
 const QC_TIMEOUT_MS    = 10_000           // hard cap — spec: do not add >10s
 const QC_MAX_TOKENS    = 256              // JSON is small
 
-// QC prompt — extends the spec wording with an explicit beautification anchor
-// on items 1 and 4. Gemini Vision tends to over-score face_similarity when the
-// person is the SAME individual but visibly "glow-up'd" (smoother skin, slimmer
-// jaw, larger eyes), which is exactly the failure mode we need to catch — so we
-// tell the rater to penalise that case directly.
+// QC prompt — spec calibration:
+//   • Skin smoothing/whitening alone is ALLOWED (light beauty pass) — do NOT
+//     treat it as identity drift. Product owner explicitly wants the cleanup.
+//   • IDENTITY drift (different person, swapped face, reshaped features, pose
+//     change, different hair) IS forbidden → set face_changed = true.
+//   • Hat similarity must penalise BOTH colour mismatch AND brim shape
+//     mismatch (flat snapback rendered as a curved baseball cap, etc).
 const QC_PROMPT = `Bạn là hệ thống kiểm định ảnh thử nón.
 
 So sánh:
@@ -49,10 +51,14 @@ C = ảnh kết quả
 
 Đánh giá:
 
-1. Mức độ giữ nguyên khuôn mặt người trong ảnh gốc. CHẤM THẤP (dưới 80) nếu khuôn mặt bị làm đẹp, làm thon hàm, làm mịn da, làm trắng da, làm to mắt, làm hồng môi, mất mụn/nốt ruồi/khuyết điểm, hoặc trông như phiên bản "glow-up" / dùng filter của người gốc — DÙ vẫn là cùng một người.
-2. Mức độ giống sản phẩm nón. CHẤM THẤP (dưới 70) nếu MÀU nón trong C khác MÀU nón trong B (ví dụ: B là nón TRẮNG nhưng C lại là nón ĐEN), kể cả khi hoạ tiết/logo/form vẫn giống.
+1. Mức độ giữ nguyên DANH TÍNH + NÉT MẶT + GÓC MẶT của người trong A.
+   - Cho phép: làm mịn da, đều màu da, làm trắng nhẹ, xoá mụn nhẹ (light beauty pass) — đây KHÔNG phải lỗi.
+   - CHẤM THẤP (dưới 75) nếu: đổi người, đổi nét mặt (thon hàm, to mắt, hồng môi, sửa mũi, sửa lông mày), đổi góc mặt / hướng nhìn, đổi kiểu tóc / màu tóc, hoặc nhìn rõ là một người khác / một look-alike đẹp hơn.
+2. Mức độ giống sản phẩm nón.
+   - CHẤM THẤP (dưới 70) nếu MÀU nón trong C khác MÀU nón trong B (ví dụ B là TRẮNG nhưng C là ĐEN).
+   - CHẤM THẤP (dưới 70) nếu LƯỠI NÓN (brim) trong C khác form trong B — đặc biệt là lưỡi ngang (flat / snapback) bị render thành lưỡi cong (curved / baseball cap), hoặc ngược lại.
 3. Mức độ chân thực.
-4. Có dấu hiệu AI làm đẹp, thay đổi mặt hoặc thay đổi người hay không. Bất kỳ dấu hiệu mịn da / thon hàm / to mắt / xoá mụn nào cũng phải đặt face_changed = true.
+4. face_changed = true CHỈ khi đổi danh tính / nét mặt / góc mặt / tóc. KHÔNG đặt true chỉ vì da mịn hơn hoặc trắng hơn nhẹ.
 
 Trả JSON:
 
@@ -170,17 +176,16 @@ export async function scoreTryOn(input: QcInput): Promise<QcScore> {
 
 /**
  * Source-of-truth pass/fail decision. Thresholds:
- *   face_similarity < 82  → fail   (tightened from 75 — Gemini Vision over-scores
- *                                   identity when the face is the same person
- *                                   but visibly beautified, so we need a higher
- *                                   bar to reject "glow-up" drift)
- *   hat_similarity  < 75  → fail
+ *   face_similarity < 75  → fail   (light beauty pass is now allowed; we only
+ *                                   reject when identity / features / pose drift)
+ *   hat_similarity  < 75  → fail   (includes colour AND brim shape mismatch —
+ *                                   see QC_PROMPT item 2)
  *   realism         < 70  → fail
  *   face_changed   = true → fail
  */
 export function evaluateQc(s: QcScore): 'pass' | 'fail' {
   if (s.face_changed)         return 'fail'
-  if (s.face_similarity < 82) return 'fail'
+  if (s.face_similarity < 75) return 'fail'
   if (s.hat_similarity  < 75) return 'fail'
   if (s.realism         < 70) return 'fail'
   return 'pass'
