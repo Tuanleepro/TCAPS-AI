@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { PRODUCTS, type Product } from '@/constants/products'
 import { proxyImg } from '@/lib/img'
 
@@ -186,8 +187,16 @@ export function OrderModal({ open, product, onClose }: Props) {
   }, [canSubmit, allItems, name, phone, address, province, note, subtotal, shipping, total, totalQty])
 
   if (!open) return null
+  // Portal to document.body so the modal escapes every transformed/filtered
+  // ancestor in the render tree. ResultPanel (and a few other containers in
+  // this app) animate with `transform: translateY(...)`, which leaves a
+  // non-`none` transform on the element after the animation finishes —
+  // per CSS spec that creates a CONTAINING BLOCK for any `position: fixed`
+  // descendant, so the modal anchors to ResultPanel instead of the viewport
+  // and renders off-centre. Portaling to <body> fixes this for good.
+  if (typeof document === 'undefined') return null
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-md"
       onClick={onClose}
@@ -205,8 +214,9 @@ export function OrderModal({ open, product, onClose }: Props) {
       aria-label="Đặt hàng TCAPS"
     >
       <div
-        className="w-full h-[92vh] sm:h-[min(820px,90vh)] sm:max-w-[640px] bg-gradient-to-b from-[#0D0D0D] to-[#0A0A0A] border-t-2 sm:border-2 border-[#C9A84C]/40 sm:rounded-3xl shadow-[0_-12px_80px_rgba(201,168,76,.15)] flex flex-col overflow-hidden modal-fade-in"
+        className="w-full h-[92vh] sm:h-[820px] sm:max-h-[90vh] sm:max-w-2xl sm:mx-auto bg-gradient-to-b from-[#0D0D0D] to-[#0A0A0A] border-t-2 sm:border-2 border-[#C9A84C]/40 sm:rounded-3xl shadow-[0_-12px_80px_rgba(201,168,76,.15)] flex flex-col overflow-hidden modal-fade-in"
         onClick={e => e.stopPropagation()}
+        style={{ maxWidth: 'min(640px, 100vw)' }}
       >
 
         {/* ── Header ─────────────────────────────────────────────────────── */}
@@ -375,7 +385,8 @@ export function OrderModal({ open, product, onClose }: Props) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
