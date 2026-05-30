@@ -296,11 +296,17 @@ export async function POST(req: NextRequest) {
     }
 
     if (qcVerdict === 'fail') {
+      // Return the FAILED image alongside the verdict so the client can pick
+      // the BEST attempt as a graceful fallback when every retry in a cycle
+      // fails (rather than throwing the user back to a red error screen). The
+      // client compares `qc.total` across attempts and surfaces the highest.
       return NextResponse.json({
-        qcFailed: true,
+        qcFailed:  true,
         qc,
-        error:    QC_FAIL_MESSAGE,
-      })   // 200 so the client treats it as a known QC failure, not a network error
+        resultUrl: dataUrl,
+        elapsedMs,
+        error:     QC_FAIL_MESSAGE,
+      })   // 200 — known QC failure, not a network error
     }
 
     return NextResponse.json({

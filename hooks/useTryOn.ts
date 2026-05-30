@@ -27,11 +27,12 @@ function nextStep(hasFace: boolean, hasHat: boolean): TryOnStep {
   return 'idle'
 }
 
-// Per spec (May 2026): up to 2 attempts per click. We auto-retry BOTH on
-// network/Gemini errors AND on QC verdict = fail (regenerate the image and
-// rescore). After 2 attempts the user gets the standard "Vui lòng thử lại"
-// message and the existing "Tạo lại kết quả" button — no infinite loop.
-const MAX_ATTEMPTS         = 2
+// Per spec (May 2026, revised): up to 4 attempts per click. We auto-retry
+// BOTH on network/Gemini errors AND on QC verdict = fail. If every attempt's
+// QC fails, we DON'T show an error — we surface the attempt with the highest
+// QC total as a best-effort fallback (graceful degradation: user always gets
+// SOMETHING usable, just flagged in the UI as "not above threshold").
+const MAX_ATTEMPTS         = 4
 const RETRY_DELAY_NETWORK  = 7000   // back-off for rate-limit / Gemini error
 const RETRY_DELAY_QC       = 1000   // tighter — QC fails are not rate-limited
 
@@ -230,6 +231,11 @@ export function useTryOn() {
       }
       let data: GeminiResp | null = null
       let lastErr = ''
+      // Track the QC-failed attempt with the HIGHEST total — if every attempt
+      // in the cycle fails QC, we surface this as the best-effort result
+      // rather than an error. Only candidates that have a `qc` object can be
+      // compared (an infra error has no scores → not a candidate).
+      let bestFail: { resultUrl: string; qc: QcScore; elapsedMs?: number } | null = null
 
       for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         if (abortRef.current) return
@@ -256,16 +262,32 @@ export function useTryOn() {
             model: d.model, hasImage: !!d.resultUrl, modelText: d.modelText, error: d.error,
             qc: d.qc, qcFailed: d.qcFailed,
           })
-          // QC verdict = fail: auto-regenerate (per spec, up to MAX_ATTEMPTS).
-          // After the final attempt still fails, surface the standard message.
+          // QC verdict = fail: auto-regenerate (up to MAX_ATTEMPTS). Each fail
+          // also competes for "best fallback" — we keep the highest-total
+          // attempt in case every attempt fails.
           if (d.qcFailed) {
             lastErr = d.error || 'Ảnh tạo chưa đạt chất lượng mong muốn. Vui lòng thử lại.'
-            console.warn(`[TryOn] ⚠ QC fail attempt ${attempt}/${MAX_ATTEMPTS}: ${lastErr}`)
+            if (d.resultUrl && d.qc && (!bestFail || d.qc.total > bestFail.qc.total)) {
+              bestFail = { resultUrl: d.resultUrl, qc: d.qc, elapsedMs: d.elapsedMs }
+              console.warn(`[TryOn] ⚠ QC fail attempt ${attempt}/${MAX_ATTEMPTS} (total=${d.qc.total}) — NEW best fallback`)
+            } else {
+              console.warn(`[TryOn] ⚠ QC fail attempt ${attempt}/${MAX_ATTEMPTS} (total=${d.qc?.total ?? '?'})`)
+            }
             if (attempt < MAX_ATTEMPTS) {
               await new Promise(r => setTimeout(r, RETRY_DELAY_QC))
               continue
             }
-            data = null
+            // Final attempt failed too — fall back to the best fail candidate.
+            if (bestFail) {
+              console.warn(`[TryOn] ⤵ all ${MAX_ATTEMPTS} attempts failed QC — using best-effort fallback (total=${bestFail.qc.total})`)
+              data = {
+                resultUrl: bestFail.resultUrl,
+                qc:        bestFail.qc,
+                elapsedMs: bestFail.elapsedMs,
+              }
+            } else {
+              data = null
+            }
             break
           }
           if (!res.ok || d.error || !d.resultUrl) throw new Error(d.error ?? `HTTP ${res.status}`)
