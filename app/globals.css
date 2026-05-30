@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base reset ──────────────────────────────────── */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: #0A0A0A;
+    color: #F5F5F5;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    font-family: var(--font-inter, 'Inter', sans-serif);
+  }
+
+  /* Luxury display font for headings (full Vietnamese diacritics). line-height
+     is kept >= 1.04 so stacked VN marks (Ợ, Ặ, Ẫ…) never clip at large sizes. */
+  h1, h2 {
+    font-family: var(--font-display, 'Playfair Display', serif);
+    line-height: 1.08;
+  }
+
+  ::-webkit-scrollbar        { width: 3px; height: 3px; }
+  ::-webkit-scrollbar-track  { background: #0A0A0A; }
+  ::-webkit-scrollbar-thumb  { background: #C9A84C; border-radius: 99px; }
+
+  ::selection { background: rgba(201,168,76,.25); color: #E8C96A; }
+
+  :focus-visible {
+    outline: 1.5px solid #C9A84C;
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+}
+
+/* ── Utility classes ─────────────────────────────── */
+@layer utilities {
+
+  /* Gold shimmer text */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      #8A7035 0%, #C9A84C 20%, #F5E17A 40%,
+      #E8C96A 50%, #F5E17A 60%, #C9A84C 80%, #8A7035 100%
+    );
+    background-size: 400% auto;
+    animation: shimmer 4s linear infinite;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Pulse gold button glow */
+  .pulse-gold {
+    animation: pulse-gold 2s ease-in-out infinite;
+  }
+
+  /* AI scan line */
+  .scan-line {
+    animation: scan 2s ease-in-out infinite;
+  }
+
+  /* Fade in up */
+  .fade-in-up {
+    animation: fadeInUp .4s ease-out forwards;
+  }
+
+  /* Slow ring spin */
+  .spin-slow {
+    animation: spin-slow 3s linear infinite;
+  }
+
+  /* Checkerboard bg for transparent PNG */
+  .checker-bg {
+    background-color: #111;
+    background-image:
+      linear-gradient(45deg, #1a1a1a 25%, transparent 25%),
+      linear-gradient(-45deg, #1a1a1a 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #1a1a1a 75%),
+      linear-gradient(-45deg, transparent 75%, #1a1a1a 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+  }
+
+  /* Upload zone drag state */
+  .drop-active {
+    border-color: #C9A84C !important;
+    background-color: rgba(201,168,76,.05) !important;
+    box-shadow: 0 0 0 1px #C9A84C, inset 0 0 40px rgba(201,168,76,.04);
+  }
+}
+
+/* ── Keyframes ───────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -400% center; }
+  100% { background-position:  400% center; }
+}
+
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,.5); }
+  50%       { box-shadow: 0 0 0 10px rgba(201,168,76,0); }
+}
+
+@keyframes scan {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateY(100%); opacity: 0; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
