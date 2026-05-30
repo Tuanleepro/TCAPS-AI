@@ -10,6 +10,19 @@ const formatVnd = (n: number) => `${Math.round(n).toLocaleString('vi-VN')}₫`
 // Featured = first products that have a real photo.
 const FEATURED = ALL_PRODUCTS.filter(p => p.imageUrl).slice(0, 4)
 
+// Lifestyle / model shots displayed in the auto-scrolling banner above the
+// "Quy trình" section. Files live under /public — add or remove here to change
+// the banner. The strip duplicates this list inline for the seamless loop.
+const BANNER_IMAGES = [
+  '/z7881892796228_a81f3a2a32e31a4de074c3e83372edfa.jpg',
+  '/z7881892799448_2013ccf22d14e701231e6e49538383b3.jpg',
+  '/z7881892806827_54c6c0d0744ec8bd222a85dc022d3c7b.jpg',
+  '/z7881892807575_c18bf32d249d95c976779564fba382ee.jpg',
+  '/z7881919534291_ac404ae1c75f8b578cc4724eac532432.jpg',
+  '/z7881919539692_d3dc81e31e4315c8743bba3462afb200.jpg',
+  '/z7881919539909_ba886c9f033f15023c10c30258a75719.jpg',
+]
+
 const STEPS = [
   { n: '01', title: 'Upload Selfie',      desc: 'Chụp ảnh tự sướng hoặc tải ảnh lên. Rõ mặt, đủ ánh sáng.' },
   { n: '02', title: 'AI Phân Tích',       desc: 'Hệ thống detect 478 điểm trên khuôn mặt, tính góc đầu.' },
@@ -63,6 +76,34 @@ export default function HomePage() {
           </Link>
         </div>
 
+      </section>
+
+      {/* ── Lifestyle banner (auto-scroll marquee) ───────── */}
+      <section className="border-t border-[#161616] bg-[#0A0A0A] py-12 md:py-14 overflow-hidden">
+        <div className="text-center mb-6 md:mb-8 px-4">
+          <p className="text-[11px] uppercase tracking-[.18em] text-[#C9A84C] mb-2">Lookbook</p>
+          <h2 className="text-2xl md:text-3xl font-black text-[#F5F5F5]">Phong cách TCAPS</h2>
+        </div>
+        {/* The track holds TWO copies of the list back-to-back; the CSS
+            animation scrolls -50% so the seam between copies lands at the
+            start of the second copy, producing a seamless infinite loop. */}
+        <div className="marquee-track gap-3 md:gap-4 will-change-transform">
+          {[...BANNER_IMAGES, ...BANNER_IMAGES].map((src, i) => (
+            <div
+              key={i}
+              className="shrink-0 w-40 md:w-56 lg:w-64 aspect-[3/4] rounded-2xl overflow-hidden border border-[#1E1E1E] bg-[#0D0D0D] relative"
+            >
+              <Image
+                src={src}
+                alt=""
+                fill
+                sizes="(max-width:768px) 160px, (max-width:1024px) 224px, 256px"
+                className="object-cover"
+                aria-hidden="true"
+              />
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* ── How it works ─────────────────────────────────── */}
