@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import type { FaceShape } from '@/types'
 import type { Product }   from '@/constants/products'
 import type { QcScore }   from '@/lib/gemini/qcScore'
@@ -8,7 +7,6 @@ import { FACE_SHAPE_LABELS, PRODUCTS } from '@/constants/products'
 import { scoreCompatibility, rankCompatibility } from '@/lib/recommendation-engine'
 import type { FaceShapeProbabilities } from '@/lib/face-analysis'
 import { BeforeAfterSlider } from './BeforeAfterSlider'
-import { OrderModal } from './OrderModal'
 import { proxyImg } from '@/lib/img'
 
 interface Props {
@@ -46,8 +44,6 @@ export function ResultPanel({
   const recommendations = hasFaceData
     ? rankCompatibility(PRODUCTS, faceShape!, { excludeSku: product?.sku, limit: 4 })
     : []
-
-  const [orderOpen, setOrderOpen] = useState(false)
 
   return (
     <div className="flex flex-col gap-0 fade-in-up w-full">
@@ -119,15 +115,13 @@ export function ResultPanel({
             </div>
           </div>
 
-          {/* Buy CTA — pinned right of name. Opens the order modal with this
-              cap pre-loaded; the modal lets the customer add more caps and
-              fill in shipping info before submitting. */}
-          <button
-            type="button"
-            onClick={() => product && setOrderOpen(true)}
-            disabled={!product}
+          {/* Buy CTA — pinned right of name. Links to /catalog so the
+              customer can complete the purchase via Pancake / TikTok Shop
+              the same way every other product on the site does. */}
+          <a
+            href={product ? `/catalog` : '#'}
             aria-label="Mua nón này"
-            className="shrink-0 inline-flex items-center gap-1.5 h-10 px-3 sm:px-5 rounded-xl bg-[#C9A84C] hover:bg-[#E8C96A] text-black font-black text-[11px] sm:text-xs tracking-wider transition-all duration-200 shadow-[0_0_20px_rgba(201,168,76,.3)] hover:shadow-[0_0_32px_rgba(201,168,76,.5)] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+            className="shrink-0 inline-flex items-center gap-1.5 h-10 px-3 sm:px-5 rounded-xl bg-[#C9A84C] hover:bg-[#E8C96A] text-black font-black text-[11px] sm:text-xs tracking-wider transition-all duration-200 shadow-[0_0_20px_rgba(201,168,76,.3)] hover:shadow-[0_0_32px_rgba(201,168,76,.5)] whitespace-nowrap"
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
               <path d="M1.5 1.5h3l1.8 8h6l1.2-5.5H4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
@@ -135,7 +129,7 @@ export function ResultPanel({
               <circle cx="12" cy="13" r="1.2" fill="currentColor"/>
             </svg>
             MUA NGAY
-          </button>
+          </a>
         </div>
 
         {/* Bottom row: face compatibility breakdown */}
@@ -272,15 +266,6 @@ export function ResultPanel({
         <ActionBtn onClick={onShare}    icon={<ShareIcon />}    label="CHIA SẺ KẾT QUẢ" />
         <ActionBtn onClick={onReset}    icon={<SwapIcon />}     label="ĐỔI ẢNH KHÁC" />
       </div>
-
-      {/* Order modal — mounted in DOM but only renders when `open` is true. */}
-      {product && (
-        <OrderModal
-          open={orderOpen}
-          product={product}
-          onClose={() => setOrderOpen(false)}
-        />
-      )}
     </div>
   )
 }
