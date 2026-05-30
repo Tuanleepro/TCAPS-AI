@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import { PRODUCTS, type Product } from '@/constants/products'
 import { proxyImg } from '@/lib/img'
@@ -57,6 +57,11 @@ export function OrderModal({ open, product, onClose }: Props) {
 
   const [submit, setSubmit] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [submitErr, setSubmitErr] = useState<string | null>(null)
+
+  // Ref to the scrollable body — used to forward wheel events from anywhere
+  // on the dim overlay into the modal scroll, so desktop users wheel-scrolling
+  // outside the modal still reach the submit button at the bottom.
+  const bodyRef = useRef<HTMLDivElement>(null)
 
   // Reset to a fresh cart when the modal opens for a new product.
   useEffect(() => {
@@ -171,20 +176,34 @@ export function OrderModal({ open, product, onClose }: Props) {
     // (z-40). Some iOS in-app browsers (Messenger / Zalo / TikTok) compose
     // fixed elements onto their own layers and a 10-step gap isn't always
     // enough, so use a big margin. The overlay's onClick closes; inner
-    // onClick stops propagation.
+    // onClick stops propagation. onWheel forwards scroll events from the
+    // dim overlay into the modal body so a desktop user wheel-scrolling
+    // anywhere on the screen still reaches the submit button at the bottom
+    // (without this, mousing over the backdrop hits a body-scroll-locked
+    // page and nothing happens — the customer gets stuck).
     <div
       className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm"
       onClick={onClose}
+      onWheel={(e) => {
+        if (!bodyRef.current) return
+        // Only forward when the wheel is OUTSIDE the modal body, otherwise
+        // we'd double-apply the scroll and the page would jerk.
+        const target = e.target as HTMLElement
+        if (bodyRef.current.contains(target)) return
+        bodyRef.current.scrollTop += e.deltaY
+      }}
       role="dialog"
       aria-modal="true"
       aria-label="Đặt hàng TCAPS"
     >
-      {/* Mobile: full-height sheet (h-[88vh]) with internal scroll. Desktop:
-          auto-height card capped at 92vh. Using `vh` (not `dvh`) for safe
-          fallback in iOS webviews / Messenger / Zalo in-app browsers where
-          dynamic viewport units silently drop the max-height. */}
+      {/* Fixed height across breakpoints — explicit h-[88vh] so the modal is
+          always shorter than the viewport with the submit footer pinned to
+          its bottom. `vh` (not `dvh`) for safe fallback in iOS webviews /
+          Messenger / Zalo in-app browsers where dynamic viewport units
+          silently drop the height constraint. Desktop also caps at 720px so
+          the modal doesn't get awkwardly tall on big monitors. */}
       <div
-        className="w-full h-[88vh] sm:h-auto sm:max-w-md sm:max-h-[92vh] bg-[#0D0D0D] border-t sm:border border-[#2A2A2A] sm:rounded-2xl shadow-[0_-12px_48px_rgba(0,0,0,.6)] flex flex-col"
+        className="w-full h-[88vh] sm:max-w-md sm:h-[min(720px,88vh)] bg-[#0D0D0D] border-t sm:border border-[#2A2A2A] sm:rounded-2xl shadow-[0_-12px_48px_rgba(0,0,0,.6)] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Sticky header */}
@@ -207,8 +226,12 @@ export function OrderModal({ open, product, onClose }: Props) {
         {/* Scrollable body. `min-h-0` is critical: without it, the flex item
             defaults to `min-height: auto` and refuses to shrink below content
             size, so the overflow-y-auto never triggers and the form / footer
-            get pushed out of the modal. */}
-        <div className="overflow-y-auto px-4 py-4 flex flex-col gap-5 flex-1 min-h-0">
+            get pushed out of the modal. The `modal-scrollbar` class (in
+            globals.css) gives this scroll area a visible gold scrollbar so
+            customers immediately see they CAN scroll — without that visual
+            cue desktop users were trying to wheel-scroll the locked page
+            outside the modal and giving up. */}
+        <div ref={bodyRef} className="modal-scrollbar overflow-y-auto px-4 py-4 flex flex-col gap-5 flex-1 min-h-0">
 
           {submit === 'success' ? (
             <SuccessPanel onClose={onClose} subtotal={subtotal} qty={totalQty} />
