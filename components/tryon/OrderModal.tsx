@@ -408,7 +408,7 @@ function PrimaryProductCard({
       <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl border border-[#2A2A2A] bg-[#0A0A0A] overflow-hidden shrink-0">
         {product.imageUrl
           // eslint-disable-next-line @next/next/no-img-element
-          ? <img src={proxyImg(product.imageUrl, 192)} alt={product.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+          ? <img src={proxyImg(product.imageUrl, 256)} alt={product.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
           : <div className="w-full h-full flex items-center justify-center text-[#4A4A4A]">🧢</div>}
       </div>
       <div className="flex-1 min-w-0">
