@@ -7,36 +7,38 @@ export const runtime = 'nodejs'
 const MAX_DATAURL_CHARS = 15 * 1024 * 1024   // allow full-quality person photos
 const GEMINI_MODEL = process.env.GEMINI_IMAGE_MODEL?.trim() || 'gemini-2.5-flash-image'
 
-// Try-on = put THIS cap on THIS person. The face IDENTITY + FEATURES + POSE are
-// locked to image 1; the cap design is locked to images 2+; light skin cleanup
-// AND outfit/background restyle to coordinate with the cap are ALLOWED. The
-// previous version forbade all skin cleanup which made results read as harsh;
-// product owner wants a light beauty pass while keeping it the SAME person.
+// Try-on = PURE HAT SWAP. Image 1 is the canonical source for EVERYTHING except
+// the cap (face, hair, skin, outfit, pose, expression, gaze, background and
+// lighting). Images 2+ are the canonical source for the CAP ONLY. Anything
+// added, removed or restyled beyond placing the cap on the head is a defect.
 const TRYON_PROMPT =
-  'GOAL: take the person in image 1 and show them wearing the cap from image 2, in ONE realistic ' +
-  'photo. You MAY do a LIGHT skin cleanup and restyle their clothing/background to match the cap. ' +
-  "You MUST keep the person's identity, facial features and head pose EXACTLY as in image 1. " +
+  'GOAL: take the person in image 1 and add THE CAP from image 2 onto their head, producing ONE ' +
+  'photorealistic photo. This is a PURE HAT SWAP — the ONLY visible change vs image 1 must be that ' +
+  'the cap from images 2+ now sits on the head. EVERYTHING else in image 1 is preserved exactly. ' +
 
-  'RULE 1 — KEEP THE SAME PERSON (most important, non-negotiable): the person in the output MUST be ' +
-  "the SAME individual as in image 1 — a viewer must INSTANTLY recognise them. Keep all facial " +
-  'FEATURES identical: eye shape, eye spacing, eyebrow shape and thickness, nose shape, nose width, ' +
-  'mouth and lip shape, jawline, chin, cheekbones, face shape and overall proportions. Keep the HAIR ' +
-  'identical: same colour, same length, same style, same hairline. Keep the HEAD POSE identical: ' +
-  'same angle/tilt, same direction the face is pointing, same head size and position in the frame. ' +
-  'Do NOT slim or sharpen the jaw. Do NOT enlarge the eyes. Do NOT thin or reshape the nose. Do NOT ' +
-  'plump or reshape the lips. Do NOT raise or reshape the eyebrows. Do NOT change the age, gender, ' +
-  'ethnicity, body, hair colour or hair style. Do NOT swap the face for a model-like look-alike. ' +
-  'ALLOWED (light beauty pass only): a NATURAL skin smoothing — mild blemish/acne cleanup, mildly ' +
-  'evened skin tone, slight whitening if it stays believable. This must look like a gentle filter on ' +
-  'the SAME skin, not a different person. NEVER take this as permission to reshape features. ' +
+  'RULE 1 — KEEP IMAGE 1 EXACTLY (most important, non-negotiable): treat image 1 as the canonical ' +
+  'source for the person, hair, skin, outfit, pose, expression, gaze, background and lighting. The ' +
+  'output MUST keep ALL of the following IDENTICAL to image 1 — pixel-faithful where possible: ' +
+  '(a) the person — same face, same identity, same facial features (eye shape, eye spacing, eyebrows, ' +
+  'nose, mouth, lips, jawline, chin, cheekbones, face proportions); ' +
+  '(b) head pose — same angle/tilt, same direction the face is pointing, same head size and position; ' +
+  '(c) expression — same mouth, same eyes, same gaze direction (where the eyes look); ' +
+  '(d) hair — same colour, same length, same style, same hairline, same volume; ' +
+  '(e) skin — same colour, same tone, same texture, same blemishes/freckles/moles (do NOT smooth, do ' +
+  'NOT whiten, do NOT clean up — beauty cleanup is FORBIDDEN in this mode); ' +
+  '(f) outfit — same clothing, same colours, same fabric (do NOT restyle or replace any clothing); ' +
+  '(g) background — same scene, same objects, same wall/sky/setting (do NOT regenerate or restyle); ' +
+  '(h) lighting — same direction of light, same brightness, same colour temperature, same shadows; ' +
+  '(i) framing — same camera angle, same crop, same zoom, same orientation. ' +
+  'Any change to (a)–(i) is a FAILURE. ' +
 
   'RULE 2 — USE THE EXACT CAP FROM IMAGES 2+ ONLY (cap content, NOT scene content): images 2 and ' +
   'onward are the SAME cap shown from different angles (front / side / back / detail). Some of these ' +
   'product reference photos may include a MODEL wearing the cap, a studio/street background, or ' +
   'styled clothing — IGNORE all of that. Do NOT copy the model, their face, their outfit, their pose ' +
   'or the background from the cap reference photos. Extract ONLY the cap itself, then place THAT cap ' +
-  "on the user's head from image 1. The user's photo (image 1) is the source for the PERSON and the " +
-  "CAMERA framing; the cap references are the source for the CAP ONLY. " +
+  "on the user's head from image 1. The user's photo (image 1) is the source for the PERSON, OUTFIT, " +
+  'BACKGROUND, LIGHTING and CAMERA framing; the cap references are the source for the CAP ONLY. ' +
 
   'RULE 3 — REPRODUCE THE CAP EXACTLY (shape, brim, colour, artwork): match the cap from images 2+ ' +
   'pixel-faithfully — its real silhouette, crown shape, brim shape (flat vs curved — this is a ' +
@@ -44,31 +46,24 @@ const TRYON_PROMPT =
   'especially the exact logo / text / graphic / pattern. Do not redesign, recolour, re-letter or ' +
   'substitute the artwork. ' +
 
-  'RULE 4 — FIT THE CAP NATURALLY (critical for realism): size the cap correctly to the head so it ' +
-  'looks genuinely worn — sits snugly on the crown, brim rests just above the eyebrows, proportional ' +
-  'to the head width, angle matching the head. It must NOT be oversized, NOT float above the hair, ' +
-  'NOT sit too high or too tilted. Add a soft natural contact shadow under the brim and where the ' +
-  'cap meets the hair. The cap is added ON TOP of the existing head — it must not push, resize, or ' +
-  'reshape the head/face underneath. ' +
+  'RULE 4 — FIT THE CAP NATURALLY (the only allowed addition): place the cap on the existing head ' +
+  'with the correct size and angle — sits snugly on the crown, brim rests just above the eyebrows, ' +
+  'proportional to the head width, angle matching the head. Add a soft natural contact shadow under ' +
+  'the brim and where the cap meets the hair (so it looks worn, not pasted). The cap is added ON ' +
+  'TOP of the existing head — it must not push, resize, or reshape the head, face, or hair underneath. ' +
+  'Hair that is visible around / below the cap MUST stay identical to image 1 (same colour, same ' +
+  'length, same style — only HIDDEN where physically covered by the cap crown). ' +
 
-  'RULE 5 — CLOTHING & BACKGROUND (you MAY restyle, BELOW THE NECK + behind the person ONLY): ' +
-  'restyle the outfit and the background into one cohesive, stylish streetwear look that coordinates ' +
-  'with the cap. This freedom applies ONLY to the body below the neck and the scene behind the ' +
-  'person — it must NEVER reshape the face, change the hair, or change the head pose (see RULE 1). ' +
-  'Keep it a believable real photograph — natural fabric, real lighting. ' +
+  'AVOID: changing the person, the face, the facial features, the head pose, the gaze direction, ' +
+  'the expression, the hair, the skin tone or texture, the clothing, the background, or the ' +
+  'lighting vs image 1. AVOID copying anything from the cap reference scenes. AVOID swapping a flat ' +
+  'brim for curved (or vice versa). AVOID a "glow-up" / beautified look. AVOID 3D/CGI/render look. ' +
+  'AVOID added text or watermark. ' +
 
-  'RULE 6 — KEEP THE FRAMING: same camera angle, same crop/zoom and same orientation as image 1, ' +
-  "with the person's head in the SAME position and SAME size as image 1. " +
-
-  'AVOID: swapping the person for a different / more model-like face, slimming or reshaping facial ' +
-  'features, changing the hair, copying the model or background from the cap reference photos, a ' +
-  'plastic / heavily airbrushed look, 3D/CGI/render or video-game look, over-glossy commercial-ad ' +
-  'look, moving or resizing the head, an oversized or floating cap, swapping a flat brim for curved ' +
-  '(or vice versa), distorted hands, added text or watermark. ' +
-
-  'OUTPUT: exactly ONE realistic photo, same orientation/framing/head-position as image 1. ' +
-  'Priority order (highest first): SAME person & features & pose > exact cap (shape, brim, colour, ' +
-  'artwork) > natural fit > restyled outfit/scene.'
+  'OUTPUT: exactly ONE photorealistic photo. It must look like image 1 with ONLY the cap added — ' +
+  'as if the user took the EXACT SAME photo while wearing the cap. ' +
+  'Priority order (highest first): preserve EVERYTHING from image 1 > add the EXACT cap from ' +
+  'images 2+ > natural cap fit and contact shadow.'
 
 function assertDataUrl(v: unknown, label: string): string {
   if (typeof v !== 'string' || !/^data:image\/(jpe?g|png|webp);base64,/.test(v)) {

@@ -269,29 +269,38 @@ export function ResultPanel({
 // ── Sub-components ─────────────────────────────────────────
 
 function QcChecklist({ qc }: { qc: QcScore }) {
-  // 3 rows: face / hat / realism. Each rendered ONLY when ≥ its pass threshold,
-  // so a fail never shows up here (the API blocks the result before it reaches
-  // this panel — this is a defence-in-depth check).
-  const rows: Array<{ label: string; pct: number }> = [
-    { label: 'Giữ khuôn mặt', pct: qc.face_similarity },
-    { label: 'Đúng sản phẩm', pct: qc.hat_similarity  },
-    { label: 'Độ chân thực',  pct: qc.realism         },
+  // 7 weighted dimensions + total. Only rendered when QC passed (the API blocks
+  // results that didn't pass), so this is a defence-in-depth disclosure of how
+  // strictly the result matched the original. Layout: 7 small rows (label +
+  // percentage + weight in muted) then a bold TOTAL row at the bottom.
+  const rows: Array<{ label: string; pct: number; weight: number }> = [
+    { label: 'Khuôn mặt',          pct: qc.face,       weight: 30 },
+    { label: 'Góc mặt',            pct: qc.faceAngle,  weight: 20 },
+    { label: 'Biểu cảm',           pct: qc.expression, weight: 15 },
+    { label: 'Tóc',                pct: qc.hair,       weight: 10 },
+    { label: 'Ánh sáng',           pct: qc.lighting,   weight: 10 },
+    { label: 'Background',         pct: qc.background, weight:  5 },
+    { label: 'Độ chính xác nón',   pct: qc.hat,        weight: 10 },
   ]
   return (
     <div className="rounded-2xl border border-[#C9A84C]/25 bg-[#C9A84C]/6 p-3 mb-4">
-      <p className="text-[10px] font-bold uppercase tracking-[.18em] text-[#C9A84C] mb-2">
-        Đã kiểm định AI
-      </p>
-      <ul className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+      <div className="flex items-baseline justify-between mb-2">
+        <p className="text-[10px] font-bold uppercase tracking-[.18em] text-[#C9A84C]">
+          Đã kiểm định AI · TỔNG {qc.total}/100
+        </p>
+        <span className="text-[9px] text-[#C9A84C]/70 font-mono">≥ 85 = ĐẠT</span>
+      </div>
+      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
         {rows.map(r => (
-          <li key={r.label} className="flex items-center gap-2 text-sm text-[#F5F5F5]">
-            <span aria-hidden className="w-4 h-4 rounded-full bg-[#C9A84C] text-black flex items-center justify-center shrink-0">
-              <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
+          <li key={r.label} className="flex items-center gap-2 text-[13px] text-[#F5F5F5]">
+            <span aria-hidden className="w-3.5 h-3.5 rounded-full bg-[#C9A84C] text-black flex items-center justify-center shrink-0">
+              <svg width="9" height="9" viewBox="0 0 14 14" fill="none">
                 <path d="M3 7.5l2.5 2.5L11 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </span>
-            <span className="flex-1">{r.label}:</span>
-            <span className="font-mono font-bold text-[#C9A84C] tabular-nums">{r.pct}%</span>
+            <span className="flex-1">{r.label}</span>
+            <span className="text-[10px] text-[#6B6B6B] font-mono tabular-nums">×{r.weight}%</span>
+            <span className="font-mono font-bold text-[#C9A84C] tabular-nums w-9 text-right">{r.pct}</span>
           </li>
         ))}
       </ul>

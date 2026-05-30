@@ -27,10 +27,13 @@ function nextStep(hasFace: boolean, hasHat: boolean): TryOnStep {
   return 'idle'
 }
 
-// Gemini can hiccup (rate-limit, or returns text instead of an image). Auto-retry
-// the call a few times before surfacing an error — retry, not silent fallback.
-const MAX_ATTEMPTS   = 3
-const RETRY_DELAY_MS = 7000
+// Per spec (May 2026): up to 2 attempts per click. We auto-retry BOTH on
+// network/Gemini errors AND on QC verdict = fail (regenerate the image and
+// rescore). After 2 attempts the user gets the standard "Vui lòng thử lại"
+// message and the existing "Tạo lại kết quả" button — no infinite loop.
+const MAX_ATTEMPTS         = 2
+const RETRY_DELAY_NETWORK  = 7000   // back-off for rate-limit / Gemini error
+const RETRY_DELAY_QC       = 1000   // tighter — QC fails are not rate-limited
 
 // ── Image payload limits ─────────────────────────────────────
 // Keep the PERSON photo at full quality. Only downscale when the longest side
@@ -253,11 +256,15 @@ export function useTryOn() {
             model: d.model, hasImage: !!d.resultUrl, modelText: d.modelText, error: d.error,
             qc: d.qc, qcFailed: d.qcFailed,
           })
-          // QC verdict = fail is a DISTINCT outcome from network/Gemini errors —
-          // per spec, no auto-regen. Surface the standard "thử lại" message and
-          // let the user retry manually.
+          // QC verdict = fail: auto-regenerate (per spec, up to MAX_ATTEMPTS).
+          // After the final attempt still fails, surface the standard message.
           if (d.qcFailed) {
             lastErr = d.error || 'Ảnh tạo chưa đạt chất lượng mong muốn. Vui lòng thử lại.'
+            console.warn(`[TryOn] ⚠ QC fail attempt ${attempt}/${MAX_ATTEMPTS}: ${lastErr}`)
+            if (attempt < MAX_ATTEMPTS) {
+              await new Promise(r => setTimeout(r, RETRY_DELAY_QC))
+              continue
+            }
             data = null
             break
           }
@@ -268,8 +275,8 @@ export function useTryOn() {
           lastErr = e instanceof Error ? e.message : String(e)
           console.warn(`[TryOn] ✗ attempt ${attempt}/${MAX_ATTEMPTS} failed: ${lastErr}`)
           if (attempt < MAX_ATTEMPTS) {
-            console.log(`[TryOn] ⏳ retry in ${RETRY_DELAY_MS / 1000}s…`)
-            await new Promise(r => setTimeout(r, RETRY_DELAY_MS))
+            console.log(`[TryOn] ⏳ retry in ${RETRY_DELAY_NETWORK / 1000}s…`)
+            await new Promise(r => setTimeout(r, RETRY_DELAY_NETWORK))
           }
         }
       }
