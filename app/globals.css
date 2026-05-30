@@ -120,6 +120,42 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── Modal (OrderModal) ─────────────────────────────────────────────────────
+   Visible gold scrollbar, smooth open animation, and a body[data-modal-open]
+   flag that hides the floating Zalo/Messenger bubbles while a modal is up
+   (their fixed positioning otherwise composites on top of the modal in some
+   iOS in-app browsers). */
+
+.modal-scrollbar::-webkit-scrollbar { width: 8px; }
+.modal-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.04);
+  border-radius: 4px;
+}
+.modal-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(201,168,76,0.45);
+  border-radius: 4px;
+}
+.modal-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(201,168,76,0.7);
+}
+.modal-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201,168,76,0.45) rgba(255,255,255,0.04);
+}
+
+.modal-fade-in {
+  animation: modalFadeIn 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);     }
+}
+
+body[data-modal-open="true"] [aria-label="Liên hệ TCAPS"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* Horizontal marquee — duplicate the children inline; the track scrolls by 50%
    so the seam between the original set and the duplicate is invisible. Pauses
    on hover so a customer can read a specific photo. */
