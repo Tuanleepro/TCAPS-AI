@@ -12,10 +12,15 @@ const fmt = (n: number) => `${Math.round(n).toLocaleString('vi-VN')}₫`
 
 const PICKABLE = PRODUCTS.filter(p => p.imageUrl)
 
-// Featured upsell — 6 caps shown by default in the "Mua thêm" section.
-// Picked from the top of the catalog (the latest / hero products); the current
-// cap is filtered out at render time so the customer never sees it twice.
-const UPSELL_POOL = PICKABLE.slice(0, 8)
+// Upsell pool — full catalog. The customer can horizontally scroll through
+// every TCAPS cap, and the inline search box filters by name/SKU. The current
+// cap is filtered out at render time so it never appears twice.
+const UPSELL_POOL = PICKABLE
+
+// Diacritic-insensitive normaliser so a search for "spartan" matches
+// "TC68 - NÓN SPARTAN ĐEN".
+const norm = (s: string) =>
+  s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd')
 
 // Social-proof bullets shown beside the confirm CTA. Static; the underlying
 // numbers are what TCAPS already advertises on TikTok / Pancake.
@@ -56,6 +61,7 @@ export function OrderModal({ open, product, onClose }: Props) {
 
   const [primaryQty, setPrimaryQty] = useState(1)
   const [extras,     setExtras]     = useState<Set<string>>(new Set())  // SKUs ticked
+  const [upsellSearch, setUpsellSearch] = useState('')                   // filters the horizontal upsell strip
 
   const [name,     setName]     = useState('')
   const [phone,    setPhone]    = useState('')
@@ -73,6 +79,7 @@ export function OrderModal({ open, product, onClose }: Props) {
     if (open) {
       setPrimaryQty(1)
       setExtras(new Set())
+      setUpsellSearch('')
       setStatus('idle')
       setStatusErr(null)
     }
@@ -120,6 +127,12 @@ export function OrderModal({ open, product, onClose }: Props) {
     () => UPSELL_POOL.filter(p => p.sku !== product.sku),
     [product.sku],
   )
+  // Search-filtered subset for the horizontal strip. Empty query → show all.
+  const filteredUpsell = useMemo(() => {
+    const q = norm(upsellSearch.trim())
+    if (!q) return upsellItems
+    return upsellItems.filter(p => norm(p.name).includes(q) || norm(p.sku).includes(q))
+  }, [upsellItems, upsellSearch])
   const extraItems: OrderItem[] = useMemo(
     () => upsellItems
       .filter(p => extras.has(p.sku))
@@ -288,22 +301,53 @@ export function OrderModal({ open, product, onClose }: Props) {
                 </div>
               </section>
 
-              {/* PART 3 — Upsell */}
+              {/* PART 3 — Upsell.
+                  One horizontal scroll strip showing the entire TCAPS catalog
+                  minus the cap the customer is buying. Search input sits
+                  inline on the right of the title so customers can find a
+                  specific cap quickly. Container uses negative-x margin +
+                  matching padding so the cards bleed to the modal's body
+                  edges (mobile-app feel — gives a visual cue that there's
+                  more to swipe). */}
               {upsellItems.length > 0 && (
                 <section>
-                  <SectionTitle>🔥 Mua thêm để tiết kiệm phí ship</SectionTitle>
-                  <p className="text-xs text-[#8A8A8A] -mt-1 mb-2.5">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-[10px] sm:text-[11px] uppercase tracking-[.15em] text-[#C9A84C] font-bold whitespace-nowrap">
+                      🔥 Mua thêm để freeship
+                    </p>
+                    <div className="flex-1 min-w-0 relative">
+                      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" className="absolute left-2 top-1/2 -translate-y-1/2 text-[#6B6B6B] pointer-events-none">
+                        <circle cx="5" cy="5" r="3.5" stroke="currentColor" strokeWidth="1.2"/>
+                        <path d="M7.6 7.6L10.5 10.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                      </svg>
+                      <input
+                        type="text"
+                        value={upsellSearch}
+                        onChange={e => setUpsellSearch(e.target.value)}
+                        placeholder="Tìm nón..."
+                        aria-label="Tìm nón mua thêm"
+                        className="w-full h-7 pl-7 pr-2 rounded-md border border-[#2A2A2A] bg-[#0A0A0A] text-[11px] text-[#F5F5F5] placeholder:text-[#5A5A5A] outline-none focus:border-[#C9A84C]/60"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-[#8A8A8A] mb-2">
                     Mua từ <span className="text-[#C9A84C] font-bold">{fmt(FREE_SHIP_THRESHOLD)}</span> được FREESHIP toàn quốc.
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {upsellItems.slice(0, 6).map(p => (
-                      <UpsellCard
-                        key={p.sku}
-                        product={p}
-                        checked={extras.has(p.sku)}
-                        onToggle={() => toggleExtra(p.sku)}
-                      />
-                    ))}
+                  <div className="-mx-5 px-5 overflow-x-auto pb-2">
+                    {filteredUpsell.length > 0 ? (
+                      <div className="flex gap-2 w-max">
+                        {filteredUpsell.map(p => (
+                          <UpsellCard
+                            key={p.sku}
+                            product={p}
+                            checked={extras.has(p.sku)}
+                            onToggle={() => toggleExtra(p.sku)}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-[#6B6B6B] py-4 text-center">Không tìm thấy nón nào.</p>
+                    )}
                   </div>
                 </section>
               )}
@@ -427,6 +471,10 @@ function PrimaryProductCard({
   )
 }
 
+// Vertical compact card for the horizontal upsell strip. Fixed 130px width
+// so multiple fit in the viewport and the carousel-like swipe affordance
+// reads naturally. The check indicator floats over the thumbnail rather
+// than taking its own row, leaving more room for the name + price below.
 function UpsellCard({
   product, checked, onToggle,
 }: { product: Product; checked: boolean; onToggle: () => void }) {
@@ -436,35 +484,37 @@ function UpsellCard({
       onClick={onToggle}
       aria-pressed={checked}
       className={[
-        'flex items-center gap-2.5 p-2 rounded-xl border text-left transition-all duration-150',
+        'shrink-0 w-[130px] flex flex-col rounded-xl border-2 overflow-hidden text-left transition-all duration-150',
         checked
           ? 'border-[#C9A84C] bg-[#C9A84C]/10 shadow-[0_0_0_3px_rgba(201,168,76,.15)]'
           : 'border-[#1E1E1E] bg-[#0A0A0A] hover:border-[#C9A84C]/40',
       ].join(' ')}
     >
-      <div className="w-12 h-12 rounded-lg bg-[#0A0A0A] border border-[#2A2A2A] overflow-hidden shrink-0">
+      <div className="relative aspect-square bg-[#0A0A0A] overflow-hidden">
         {product.imageUrl
           // eslint-disable-next-line @next/next/no-img-element
-          ? <img src={proxyImg(product.imageUrl, 96)} alt={product.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
-          : <div className="w-full h-full flex items-center justify-center text-[#4A4A4A] text-sm">🧢</div>}
+          ? <img src={proxyImg(product.imageUrl, 256)} alt={product.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+          : <div className="w-full h-full flex items-center justify-center text-[#4A4A4A] text-2xl">🧢</div>}
+        <span
+          aria-hidden
+          className={[
+            'absolute top-1.5 right-1.5 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-150 backdrop-blur-sm',
+            checked
+              ? 'border-[#C9A84C] bg-[#C9A84C]'
+              : 'border-[#F5F5F5]/70 bg-black/40',
+          ].join(' ')}
+        >
+          {checked && (
+            <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
+              <path d="M3 7.5l2.5 2.5L11 4" stroke="#0A0A0A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          )}
+        </span>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[12px] font-bold text-[#F5F5F5] truncate">{product.name}</p>
-        <p className="text-[11px] text-[#C9A84C] font-mono">{fmt(product.priceBundle)}</p>
+      <div className="px-2 py-1.5">
+        <p className="text-[11px] font-bold text-[#F5F5F5] leading-tight line-clamp-2 min-h-[2.4em]">{product.name}</p>
+        <p className="text-[11px] text-[#C9A84C] font-mono mt-0.5">{fmt(product.priceBundle)}</p>
       </div>
-      <span
-        aria-hidden
-        className={[
-          'w-6 h-6 rounded-md border-2 flex items-center justify-center shrink-0 transition-all duration-150',
-          checked ? 'border-[#C9A84C] bg-[#C9A84C]' : 'border-[#3A3A3A] bg-transparent',
-        ].join(' ')}
-      >
-        {checked && (
-          <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-            <path d="M3 7.5l2.5 2.5L11 4" stroke="#0A0A0A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        )}
-      </span>
     </button>
   )
 }
