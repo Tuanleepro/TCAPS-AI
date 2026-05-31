@@ -39,7 +39,7 @@ const RETRY_DELAY_MS = 7000
 const PERSON_MAX_DIM      = 2048
 const ORIGINAL_MAX_BYTES  = 10 * 1024 * 1024   // send original as-is up to ~10MB
 const MAX_SEND_CHARS      = 15 * 1024 * 1024   // hard cap for the data URL we POST
-const MAX_CAP_IMAGES      = 4                  // cap angles sent to Gemini per try-on
+const MAX_CAP_IMAGES      = 6                  // cap angles sent to Gemini per try-on (bumped 4→6 after owner added multi-angle photos in Pancake)
 
 
 function getImageDims(file: File): Promise<{ width: number; height: number }> {
@@ -225,10 +225,17 @@ export function useTryOn() {
       const detectedColor = lockName ? detectColor(lockName) : null
       const detectedBrim: BrimShape = (lockName ? detectBrim(lockName) : null) ?? 'FLAT'
 
-      // Source images: PIN to the pinned variant when set, otherwise fall
-      // back to the colour+brim filter over the full variant list.
+      // Source images: when a variant is pinned, lead with the variant photo
+      // (canonical colour) and then PAD with the rest of the parent gallery
+      // so Gemini sees multiple angles. The COLOUR LOCK + BRIM LOCK sentences
+      // in the prompt keep it from drifting to a sibling colour even though
+      // the gallery may contain photos of other variants. Without a pin we
+      // fall back to the colour+brim filter as before.
+      const galleryAngles = (product?.images ?? []).filter(
+        u => /^https?:\/\//.test(u) && u !== pinnedVariant?.image,
+      )
       const sourceImages = pinnedVariant?.image
-        ? [pinnedVariant.image]
+        ? [pinnedVariant.image, ...galleryAngles]
         : product
           ? filterImagesByVariant(product, detectedColor, detectedBrim)
           : []
