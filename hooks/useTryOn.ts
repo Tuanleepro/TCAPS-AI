@@ -116,10 +116,15 @@ const dataUrlKB = (d: string) => Math.round((d.length * 3 / 4) / 1024)   // base
 
 export function useTryOn() {
   const [state, setState] = useState<TryOnState>(INIT)
-  const faceRef  = useRef<File | null>(null)
-  const hatRef   = useRef<File | null>(null)
-  const skuRef   = useRef<string | null>(null)
-  const abortRef = useRef(false)
+  const faceRef     = useRef<File | null>(null)
+  const hatRef      = useRef<File | null>(null)
+  const skuRef      = useRef<string | null>(null)
+  // Variant identifier (variant.sku or variant.name) set when the customer
+  // came from /product/[sku] with `&v=` — we then pin garmentUrls to ONLY
+  // that variant's image so Gemini doesn't pull the parent thumbnail or a
+  // sibling variant and render the wrong cap.
+  const variantRef  = useRef<string | null>(null)
+  const abortRef    = useRef(false)
   // Live mirror of state so callbacks (e.g. download) can read the current
   // resultUrl without becoming stale closures or re-creating every render.
   const stateRef = useRef<TryOnState>(state)
@@ -138,9 +143,12 @@ export function useTryOn() {
     })
   }, [])
 
-  const setHatFile = useCallback((file: File, sku?: string) => {
+  const setHatFile = useCallback((file: File, sku?: string, variantId?: string | null) => {
     hatRef.current = file
     if (sku) skuRef.current = sku
+    // `null` clears, `undefined` leaves the previous value alone (so an
+    // existing variant pin survives an unrelated setHatFile call).
+    if (variantId !== undefined) variantRef.current = variantId
     setState(prev => {
       if (prev.hatUrl) URL.revokeObjectURL(prev.hatUrl)
       return {
@@ -196,19 +204,34 @@ export function useTryOn() {
       // no product gallery do we fall back to sending the hat file itself as a data
       // URL (via FileReader — no canvas, reliable on mobile).
       const product = skuRef.current ? PRODUCT_MAP[skuRef.current] : null
-      // Colour-lock: if the product name tells us the cap colour (e.g. "TRẮNG"),
-      // only send the gallery images whose variant name matches that colour.
-      // Stops Gemini from "picking" the wrong colourway when a multi-variant
-      // SKU's gallery contains photos of both colours (e.g. TC67's gallery has
-      // TRẮNG + ĐEN; without filtering the result sometimes comes back black).
-      const detectedColor = product ? detectColor(product.name) : null
-      // Brim: if the parent SKU name doesn't carry NGANG/CONG, default to FLAT
-      // (NGANG) — snapbacks ship with a flat brim and that's the most common
-      // request. Variant picker UI (future) will let the user override.
-      const detectedBrim: BrimShape = (product ? detectBrim(product.name) : null) ?? 'FLAT'
-      const sourceImages = product
-        ? filterImagesByVariant(product, detectedColor, detectedBrim)
-        : []
+      // Resolve the explicitly chosen variant (if any). When the customer
+      // came in via /product/[sku]?v=... the variant identifier was pinned
+      // by setHatFile; we use that to send EXACTLY the variant photo to
+      // Gemini instead of the multi-variant gallery — otherwise Gemini was
+      // picking the parent thumbnail or a sibling variant (the bug: choose
+      // BO ĐEN on TC66 product page, get a KẾT result).
+      const variantId = variantRef.current
+      const pinnedVariant = variantId && product?.variants
+        ? product.variants.find(v => v.sku === variantId || v.name === variantId) ?? null
+        : null
+
+      // For locks: prefer the variant name when it carries the colour/brim
+      // token (variants are named like "BO / ĐEN", "NGANG / TRẮNG", "CONG /
+      // ĐEN") because parent product names have been cleaned of the trailing
+      // colour. Falls back to the parent name when no variant is pinned.
+      const lockName = pinnedVariant?.name
+        ? `${product?.name ?? ''} ${pinnedVariant.name}`
+        : product?.name
+      const detectedColor = lockName ? detectColor(lockName) : null
+      const detectedBrim: BrimShape = (lockName ? detectBrim(lockName) : null) ?? 'FLAT'
+
+      // Source images: PIN to the pinned variant when set, otherwise fall
+      // back to the colour+brim filter over the full variant list.
+      const sourceImages = pinnedVariant?.image
+        ? [pinnedVariant.image]
+        : product
+          ? filterImagesByVariant(product, detectedColor, detectedBrim)
+          : []
       const garmentUrls = sourceImages
         .filter(u => /^https?:\/\//.test(u))
         .slice(0, MAX_CAP_IMAGES)
@@ -218,6 +241,7 @@ export function useTryOn() {
       console.log('[TryOn] PERSON original :', `${person.origWidth}×${person.origHeight}px`, `${(person.origBytes / 1024).toFixed(0)}KB`)
       console.log('[TryOn] PERSON sent     :', `${person.sentWidth}×${person.sentHeight}px`, `${dataUrlKB(person.dataUrl)}KB`, `(${person.mode})`)
       console.log('[TryOn] CAP references  :', garmentUrls.length ? `${garmentUrls.length} url(s) (server-fetched)` : '1 uploaded file')
+      console.log('[TryOn] CAP variant pin :', pinnedVariant ? `${pinnedVariant.name ?? pinnedVariant.sku}` : 'none — using gallery filter')
       console.log('[TryOn] CAP colour-lock :', detectedColor ? `${detectedColor.vn} → ${detectedColor.en}` : 'none detected (no name colour token)')
       console.log('[TryOn] CAP brim-lock   :', `${detectedBrim} (${detectedBrim === 'FLAT' ? 'NGANG' : 'CONG'})`)
 

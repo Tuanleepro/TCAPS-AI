@@ -61,6 +61,11 @@ function TryOnMain() {
   const { state, setFaceFile, setHatFile, runTryOn, retry, reset, download, canRun } = useTryOn()
   const searchParams = useSearchParams()
   const skuParam = searchParams.get('sku')
+  // Optional variant id — sent by ProductDetail's THỬ NÓN AI link so we can
+  // load the SPECIFIC variant photo as the hat reference instead of the
+  // parent thumbnail (which otherwise renders whichever variant happens to
+  // be at images[0], typically the first one).
+  const variantParam = searchParams.get('v')
 
   // Resolve the product the user picked in the Catalog. If the ?sku is unknown,
   // fall back to the default hat (never leave the user stranded).
@@ -69,22 +74,36 @@ function TryOnMain() {
     : null
 
   const [hatLoading, setHatLoading] = useState(false)
-  const appliedSkuRef = useRef<string | null>(null)
+  // Cache key combines SKU + variant so swapping variants on the same product
+  // triggers a re-fetch (otherwise the appliedSkuRef early-out would skip it).
+  const appliedKeyRef = useRef<string | null>(null)
 
-  // Auto-load the catalog hat into the try-on pipeline once per distinct SKU.
-  // Guard is set synchronously before the fetch so React 18 Strict Mode's
-  // double-invoke can't kick off two loads or drop the result.
+  // Auto-load the catalog hat into the try-on pipeline once per distinct
+  // SKU+variant combination. Guard is set synchronously before the fetch so
+  // React 18 Strict Mode's double-invoke can't kick off two loads.
   useEffect(() => {
-    if (!fromCatalog?.imageUrl) return
-    if (appliedSkuRef.current === fromCatalog.sku) return
-    const { sku, imageUrl } = fromCatalog
-    appliedSkuRef.current = sku
+    if (!fromCatalog) return
+    const key = `${fromCatalog.sku}::${variantParam ?? ''}`
+    if (appliedKeyRef.current === key) return
+
+    // Resolve the variant the customer picked on the product page (matched
+    // by sku first, then by name). Fall back to the parent thumbnail if no
+    // variant was specified or the lookup failed.
+    const variant = variantParam
+      ? fromCatalog.variants?.find(
+          v => v.sku === variantParam || v.name === variantParam,
+        )
+      : null
+    const imageUrl = variant?.image ?? fromCatalog.imageUrl
+    if (!imageUrl) return
+
+    appliedKeyRef.current = key
     setHatLoading(true)
-    productImageToFile(imageUrl, sku)
-      .then(file => setHatFile(file, sku))
-      .catch(err => { appliedSkuRef.current = null; console.warn('[TryOn] auto-load hat failed:', err) })
+    productImageToFile(imageUrl, fromCatalog.sku)
+      .then(file => setHatFile(file, fromCatalog.sku, variantParam ?? null))
+      .catch(err => { appliedKeyRef.current = null; console.warn('[TryOn] auto-load hat failed:', err) })
       .finally(() => setHatLoading(false))
-  }, [fromCatalog, setHatFile])
+  }, [fromCatalog, variantParam, setHatFile])
 
   const LOADING_STEPS = ['detecting', 'compositing', 'processing'] as const
   const isLoading  = (LOADING_STEPS as readonly string[]).includes(state.step)
@@ -101,10 +120,11 @@ function TryOnMain() {
   // user still presses "Thử Nón Ngay" once the selfie is added too.
   const pickProduct = useCallback((p: Product) => {
     if (!p.imageUrl || hatLoading) return
-    appliedSkuRef.current = p.sku                      // block the ?sku effect from re-loading
+    // No specific variant when picking from the grid → clear the variant pin.
+    appliedKeyRef.current = `${p.sku}::`               // block the ?sku effect from re-loading
     setHatLoading(true)
     productImageToFile(p.imageUrl, p.sku)
-      .then(file => setHatFile(file, p.sku))
+      .then(file => setHatFile(file, p.sku, null))
       .catch(err => console.warn('[TryOn] pick hat failed:', err))
       .finally(() => setHatLoading(false))
   }, [setHatFile, hatLoading])
@@ -115,9 +135,9 @@ function TryOnMain() {
     if (!p.imageUrl) return
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
     setHatLoading(true)
-    appliedSkuRef.current = p.sku                      // block the ?sku effect from re-loading
+    appliedKeyRef.current = `${p.sku}::`               // block the ?sku effect from re-loading
     productImageToFile(p.imageUrl, p.sku)
-      .then(file => { setHatFile(file, p.sku); runTryOn() })
+      .then(file => { setHatFile(file, p.sku, null); runTryOn() })
       .catch(err => console.warn('[TryOn] try recommended hat failed:', err))
       .finally(() => setHatLoading(false))
   }, [setHatFile, runTryOn])

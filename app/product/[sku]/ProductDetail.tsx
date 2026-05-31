@@ -245,7 +245,10 @@ export function ProductDetail({ product }: { product: Product }) {
               <span>{selectedOutOfStock ? 'TẠM HẾT HÀNG' : 'MUA NGAY'}</span>
             </button>
             <Link
-              href={`/try-on?sku=${encodeURIComponent(product.sku)}`}
+              href={
+                `/try-on?sku=${encodeURIComponent(product.sku)}` +
+                (selectedVariantId ? `&v=${encodeURIComponent(selectedVariantId)}` : '')
+              }
               className="h-13 py-3.5 rounded-xl border-2 border-[#C9A84C] text-[#C9A84C] hover:bg-[#C9A84C]/10 active:bg-[#C9A84C]/15 font-black text-sm tracking-wider flex items-center justify-center gap-1.5 transition-all"
             >
               <SparkleIcon size={16} />
