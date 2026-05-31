@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { Product } from '@/constants/products'
@@ -59,19 +59,61 @@ export function ProductDetail({ product }: { product: Product }) {
     }
   }, [product, selectedVariant])
 
-  // Gallery: parent thumbnail + any per-variant images, deduped.
+  // Gallery: variant's canonical image first, then the FULL Pancake
+  // gallery (product.images[] — these are the multi-angle photos the
+  // owner uploads in Pancake POS), then product.imageUrl + the other
+  // variant photos as fallback. Deduped, falsy stripped.
   const gallery = useMemo(() => {
     const urls: string[] = []
+    if (selectedVariant?.image) urls.push(selectedVariant.image)
+    for (const u of product.images ?? []) urls.push(u)
     if (product.imageUrl) urls.push(product.imageUrl)
     for (const v of variants) if (v.image) urls.push(v.image)
-    return Array.from(new Set(urls))
-  }, [product, variants])
+    return Array.from(new Set(urls.filter(Boolean)))
+  }, [product, variants, selectedVariant])
 
-  const [activeImage, setActiveImage] = useState(
-    selectedVariant?.image ?? product.imageUrl,
-  )
-  // Keep the big image in sync with the variant choice.
-  const displayedImage = selectedVariant?.image ?? activeImage ?? product.imageUrl
+  // Index into gallery — `0` is always the canonical (variant) image.
+  const [activeIndex, setActiveIndex] = useState(0)
+  // Snap back to the canonical image whenever the customer picks a
+  // different variant.
+  useEffect(() => { setActiveIndex(0) }, [selectedVariantId])
+  // Clamp if gallery shrinks (e.g. product data refetched).
+  useEffect(() => {
+    if (activeIndex >= gallery.length) setActiveIndex(0)
+  }, [gallery.length, activeIndex])
+
+  const displayedImage = gallery[activeIndex] ?? product.imageUrl
+
+  const goNext = () => setActiveIndex(i => (i + 1) % Math.max(1, gallery.length))
+  const goPrev = () => setActiveIndex(i => (i - 1 + Math.max(1, gallery.length)) % Math.max(1, gallery.length))
+
+  // Touch-swipe + keyboard navigation on the main image.
+  const touchStartX = useRef<number | null>(null)
+  const onTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const startX = touchStartX.current
+    if (startX == null) return
+    const dx = e.changedTouches[0].clientX - startX
+    if (Math.abs(dx) > 40) (dx < 0 ? goNext : goPrev)()
+    touchStartX.current = null
+  }
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') goNext()
+      else if (e.key === 'ArrowLeft') goPrev()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [gallery.length])
+
+  // Keep selected thumbnail visible inside the horizontal scroll strip.
+  const thumbStripRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    const strip = thumbStripRef.current
+    if (!strip) return
+    const el = strip.querySelector<HTMLButtonElement>(`[data-idx="${activeIndex}"]`)
+    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+  }, [activeIndex])
 
   // Related products — pick by face shape if the catalog has labels; otherwise
   // just take the next 4 with imageUrls excluding the current one.
@@ -106,41 +148,82 @@ export function ProductDetail({ product }: { product: Product }) {
 
         {/* ── Left: Image gallery ─────────────────────────────── */}
         <div className="flex flex-col gap-3">
-          <div className="relative aspect-square rounded-2xl overflow-hidden border border-[#1E1E1E] bg-[#0D0D0D]">
+          <div
+            className="group relative aspect-square rounded-2xl overflow-hidden border border-[#1E1E1E] bg-[#0D0D0D] select-none touch-pan-y"
+            onTouchStart={onTouchStart}
+            onTouchEnd={onTouchEnd}
+          >
             {displayedImage ? (
               <Image
+                key={displayedImage}
                 src={proxyImg(displayedImage, 640)}
                 alt={product.name}
                 fill
                 sizes="(max-width:768px) 100vw, 50vw"
-                className="object-cover"
+                className="object-cover animate-[fadeIn_.25s_ease-out]"
                 priority
+                draggable={false}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-[#3A3A3A]" aria-hidden><CapIcon size={64} /></div>
             )}
+
+            {gallery.length > 1 && (
+              <>
+                {/* Prev / Next arrows — always visible on touch (mobile),
+                    fade in on hover for desktop. Tap targets are 40px so
+                    they meet accessibility minimums. */}
+                <button
+                  type="button"
+                  onClick={goPrev}
+                  aria-label="Ảnh trước"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/55 hover:bg-black/75 backdrop-blur-sm text-white flex items-center justify-center transition-opacity opacity-70 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100"
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={goNext}
+                  aria-label="Ảnh sau"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/55 hover:bg-black/75 backdrop-blur-sm text-white flex items-center justify-center transition-opacity opacity-70 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100"
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 2l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </button>
+
+                {/* Counter + dots */}
+                <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/55 backdrop-blur-sm">
+                  <span className="text-[10px] font-mono text-white/90 tabular-nums">{activeIndex + 1}/{gallery.length}</span>
+                </div>
+              </>
+            )}
           </div>
 
           {gallery.length > 1 && (
-            <div className="grid grid-cols-5 gap-2">
-              {gallery.slice(0, 5).map(url => (
+            <div
+              ref={thumbStripRef}
+              className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x snap-mandatory scrollbar-thin scrollbar-track-transparent scrollbar-thumb-[#1E1E1E]"
+              style={{ scrollbarWidth: 'thin' }}
+            >
+              {gallery.map((url, i) => (
                 <button
                   key={url}
+                  data-idx={i}
                   type="button"
-                  onClick={() => setActiveImage(url)}
-                  aria-label="Xem ảnh"
+                  onClick={() => setActiveIndex(i)}
+                  aria-label={`Xem ảnh ${i + 1}`}
+                  aria-current={i === activeIndex}
                   className={[
-                    'relative aspect-square rounded-lg overflow-hidden border-2 transition-all',
-                    displayedImage === url
+                    'relative shrink-0 snap-start w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-lg overflow-hidden border-2 transition-all',
+                    i === activeIndex
                       ? 'border-[#C9A84C]'
-                      : 'border-[#1E1E1E] hover:border-[#C9A84C]/40',
+                      : 'border-[#1E1E1E] hover:border-[#C9A84C]/40 opacity-75 hover:opacity-100',
                   ].join(' ')}
                 >
                   <Image
                     src={proxyImg(url, 128)}
                     alt=""
                     fill
-                    sizes="80px"
+                    sizes="72px"
                     className="object-cover"
                   />
                 </button>
