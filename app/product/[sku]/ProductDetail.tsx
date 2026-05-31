@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import type { Product } from '@/constants/products'
 import { OrderModal } from '@/components/tryon/OrderModal'
+import { BanIcon, CapIcon, CartIcon, ChatIcon, GiftIcon, RefreshIcon, SparkleIcon, TruckIcon } from '@/components/ui/icons'
 import { proxyImg } from '@/lib/img'
 import { rankCompatibility } from '@/lib/recommendation-engine'
 import { PRODUCTS } from '@/constants/products'
@@ -116,7 +117,7 @@ export function ProductDetail({ product }: { product: Product }) {
                 priority
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-6xl text-[#3A3A3A]" aria-hidden>🧢</div>
+              <div className="w-full h-full flex items-center justify-center text-[#3A3A3A]" aria-hidden><CapIcon size={64} /></div>
             )}
           </div>
 
@@ -176,8 +177,9 @@ export function ProductDetail({ product }: { product: Product }) {
             )}
           </div>
 
-          <p className="text-xs text-[#C9A84C]/80 -mt-1">
-            🎁 Mua 2 nón + Free Ship chỉ <strong>250K/2 nón</strong>
+          <p className="text-xs text-[#C9A84C]/80 -mt-1 flex items-center gap-1.5">
+            <GiftIcon size={14} />
+            Mua 2 nón + Free Ship chỉ <strong>250K/2 nón</strong>
           </p>
 
           {/* Variant picker */}
@@ -239,28 +241,30 @@ export function ProductDetail({ product }: { product: Product }) {
                   : 'bg-gradient-to-r from-[#C9A84C] via-[#E8C96A] to-[#C9A84C] hover:brightness-110 active:brightness-95 text-black shadow-[0_8px_24px_rgba(201,168,76,.35)]',
               ].join(' ')}
             >
-              {selectedOutOfStock ? '🚫 TẠM HẾT HÀNG' : '🛒 MUA NGAY'}
+              {selectedOutOfStock ? <BanIcon size={16} /> : <CartIcon size={16} />}
+              <span>{selectedOutOfStock ? 'TẠM HẾT HÀNG' : 'MUA NGAY'}</span>
             </button>
             <Link
               href={`/try-on?sku=${encodeURIComponent(product.sku)}`}
               className="h-13 py-3.5 rounded-xl border-2 border-[#C9A84C] text-[#C9A84C] hover:bg-[#C9A84C]/10 active:bg-[#C9A84C]/15 font-black text-sm tracking-wider flex items-center justify-center gap-1.5 transition-all"
             >
-              ✨ THỬ NÓN AI
+              <SparkleIcon size={16} />
+              <span>THỬ NÓN AI</span>
             </Link>
           </div>
 
           {/* Trust strip */}
-          <ul className="mt-5 space-y-1.5 text-[12.5px] text-[#8A8A8A] border-t border-[#1E1E1E] pt-4">
-            <li className="flex items-start gap-2">
-              <span aria-hidden>🚚</span>
+          <ul className="mt-5 space-y-2 text-[12.5px] text-[#8A8A8A] border-t border-[#1E1E1E] pt-4">
+            <li className="flex items-start gap-2.5">
+              <TruckIcon className="mt-0.5 shrink-0 text-[#C9A84C]" size={16} />
               <span>Ship COD toàn quốc · Phí 30K · <strong className="text-[#F5F5F5]">Free ship đơn từ 250K</strong></span>
             </li>
-            <li className="flex items-start gap-2">
-              <span aria-hidden>🔄</span>
+            <li className="flex items-start gap-2.5">
+              <RefreshIcon className="mt-0.5 shrink-0 text-[#C9A84C]" size={16} />
               <span>Đổi trả 30 ngày nếu lỗi sản xuất</span>
             </li>
-            <li className="flex items-start gap-2">
-              <span aria-hidden>💬</span>
+            <li className="flex items-start gap-2.5">
+              <ChatIcon className="mt-0.5 shrink-0 text-[#C9A84C]" size={16} />
               <span>Hỗ trợ qua <strong className="text-[#F5F5F5]">Zalo · Messenger · Hotline 0972 284 146</strong></span>
             </li>
           </ul>
@@ -302,7 +306,7 @@ export function ProductDetail({ product }: { product: Product }) {
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     )
-                    : <div className="w-full h-full flex items-center justify-center text-4xl text-[#3A3A3A]" aria-hidden>🧢</div>}
+                    : <div className="w-full h-full flex items-center justify-center text-[#3A3A3A]" aria-hidden><CapIcon size={36} /></div>}
                 </div>
                 <div className="p-2.5 flex flex-col gap-0.5">
                   <p className="text-[12.5px] font-bold text-[#F5F5F5] line-clamp-2">{rp.name}</p>

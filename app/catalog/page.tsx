@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Navbar } from '@/components/layout/Navbar'
+import { CartIcon, SparkleIcon } from '@/components/ui/icons'
 import { PRODUCTS } from '@/constants/products'
 import { proxyImg } from '@/lib/img'
 
@@ -74,16 +75,18 @@ export default function CatalogPage() {
                 <Link
                   href={`/product/${encodeURIComponent(h.sku)}`}
                   aria-label={`Mua ${h.name}`}
-                  className="h-10 rounded-lg bg-[#C9A84C] hover:bg-[#E8C96A] text-black text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-colors"
+                  className="h-10 rounded-lg bg-[#C9A84C] hover:bg-[#E8C96A] text-black text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors"
                 >
-                  🛒 MUA
+                  <CartIcon size={14} />
+                  MUA
                 </Link>
                 <Link
                   href={`/try-on?sku=${encodeURIComponent(h.sku)}`}
                   aria-label={`Thử nón ${h.name}`}
-                  className="h-10 rounded-lg border border-[#C9A84C]/60 hover:bg-[#C9A84C]/10 text-[#C9A84C] text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 transition-colors"
+                  className="h-10 rounded-lg border border-[#C9A84C]/60 hover:bg-[#C9A84C]/10 text-[#C9A84C] text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors"
                 >
-                  ✨ THỬ NÓN
+                  <SparkleIcon size={14} />
+                  THỬ NÓN
                 </Link>
               </div>
             </div>
