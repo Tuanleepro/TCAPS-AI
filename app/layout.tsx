@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Playfair_Display } from 'next/font/google'
+import { Inter, Bungee } from 'next/font/google'
 import { FloatingContact } from '@/components/layout/FloatingContact'
 import './globals.css'
 
@@ -10,13 +10,15 @@ const inter = Inter({
   display: 'swap',
 })
 
-// Display headings — Playfair Display: a luxury high-contrast serif with full
-// Vietnamese support (fixes the clipped/broken diacritics the bold Inter caps had).
-const playfair = Playfair_Display({
-  subsets: ['latin', 'vietnamese'],
-  weight: ['500', '600', '700', '800', '900'],
+// Display headings — Bungee: a chunky display face that gives every h1/h2
+// the streetwear "stencil signage" feel TCAPS wants. Single weight (400)
+// because Bungee only ships one. `vietnamese` subset is required so titles
+// like "NÓN MONOGRAM HỌA TIẾT" render with proper accents.
+const bungee = Bungee({
+  subsets: ['latin', 'latin-ext', 'vietnamese'],
+  weight:  '400',
   variable: '--font-display',
-  display: 'swap',
+  display:  'swap',
 })
 
 export const metadata: Metadata = {
@@ -34,7 +36,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="vi" className={`${inter.variable} ${playfair.variable}`}>
+    <html lang="vi" className={`${inter.variable} ${bungee.variable}`}>
       <body className="antialiased bg-[#0A0A0A] text-[#F5F5F5]">
         {children}
         <FloatingContact />

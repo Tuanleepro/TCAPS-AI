@@ -25,7 +25,7 @@ const config = {
       },
       fontFamily: {
         sans:    ['var(--font-inter)', 'Inter', 'sans-serif'],
-        display: ['var(--font-display)', 'Playfair Display', 'serif'],
+        display: ['var(--font-display)', 'Bungee', 'Impact', 'sans-serif'],
       },
       keyframes: {
         shimmer: {

@@ -20,11 +20,12 @@
     font-family: var(--font-inter, 'Inter', sans-serif);
   }
 
-  /* Luxury display font for headings (full Vietnamese diacritics). line-height
-     is kept >= 1.04 so stacked VN marks (Ợ, Ặ, Ẫ…) never clip at large sizes. */
+  /* Display font for headings — Bungee (chunky streetwear signage feel).
+     Single weight 400; rely on letter-spacing + size for hierarchy. Line-height
+     stays roomy enough that stacked VN diacritics (Ợ, Ặ, Ẫ…) don't clip. */
   h1, h2 {
-    font-family: var(--font-display, 'Playfair Display', serif);
-    line-height: 1.08;
+    font-family: var(--font-display, 'Bungee', 'Impact', sans-serif);
+    line-height: 1.15;
   }
 
   ::-webkit-scrollbar        { width: 3px; height: 3px; }
