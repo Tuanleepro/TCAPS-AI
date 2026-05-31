@@ -31,6 +31,16 @@ export function ProductDetail({ product }: { product: Product }) {
     [variants, selectedVariantId],
   )
 
+  // Out-of-stock for the CURRENTLY selected variant — used to disable MUA NGAY
+  // but not the variant picker (customer can still tap an out-of-stock variant
+  // to view its photo and try it on with AI, just can't buy it).
+  const selectedOutOfStock = useMemo(() => {
+    if (selectedVariant) {
+      return typeof selectedVariant.stock === 'number' && selectedVariant.stock <= 0
+    }
+    return typeof product.stock === 'number' && product.stock <= 0
+  }, [selectedVariant, product.stock])
+
   // Build the effective Product that gets passed to <OrderModal> when the
   // customer taps MUA NGAY. We merge the selected variant on top of the
   // parent so the modal sees the right name / image / price without needing
@@ -150,7 +160,7 @@ export function ProductDetail({ product }: { product: Product }) {
 
           <p className="text-[11px] text-[#6B6B6B] font-mono">Mã sản phẩm: {product.sku}</p>
 
-          <div className="flex items-baseline gap-3">
+          <div className="flex items-baseline gap-3 flex-wrap">
             <p className="text-3xl text-[#C9A84C] font-mono font-black tabular-nums">
               {fmt(currentPrice)}
             </p>
@@ -158,6 +168,11 @@ export function ProductDetail({ product }: { product: Product }) {
               <p className="text-sm text-[#6B6B6B] line-through font-mono">
                 {fmt(product.price)}
               </p>
+            )}
+            {selectedOutOfStock && (
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#E05252] bg-[#E05252]/10 border border-[#E05252]/35 px-2 py-1 rounded-full">
+                Tạm hết hàng
+              </span>
             )}
           </div>
 
@@ -176,6 +191,10 @@ export function ProductDetail({ product }: { product: Product }) {
                   const id = variantKey(v)
                   const active = id === selectedVariantId
                   const outOfStock = typeof v.stock === 'number' && v.stock <= 0
+                  // Always clickable — customer can pick an out-of-stock variant
+                  // to view its photo and run AI Try-On on it. Only the MUA
+                  // NGAY button below the picker gets disabled when the
+                  // current selection is out of stock.
                   return (
                     <button
                       key={id || v.name || Math.random()}
@@ -183,15 +202,16 @@ export function ProductDetail({ product }: { product: Product }) {
                       onClick={() => setSelectedVariantId(id)}
                       aria-pressed={active}
                       className={[
-                        'h-12 rounded-xl border-2 text-xs sm:text-sm font-bold transition-all px-2 text-center',
-                        active
+                        'h-12 rounded-xl border-2 text-xs sm:text-sm font-bold transition-all px-2 text-center cursor-pointer',
+                        active && outOfStock
+                          ? 'border-[#C9A84C] bg-[#C9A84C]/12 text-[#C9A84C] line-through'
+                          : active
                           ? 'border-[#C9A84C] bg-[#C9A84C]/12 text-[#C9A84C]'
                           : outOfStock
-                          ? 'border-[#1E1E1E] text-[#5A5A5A] cursor-not-allowed line-through'
+                          ? 'border-[#1E1E1E] text-[#5A5A5A] line-through hover:border-[#C9A84C]/30 hover:text-[#7A7A7A]'
                           : 'border-[#2A2A2A] hover:border-[#C9A84C]/50 text-[#C8C8C8]',
                       ].join(' ')}
-                      disabled={outOfStock}
-                      title={outOfStock ? 'Hết hàng' : undefined}
+                      title={outOfStock ? 'Hết hàng — vẫn xem ảnh + thử AI được' : undefined}
                     >
                       {v.name || v.sku}
                     </button>
@@ -201,14 +221,25 @@ export function ProductDetail({ product }: { product: Product }) {
             </div>
           )}
 
-          {/* CTAs */}
+          {/* CTAs — MUA NGAY disabled when the selected variant is out of
+              stock (greyed + 'TẠM HẾT HÀNG' label). THỬ NÓN AI stays enabled
+              because customers can preview any variant with AI regardless
+              of stock. */}
           <div className="grid grid-cols-2 gap-3 mt-3">
             <button
               type="button"
               onClick={() => setOrderOpen(true)}
-              className="h-13 py-3.5 rounded-xl bg-gradient-to-r from-[#C9A84C] via-[#E8C96A] to-[#C9A84C] hover:brightness-110 active:brightness-95 text-black font-black text-sm tracking-wider transition-all shadow-[0_8px_24px_rgba(201,168,76,.35)] flex items-center justify-center gap-1.5"
+              disabled={selectedOutOfStock}
+              aria-disabled={selectedOutOfStock}
+              title={selectedOutOfStock ? 'Mẫu này tạm hết hàng — bạn vẫn có thể thử AI hoặc chọn mẫu khác' : undefined}
+              className={[
+                'h-13 py-3.5 rounded-xl font-black text-sm tracking-wider transition-all flex items-center justify-center gap-1.5',
+                selectedOutOfStock
+                  ? 'bg-[#1E1E1E] text-[#5A5A5A] cursor-not-allowed border-2 border-[#2A2A2A]'
+                  : 'bg-gradient-to-r from-[#C9A84C] via-[#E8C96A] to-[#C9A84C] hover:brightness-110 active:brightness-95 text-black shadow-[0_8px_24px_rgba(201,168,76,.35)]',
+              ].join(' ')}
             >
-              🛒 MUA NGAY
+              {selectedOutOfStock ? '🚫 TẠM HẾT HÀNG' : '🛒 MUA NGAY'}
             </button>
             <Link
               href={`/try-on?sku=${encodeURIComponent(product.sku)}`}
