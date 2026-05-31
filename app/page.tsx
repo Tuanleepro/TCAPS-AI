@@ -205,7 +205,7 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-          <p className="text-center text-xs text-[#3A3A3A] mt-6">Mua 1: 149,000₫ · Mua 2 nón + Free Ship chỉ 250K/2 nón</p>
+          <p className="text-center text-xs text-[#3A3A3A] mt-6">1 nón 130K · 2 nón 250K · 3 nón 370K · 4 nón 516K tặng 1 · 5 nón 650K tặng 1 · Freeship từ 2 nón</p>
         </div>
       </section>
 

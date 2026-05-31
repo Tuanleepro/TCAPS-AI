@@ -86,7 +86,7 @@ const ORDER_STEPS = [
 const POLICIES = [
   { icon: '🚚', title: 'Ship COD toàn quốc', desc: 'Phí 30.000đ. Miễn phí khi đơn từ 250.000đ. Nhận hàng kiểm tra xong mới trả tiền.' },
   { icon: '🔄', title: 'Đổi trả 30 ngày',     desc: 'Lỗi sản xuất TCAPS đổi ngay, không hỏi lý do. Khách chỉ trả phí ship chiều đi 1 lần.' },
-  { icon: '💰', title: 'Bundle 2+ giá tốt',    desc: 'Mua 2 nón TCAPS chỉ 250.000đ + free ship. Giá lẻ 130k-160k tuỳ mẫu.' },
+  { icon: '💰', title: 'Combo càng nhiều càng rẻ',  desc: '1 nón 130K · 2 nón 250K · 3 nón 370K · 4 nón 516K +1 tặng · 5 nón 650K +1 tặng. Freeship từ 2 nón.' },
   { icon: '🏬', title: 'Kho sỉ tận gốc',      desc: 'TCAPS là kho sỉ chuyên nón thời trang khu vực Đông Nam Á. Sỉ lẻ đều có giá tốt nhất.' },
 ]
 
@@ -154,7 +154,7 @@ export default function AboutPage() {
             <p>
               Chúng tôi vận hành như một <strong className="text-[#F5F5F5]">kho sỉ tận gốc</strong> —
               cung cấp nón thời trang cho cả thị trường khu vực Đông Nam Á. Điều này cho phép TCAPS
-              giữ giá lẻ ở mức 130.000đ – 160.000đ/nón và bundle 2 nón chỉ 250.000đ — mà vẫn đảm bảo
+              giữ giá lẻ chỉ <strong className="text-[#F5F5F5]">130.000đ/nón</strong> và combo siêu hời (2 nón 250K, 3 nón 370K, 4 nón 516K tặng kèm 1 nón, 5 nón 650K tặng kèm 1 nón) — mà vẫn đảm bảo
               chất lượng vải, form, in ấn ngang ngửa các thương hiệu nhập khẩu giá gấp đôi, gấp ba.
             </p>
             <p>

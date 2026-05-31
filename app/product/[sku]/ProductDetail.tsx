@@ -177,9 +177,9 @@ export function ProductDetail({ product }: { product: Product }) {
             )}
           </div>
 
-          <p className="text-xs text-[#C9A84C]/80 -mt-1 flex items-center gap-1.5">
-            <GiftIcon size={14} />
-            Mua 2 nón + Free Ship chỉ <strong>250K/2 nón</strong>
+          <p className="text-xs text-[#C9A84C]/80 -mt-1 flex items-start gap-1.5 leading-relaxed">
+            <GiftIcon size={14} className="mt-0.5 shrink-0" />
+            <span>Combo: 2 nón <strong>250K</strong> · 3 nón <strong>370K</strong> · 4 nón <strong>516K</strong> tặng 1 · 5 nón <strong>650K</strong> tặng 1 · Freeship từ 2 nón.</span>
           </p>
 
           {/* Variant picker */}
@@ -260,7 +260,7 @@ export function ProductDetail({ product }: { product: Product }) {
           <ul className="mt-5 space-y-2 text-[12.5px] text-[#8A8A8A] border-t border-[#1E1E1E] pt-4">
             <li className="flex items-start gap-2.5">
               <TruckIcon className="mt-0.5 shrink-0 text-[#C9A84C]" size={16} />
-              <span>Ship COD toàn quốc · Phí 30K · <strong className="text-[#F5F5F5]">Free ship đơn từ 250K</strong></span>
+              <span>Ship COD toàn quốc · 1 nón ship 30K · <strong className="text-[#F5F5F5]">Freeship khi mua từ 2 nón</strong></span>
             </li>
             <li className="flex items-start gap-2.5">
               <RefreshIcon className="mt-0.5 shrink-0 text-[#C9A84C]" size={16} />

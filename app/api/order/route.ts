@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { google } from 'googleapis'
+import { calculatePricing } from '@/lib/pricing'
 
 export const runtime = 'nodejs'
 
@@ -69,9 +70,15 @@ export async function POST(req: NextRequest) {
     if (customer.address.length < 5) return NextResponse.json({ ok: false, error: 'Địa chỉ quá ngắn' },           { status: 400 })
 
     // ── 2. Recompute totals server-side (never trust browser prices) ─────
-    const subtotal = items.reduce((s, it) => s + it.unit * it.qty, 0)
-    const shipping = subtotal >= 250_000 ? 0 : 30_000
-    const total    = subtotal + shipping
+    // Tier pricing lives in lib/pricing.ts so client + server can't drift.
+    // The per-row `unit` from the browser is informational only at this point;
+    // calculatePricing(qty) is the authoritative total.
+    const totalQty = items.reduce((s, it) => s + it.qty, 0)
+    const pricing  = calculatePricing(totalQty)
+    const subtotal = pricing.subtotal
+    const shipping = pricing.shipping
+    const total    = pricing.total
+    const bonusQty = pricing.bonusQty
 
     // ── 3. Build the row to append ───────────────────────────────────────
     const fmt = (n: number) => `${Math.round(n).toLocaleString('vi-VN')}₫`
@@ -93,6 +100,11 @@ export async function POST(req: NextRequest) {
 
     // Column order MUST match the spec exactly so the sheet's existing
     // header row keeps aligning.
+    // When the tier qualifies for a bonus cap, prepend a 🎁 marker to the
+    // Ghi chú column so the shop owner sees it at a glance when processing.
+    const note = bonusQty > 0
+      ? `🎁 Tặng +${bonusQty} nón${customer.note ? ` · ${customer.note}` : ''}`
+      : customer.note
     const row: Array<string | number> = [
       timestamp,            // A — Thời gian
       customer.name,        // B — Họ tên
@@ -101,7 +113,7 @@ export async function POST(req: NextRequest) {
       mainProduct,          // E — Sản phẩm chính
       addProducts,          // F — Sản phẩm mua thêm
       total,                // G — Tổng tiền (number)
-      customer.note,        // H — Ghi chú
+      note,                 // H — Ghi chú (with bonus marker if applicable)
       'Chưa xử lý',         // I — Trạng thái
       'TCAPS AI',           // J — Nguồn
     ]

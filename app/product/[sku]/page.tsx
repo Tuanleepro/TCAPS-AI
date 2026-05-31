@@ -17,7 +17,7 @@ export function generateMetadata({ params }: { params: { sku: string } }): Metad
   if (!product) return { title: 'Sản phẩm không tồn tại — TCAPS' }
   return {
     title:       `${product.name} — TCAPS`,
-    description: `${product.name} · Giá ${product.priceBundle.toLocaleString('vi-VN')}đ · Ship COD toàn quốc · Đổi trả 30 ngày · Mua 2 nón + free ship 250K/2 nón.`,
+    description: `${product.name} · 130K/nón · Combo 2 nón 250K · 3 nón 370K · 4 nón 516K tặng 1 · 5 nón 650K tặng 1 · Ship COD toàn quốc · Đổi trả 30 ngày.`,
   }
 }
 

@@ -19,7 +19,7 @@ export default function CatalogPage() {
         <div className="mb-10">
           <p className="text-[11px] uppercase tracking-[.18em] text-[#C9A84C] mb-2">Catalog</p>
           <h1 className="text-3xl font-black mb-1">Bộ Sưu Tập TCAPS</h1>
-          <p className="text-sm text-[#6B6B6B]">{PRODUCTS.length} sản phẩm — Mua 2 nón + Free Ship chỉ 250K/2 nón</p>
+          <p className="text-sm text-[#6B6B6B]">{PRODUCTS.length} sản phẩm — 1 nón 130K · 2 nón 250K · 3 nón 370K · 4 nón 516K tặng 1 · 5 nón 650K tặng 1</p>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
@@ -94,7 +94,7 @@ export default function CatalogPage() {
         </div>
 
         <div className="mt-12 p-6 rounded-2xl border border-[#C9A84C]/20 bg-[#C9A84C]/5 text-center">
-          <p className="font-bold text-[#C9A84C] mb-1 text-base">💰 Mua 2 nón + Free Ship chỉ 250K/2 nón</p>
+          <p className="font-bold text-[#C9A84C] mb-1 text-base">💰 Combo: 2 nón 250K · 3 nón 370K · 4 nón 516K +1 tặng · 5 nón 650K +1 tặng</p>
           <p className="text-sm text-[#6B6B6B]">Liên hệ: 0972284146 · 332 Lê Văn Việt, TP.HCM</p>
         </div>
       </main>

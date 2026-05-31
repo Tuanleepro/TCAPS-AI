@@ -6,9 +6,8 @@ import { PRODUCTS, type Product } from '@/constants/products'
 import { proxyImg } from '@/lib/img'
 
 // ── Pricing & shipping ─────────────────────────────────────────────────────
-const COD_SHIPPING        = 30_000
-const FREE_SHIP_THRESHOLD = 250_000
-const fmt = (n: number) => `${Math.round(n).toLocaleString('vi-VN')}₫`
+// Owner-defined tier pricing lives in lib/pricing.ts so client + server agree.
+import { calculatePricing, fmtVnd as fmt } from '@/lib/pricing'
 
 const PICKABLE = PRODUCTS.filter(p => p.imageUrl)
 
@@ -143,10 +142,17 @@ export function OrderModal({ open, product, onClose }: Props) {
     () => [{ ...primary, qty: primaryQty }, ...extraItems],
     [primary, primaryQty, extraItems],
   )
-  const subtotal = allItems.reduce((s, it) => s + it.unit * it.qty, 0)
-  const shipping = subtotal >= FREE_SHIP_THRESHOLD ? 0 : COD_SHIPPING
-  const total    = subtotal + shipping
+  // Tier-based pricing — the per-item `unit` in CartItem is ignored at total
+  // time; lib/pricing.ts decides the cap subtotal + shipping + bonus from the
+  // total quantity alone. Per-row prices in the summary are dropped for the
+  // same reason (showing 130k per row alongside a 250k tier total is just
+  // confusing).
   const totalQty = allItems.reduce((s, it) => s + it.qty, 0)
+  const pricing  = calculatePricing(totalQty)
+  const subtotal = pricing.subtotal
+  const shipping = pricing.shipping
+  const total    = pricing.total
+  const bonusQty = pricing.bonusQty
 
   const toggleExtra = useCallback((sku: string) => {
     setExtras(prev => {
@@ -178,7 +184,7 @@ export function OrderModal({ open, product, onClose }: Props) {
           province: province.trim(),
           note:     note.trim(),
         },
-        totals:   { subtotal, shipping, total, qty: totalQty },
+        totals:   { subtotal, shipping, total, qty: totalQty, bonusQty },
       }
       const r = await fetch('/api/order', {
         method:  'POST',
@@ -192,7 +198,7 @@ export function OrderModal({ open, product, onClose }: Props) {
       setStatus('error')
       setStatusErr(e instanceof Error ? e.message : 'Không thể gửi đơn hàng. Vui lòng thử lại.')
     }
-  }, [canSubmit, allItems, name, phone, address, province, note, subtotal, shipping, total, totalQty])
+  }, [canSubmit, allItems, name, phone, address, province, note, subtotal, shipping, total, totalQty, bonusQty])
 
   if (!open) return null
   // Portal to document.body so the modal escapes every transformed/filtered
@@ -331,7 +337,7 @@ export function OrderModal({ open, product, onClose }: Props) {
                     </div>
                   </div>
                   <p className="text-[11px] text-[#8A8A8A] mb-2">
-                    Mua từ <span className="text-[#C9A84C] font-bold">{fmt(FREE_SHIP_THRESHOLD)}</span> được FREESHIP toàn quốc.
+                    2 nón <span className="text-[#C9A84C] font-bold">250K</span> · 3 nón <span className="text-[#C9A84C] font-bold">370K</span> · 4 nón <span className="text-[#C9A84C] font-bold">516K</span> tặng 1 · 5 nón <span className="text-[#C9A84C] font-bold">650K</span> tặng 1 · Freeship từ 2 nón.
                   </p>
                   <div className="-mx-5 px-5 overflow-x-auto pb-2">
                     {filteredUpsell.length > 0 ? (
@@ -352,18 +358,26 @@ export function OrderModal({ open, product, onClose }: Props) {
                 </section>
               )}
 
-              {/* PART 4 — Order summary */}
+              {/* PART 4 — Order summary
+                  Per-row prices are intentionally dropped: with tier pricing
+                  (1 cap 130k → 5 caps 650k) the "per row" amount stops being
+                  meaningful, so we list what's in the cart and show the
+                  tier-total at the bottom. Bonus row appears only when the
+                  tier qualifies for a free cap. */}
               <section>
                 <SectionTitle>Tóm tắt đơn hàng</SectionTitle>
                 <div className="rounded-2xl border border-[#1E1E1E] bg-[#0A0A0A] p-3 flex flex-col gap-1">
                   {allItems.map(it => (
-                    <div key={it.sku} className="flex items-baseline justify-between text-[13px]">
-                      <span className="text-[#C8C8C8] truncate pr-2">
-                        {it.qty}× {it.name}
-                      </span>
-                      <span className="text-[#F5F5F5] font-mono shrink-0">{fmt(it.unit * it.qty)}</span>
+                    <div key={it.sku} className="text-[13px] text-[#C8C8C8] truncate">
+                      {it.qty}× {it.name}
                     </div>
                   ))}
+                  {bonusQty > 0 && (
+                    <div className="mt-1.5 flex items-center gap-2 px-2.5 py-2 rounded-lg border border-[#C9A84C]/35 bg-[#C9A84C]/8 text-[12px] text-[#C9A84C] font-bold">
+                      <span aria-hidden>🎁</span>
+                      <span>Tặng thêm <strong>{bonusQty} nón</strong> — TCAPS sẽ liên hệ xác nhận mẫu tặng kèm.</span>
+                    </div>
+                  )}
                   <div className="border-t border-[#1E1E1E] my-1.5" />
                   <SummaryRow label={`Tạm tính (${totalQty} nón)`} value={fmt(subtotal)} />
                   <SummaryRow
