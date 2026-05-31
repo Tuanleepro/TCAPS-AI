@@ -40,6 +40,9 @@ yarn-error.log*
 /.pancake-profile
 /data
 
+# Pancake → app daily sync logs (Task Scheduler writes here)
+/logs
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -82,9 +82,7 @@ TCAPS đã upload thủ công (TC68 / TC63 / TC61 / Nón TC59 / TC45 / TC42).
 
 ---
 
-## Quy trình daily
-
-Khuyến nghị mỗi sáng:
+## Quy trình daily — chạy tay
 
 ```bash
 # 1. Sync
@@ -101,9 +99,85 @@ git push
 # 4. Vercel auto-deploy
 ```
 
-Hoặc setup cron job trên máy local (Linux/Mac):
+---
+
+## Quy trình daily — auto qua Windows Task Scheduler
+
+Setup 1 lần ~5 phút. Sau đó mỗi sáng 8h máy bạn tự chạy sync + commit +
+push, không cần can thiệp.
+
+### Files trong repo
+
+| File | Mục đích |
+|---|---|
+| `scripts/sync-and-push.bat` | Batch chạy: sync → git add → commit → push → ghi log |
+| `TCAPS-Sync-Daily.xml` | Task Scheduler import (chạy 8h sáng hàng ngày) |
+| `logs/sync-YYYY-MM-DD.log` | Log của mỗi run (đã gitignore) |
+
+### Bước 1 — Test batch chạy được
+
+Mở **Command Prompt** (cmd) hoặc PowerShell:
+
+```cmd
+cd "c:\APP AI\tcaps-app"
+scripts\sync-and-push.bat
+```
+
+Sau khi chạy xong, mở `logs\sync-YYYY-MM-DD.log` xem có dòng
+`OK Pushed to GitHub.` hoặc `OK No changes to commit.` — nghĩa là OK.
+
+Nếu lỗi: thường do (a) Pancake login expire — chạy lại
+`npx tsx scripts/pancake-login.ts`, hoặc (b) git credential — kiểm tra
+`git push` từ command line có cần nhập mật khẩu không.
+
+### Bước 2 — Import Task vào Windows Task Scheduler
+
+1. Mở **Task Scheduler** (Win+R → `taskschd.msc` → Enter).
+2. Cột phải → **Import Task...**
+3. Chọn file `c:\APP AI\tcaps-app\TCAPS-Sync-Daily.xml`.
+4. Trong cửa sổ Properties hiện ra:
+   - Tab **General**: tick **Run with highest privileges**, chọn **Configure for**: Windows 10/11.
+   - Tab **Triggers**: thấy "Daily" → mở ra, sửa giờ chạy nếu muốn (mặc định 08:00).
+   - Tab **Actions**: confirm Command đúng path:
+     ```
+     c:\APP AI\tcaps-app\scripts\sync-and-push.bat
+     ```
+     Start in (working directory):
+     ```
+     c:\APP AI\tcaps-app
+     ```
+   - Tab **Conditions**: bỏ tick "Start the task only if the computer is on AC power" (nếu xài laptop).
+   - Tab **Settings**: tick **Run task as soon as possible after a scheduled start is missed** (catch up khi máy off vào giờ chạy).
+5. OK → nhập password Windows account → Done.
+
+### Bước 3 — Test ngay (không đợi 8h sáng)
+
+Trong Task Scheduler → chọn task **TCAPS Pancake Sync** → cột phải **Run**.
+
+Sau ~30s xem `logs\sync-...log`. Nếu thấy push success → setup xong.
+
+### Bước 4 — Theo dõi log thỉnh thoảng
+
+```cmd
+type logs\sync-YYYY-MM-DD.log
+```
+
+Xem có lỗi gì lặp lại không. Nếu Pancake login hết hạn → log sẽ báo
+`0 products scraped`. Khi đó chạy lại `npx tsx scripts/pancake-login.ts`
+để refresh session.
+
+### Nếu di chuyển folder dự án
+
+Path trong cả batch và XML đều hardcoded `c:\APP AI\tcaps-app`. Nếu di
+chuyển folder:
+1. Sửa batch: dòng `set "PROJECT_DIR=..."`
+2. Sửa XML: 2 chỗ `<Command>` và `<WorkingDirectory>`
+3. Re-import vào Task Scheduler (Delete task cũ → Import lại).
+
+### Cron job trên Linux/Mac (alternative)
+
 ```cron
-0 8 * * * cd /path/to/tcaps-app && SYNC_ONLY=1 node scripts/pancake-scrape.mjs && git add constants/products.ts && git commit -m "sync: daily $(date +%F)" && git push
+0 8 * * * cd /path/to/tcaps-app && SYNC_ONLY=1 node scripts/pancake-scrape.mjs && git add constants/products.ts && (git commit -m "sync: daily $(date +%F)" && git push) || echo "no changes"
 ```
 
 ---
