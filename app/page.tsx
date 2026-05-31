@@ -51,7 +51,7 @@ export default function HomePage() {
             left-to-right. */}
         <div className="grid grid-cols-[1fr_auto_1fr] gap-2 sm:gap-5 items-center max-w-3xl mx-auto mb-8">
           <HeroBeforeAfterCard
-            src="/z7883411256974_182e7cda88b23af3da59f2197c769018.jpg"
+            src="/z7884987169122_035798bb97064f38f9cb9e13c83b773b.jpg"
             label="Ảnh gốc"
             accent="muted"
             priority
@@ -62,7 +62,7 @@ export default function HomePage() {
             </svg>
           </div>
           <HeroBeforeAfterCard
-            src="/z7883411250849_f036a210fd504ef13541ba1e74128238.jpg"
+            src="/Screenshot 2026-05-31 150637.png"
             label="AI Try-On"
             accent="gold"
             priority
