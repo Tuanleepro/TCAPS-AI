@@ -159,8 +159,6 @@ export function ProductDetail({ product }: { product: Product }) {
             {product.name}
           </h1>
 
-          <p className="text-[11px] text-[#6B6B6B] font-mono">Mã sản phẩm: {product.sku}</p>
-
           <div className="flex items-baseline gap-3 flex-wrap">
             <p className="text-3xl text-[#C9A84C] font-mono font-black tabular-nums">
               {fmt(currentPrice)}
@@ -182,13 +180,15 @@ export function ProductDetail({ product }: { product: Product }) {
             <span>Combo: 2 nón <strong>250K</strong> · 3 nón <strong>370K</strong> · 4 nón <strong>516K</strong> tặng 1 · 5 nón <strong>650K</strong> tặng 1 · Freeship từ 2 nón.</span>
           </p>
 
-          {/* Variant picker */}
+          {/* Variant picker — placed BEFORE the SKU line so customers' first
+              decision is which variant they want; the SKU is reference info
+              and lives below. */}
           {variants.length > 0 && (
             <div className="mt-2">
-              <p className="text-[11px] uppercase tracking-widest text-[#8A8A8A] font-semibold mb-2">
+              <p className="text-[11px] uppercase tracking-widest text-[#8A8A8A] font-semibold mb-1.5">
                 Chọn mẫu <span className="text-[#C9A84C]">*</span>
               </p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
                 {variants.map(v => {
                   const id = variantKey(v)
                   const active = id === selectedVariantId
@@ -204,7 +204,7 @@ export function ProductDetail({ product }: { product: Product }) {
                       onClick={() => setSelectedVariantId(id)}
                       aria-pressed={active}
                       className={[
-                        'h-12 rounded-xl border-2 text-xs sm:text-sm font-bold transition-all px-2 text-center cursor-pointer',
+                        'h-9 rounded-lg border text-[11px] font-bold transition-all px-1.5 text-center cursor-pointer whitespace-nowrap overflow-hidden',
                         active && outOfStock
                           ? 'border-[#C9A84C] bg-[#C9A84C]/12 text-[#C9A84C] line-through'
                           : active
@@ -222,6 +222,10 @@ export function ProductDetail({ product }: { product: Product }) {
               </div>
             </div>
           )}
+
+          {/* Reference SKU — moved below the variant picker per owner's
+              preference. Reads as a small mono caption, not a primary fact. */}
+          <p className="text-[10.5px] text-[#6B6B6B] font-mono">Mã sản phẩm: {product.sku}</p>
 
           {/* CTAs — MUA NGAY disabled when the selected variant is out of
               stock (greyed + 'TẠM HẾT HÀNG' label). THỬ NÓN AI stays enabled
