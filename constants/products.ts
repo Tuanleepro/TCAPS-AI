@@ -327,25 +327,6 @@ export const PRODUCTS: Product[] = [
     pancakeId: "2ef800d2-ebeb-412d-ace7-93b047f8b3ca",
   },
   {
-    sku: "TC50",
-    name: "TC50 - NÓN PHOENIX",
-    line: "", style: "streetwear", color: "",
-    price: 130000, priceBundle: 130000,
-    badge: null,
-    description: "",
-    faceShapes: ["oval", "round", "heart"],
-    topFor: ["oval"],
-    imageUrl: "https://content.pancake.vn/2-2510/2025/10/28/86fa8d2be6995d9705c41e11b48bf7326d1b1b23.jpg", overlayUrl: "",
-    tags: [],
-    images: ["https://content.pancake.vn/2-2510/2025/10/28/86fa8d2be6995d9705c41e11b48bf7326d1b1b23.jpg", "https://content.pancake.vn/2-2510/2025/10/28/59235c197e809b8a5600432a731cba3160b16e58.jpg"],
-    variants: [
-      { sku: "TC50NGANGDEN", name: "NGANG / Đen", price: 130000, stock: 41, image: "https://content.pancake.vn/2-2510/2025/10/28/86fa8d2be6995d9705c41e11b48bf7326d1b1b23.jpg" },
-      { sku: "TC50CONGDEN", name: "CONG / Đen", price: 130000, stock: 0, image: "https://content.pancake.vn/2-2510/2025/10/28/59235c197e809b8a5600432a731cba3160b16e58.jpg" }
-    ],
-    stock: 41,
-    pancakeId: "8d05149f-013e-4c57-b852-f68115aede14",
-  },
-  {
     sku: "CB TC49",
     name: "TC49 - NÓN MONOGRAM HỌA TIẾT",
     line: "", style: "streetwear", color: "",
@@ -373,25 +354,6 @@ export const PRODUCTS: Product[] = [
     ],
     stock: -43,
     pancakeId: "41194a5d-d7ee-4bd7-bf3a-d9236d9c8ba6",
-  },
-  {
-    sku: "TC47",
-    name: "TC47 - NÓN FREEDOM",
-    line: "", style: "streetwear", color: "",
-    price: 130000, priceBundle: 130000,
-    badge: null,
-    description: "",
-    faceShapes: ["oval", "round", "heart"],
-    topFor: ["oval"],
-    imageUrl: "https://content.pancake.vn/2-2512/2025/12/15/e21e58f0a61ab335eec5204e5c744ffd0d7f26ed.jpg", overlayUrl: "",
-    tags: [],
-    images: ["https://content.pancake.vn/2-2512/2025/12/15/e21e58f0a61ab335eec5204e5c744ffd0d7f26ed.jpg", "https://content.pancake.vn/2-2510/2025/10/17/92aa5f73593118df20c0a1cd3f242940e57a85bb.jpg"],
-    variants: [
-      { sku: "TC47NGANGDEN", name: "NGANG / Đen", price: 130000, stock: 0, image: "https://content.pancake.vn/2-2512/2025/12/15/e21e58f0a61ab335eec5204e5c744ffd0d7f26ed.jpg" },
-      { sku: "TC47CONGDEN", name: "CONG / Đen", price: 130000, stock: -5, image: "https://content.pancake.vn/2-2510/2025/10/17/92aa5f73593118df20c0a1cd3f242940e57a85bb.jpg" }
-    ],
-    stock: -5,
-    pancakeId: "19c7bf6f-5ac1-410d-a0fa-c8838610444a",
   },
   {
     sku: "TC45",
