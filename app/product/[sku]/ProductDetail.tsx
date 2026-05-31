@@ -159,32 +159,11 @@ export function ProductDetail({ product }: { product: Product }) {
             {product.name}
           </h1>
 
-          <div className="flex items-baseline gap-3 flex-wrap">
-            <p className="text-3xl text-[#C9A84C] font-mono font-black tabular-nums">
-              {fmt(currentPrice)}
-            </p>
-            {product.price > currentPrice && (
-              <p className="text-sm text-[#6B6B6B] line-through font-mono">
-                {fmt(product.price)}
-              </p>
-            )}
-            {selectedOutOfStock && (
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#E05252] bg-[#E05252]/10 border border-[#E05252]/35 px-2 py-1 rounded-full">
-                Tạm hết hàng
-              </span>
-            )}
-          </div>
-
-          <p className="text-xs text-[#C9A84C]/80 -mt-1 flex items-start gap-1.5 leading-relaxed">
-            <GiftIcon size={14} className="mt-0.5 shrink-0" />
-            <span>Combo: 2 nón <strong>250K</strong> · 3 nón <strong>370K</strong> · 4 nón <strong>516K</strong> tặng 1 · 5 nón <strong>650K</strong> tặng 1 · Freeship từ 2 nón.</span>
-          </p>
-
-          {/* Variant picker — placed BEFORE the SKU line so customers' first
-              decision is which variant they want; the SKU is reference info
-              and lives below. */}
+          {/* Variant picker — placed right under the name so it's the
+              customer's first decision before they see the price (which
+              changes per-variant when stock has a different price). */}
           {variants.length > 0 && (
-            <div className="mt-2">
+            <div className="mt-1">
               <p className="text-[11px] uppercase tracking-widest text-[#8A8A8A] font-semibold mb-1.5">
                 Chọn mẫu <span className="text-[#C9A84C]">*</span>
               </p>
@@ -223,8 +202,29 @@ export function ProductDetail({ product }: { product: Product }) {
             </div>
           )}
 
-          {/* Reference SKU — moved below the variant picker per owner's
-              preference. Reads as a small mono caption, not a primary fact. */}
+          <div className="flex items-baseline gap-3 flex-wrap">
+            <p className="text-3xl text-[#C9A84C] font-mono font-black tabular-nums">
+              {fmt(currentPrice)}
+            </p>
+            {product.price > currentPrice && (
+              <p className="text-sm text-[#6B6B6B] line-through font-mono">
+                {fmt(product.price)}
+              </p>
+            )}
+            {selectedOutOfStock && (
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#E05252] bg-[#E05252]/10 border border-[#E05252]/35 px-2 py-1 rounded-full">
+                Tạm hết hàng
+              </span>
+            )}
+          </div>
+
+          <p className="text-xs text-[#C9A84C]/80 -mt-1 flex items-start gap-1.5 leading-relaxed">
+            <GiftIcon size={14} className="mt-0.5 shrink-0" />
+            <span>Combo: 2 nón <strong>250K</strong> · 3 nón <strong>370K</strong> · 4 nón <strong>516K</strong> tặng 1 · 5 nón <strong>650K</strong> tặng 1 · Freeship từ 2 nón.</span>
+          </p>
+
+          {/* Reference SKU — small mono caption below the commercial info,
+              before the CTAs. Reads as a reference, not a primary fact. */}
           <p className="text-[10.5px] text-[#6B6B6B] font-mono">Mã sản phẩm: {product.sku}</p>
 
           {/* CTAs — MUA NGAY disabled when the selected variant is out of
