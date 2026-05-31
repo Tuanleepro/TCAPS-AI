@@ -1,5 +1,6 @@
-import Link from 'next/link'
 import Image from 'next/image'
+import Link from 'next/link'
+import { Navbar } from '@/components/layout/Navbar'
 import { PRODUCTS } from '@/constants/products'
 import { proxyImg } from '@/lib/img'
 
@@ -11,16 +12,9 @@ const ITEMS = [...PRODUCTS].sort((a, b) => (b.imageUrl ? 1 : 0) - (a.imageUrl ? 
 export default function CatalogPage() {
   return (
     <div className="min-h-dvh bg-[#0A0A0A] text-[#F5F5F5]">
-      <header className="sticky top-0 z-50 border-b border-[#161616] bg-[#0A0A0A]/90 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href="/" className="text-xl font-black tracking-widest shimmer">TCAPS</Link>
-          <Link href="/try-on" className="h-10 px-4 rounded-lg bg-[#C9A84C] hover:bg-[#E8C96A] text-black text-sm font-bold inline-flex items-center transition-colors">
-            Thử Nón AI
-          </Link>
-        </div>
-      </header>
+      <Navbar />
 
-      <main className="max-w-6xl mx-auto px-4 py-12">
+      <main className="max-w-6xl mx-auto px-4 pt-24 pb-12">
         <div className="mb-10">
           <p className="text-[11px] uppercase tracking-[.18em] text-[#C9A84C] mb-2">Catalog</p>
           <h1 className="text-3xl font-black mb-1">Bộ Sưu Tập TCAPS</h1>

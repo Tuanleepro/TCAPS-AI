@@ -23,7 +23,7 @@ export function Navbar() {
   const [open, setOpen] = useState(false)
 
   return (
-    <nav className="fixed top-0 inset-x-0 z-50 bg-[#0A0A0A]/92 backdrop-blur-md border-b border-[#181818]">
+    <nav className="fixed top-0 inset-x-0 z-50 bg-[#0A0A0A] border-b border-[#181818]">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
 
         {/* Logo — icon sits beside the shimmer wordmark. The SVG can't live
