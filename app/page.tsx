@@ -156,35 +156,50 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {FEATURED.map(p => (
-              <Link
-                key={p.sku} href={`/try-on?sku=${encodeURIComponent(p.sku)}`}
-                aria-label={`Thử nón ${p.name}`}
-                className="group rounded-2xl border border-[#161616] bg-[#111] overflow-hidden transition-all duration-300 hover:border-[#C9A84C]/50 hover:-translate-y-1 hover:shadow-[0_12px_34px_-12px_rgba(201,168,76,0.3)]"
+              <div
+                key={p.sku}
+                className="group flex flex-col rounded-2xl border border-[#161616] bg-[#111] overflow-hidden transition-all duration-300 hover:border-[#C9A84C]/50 hover:-translate-y-1 hover:shadow-[0_12px_34px_-12px_rgba(201,168,76,0.3)]"
               >
-                <div className="h-44 md:h-52 flex items-center justify-center relative overflow-hidden bg-[#0A0A0A]">
-                  <Image
-                    src={proxyImg(p.imageUrl)}
-                    alt={p.name}
-                    fill
-                    unoptimized
-                    sizes="(max-width:768px) 50vw, 25vw"
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                  {p.badge && (
-                    <span className="absolute top-2 right-2 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-[#C9A84C] text-black tracking-wide z-10">
-                      {p.badge}
-                    </span>
-                  )}
-                </div>
-                <div className="p-3 border-t border-[#161616]">
-                  <p className="text-sm font-semibold text-[#F5F5F5] truncate" title={p.name}>{p.name}</p>
-                  <p className="text-xs text-[#5A5A5A] mt-0.5 truncate">{[p.line, p.style].filter(Boolean).join(' · ') || 'Nón TCAPS'}</p>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-sm text-[#C9A84C] font-mono font-semibold">{formatVnd(p.price)}</span>
-                    <span className="text-xs text-[#C9A84C]/70 group-hover:text-[#C9A84C] transition-colors">Thử →</span>
+                <Link href={`/product/${encodeURIComponent(p.sku)}`} className="flex flex-col flex-1" aria-label={p.name}>
+                  <div className="h-44 md:h-52 flex items-center justify-center relative overflow-hidden bg-[#0A0A0A]">
+                    <Image
+                      src={proxyImg(p.imageUrl)}
+                      alt={p.name}
+                      fill
+                      unoptimized
+                      sizes="(max-width:768px) 50vw, 25vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                    {p.badge && (
+                      <span className="absolute top-2 right-2 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-[#C9A84C] text-black tracking-wide z-10">
+                        {p.badge}
+                      </span>
+                    )}
                   </div>
+                  <div className="p-3 border-t border-[#161616] flex flex-col flex-1">
+                    <p className="text-sm font-semibold text-[#F5F5F5] truncate" title={p.name}>{p.name}</p>
+                    <p className="text-xs text-[#5A5A5A] mt-0.5 truncate">{[p.line, p.style].filter(Boolean).join(' · ') || 'Nón TCAPS'}</p>
+                    <span className="text-sm text-[#C9A84C] font-mono font-semibold mt-2">{formatVnd(p.price)}</span>
+                  </div>
+                </Link>
+                {/* MUA (left) + THỬ NÓN (right) — matches catalog card layout. */}
+                <div className="grid grid-cols-2 gap-1.5 p-2 border-t border-[#161616] bg-[#0D0D0D]">
+                  <Link
+                    href={`/product/${encodeURIComponent(p.sku)}`}
+                    aria-label={`Mua ${p.name}`}
+                    className="h-10 rounded-lg bg-[#C9A84C] hover:bg-[#E8C96A] text-black text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-colors"
+                  >
+                    🛒 MUA
+                  </Link>
+                  <Link
+                    href={`/try-on?sku=${encodeURIComponent(p.sku)}`}
+                    aria-label={`Thử nón ${p.name}`}
+                    className="h-10 rounded-lg border border-[#C9A84C]/60 hover:bg-[#C9A84C]/10 text-[#C9A84C] text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 transition-colors"
+                  >
+                    ✨ THỬ NÓN
+                  </Link>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
           <p className="text-center text-xs text-[#3A3A3A] mt-6">Mua 1: 149,000₫ · Mua 2 nón + Free Ship chỉ 250K/2 nón</p>
