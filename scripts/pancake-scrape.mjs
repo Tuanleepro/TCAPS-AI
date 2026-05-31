@@ -36,6 +36,13 @@ const PRODUCTS_TS = path.join(ROOT, 'constants', 'products.ts')
 const PAGE_SIZE = Number(process.env.PAGE_SIZE || 100)
 const MAX_PAGES = Number(process.env.MAX_PAGES || 200)
 const HEADLESS = process.env.HEADLESS === '1'
+// SYNC_ONLY=1 → don't add new products, don't prune existing, don't touch
+// curated fields. Only refresh stock counts (parent + per-variant) and images
+// (parent + per-variant). Local /public image paths are PRESERVED so the
+// photo swaps the owner made for TC68/TC63/TC61/TC59/TC45/TC42 don't get
+// clobbered every sync.
+const SYNC_ONLY = process.env.SYNC_ONLY === '1'
+const isLocalPath = (s) => typeof s === 'string' && s.startsWith('/')
 
 fs.mkdirSync(OUT_DIR, { recursive: true })
 
@@ -368,13 +375,49 @@ async function main() {
       const m = merged[idx]                                   // update REAL data only
       // NOTE: m.name is curated (descriptive names from rename-vision.mjs) — do
       // NOT overwrite it with the Pancake code name on re-scrape.
-      if (sp.price > 0) m.price = sp.price
-      if (sp.images.length) { m.imageUrl = sp.images[0]; m.images = sp.images }
-      if (sp.variants.length) m.variants = sp.variants
-      if (sp.stock || sp.stock === 0) m.stock = sp.stock
-      if (sp.pancakeId) m.pancakeId = sp.pancakeId
+
+      if (SYNC_ONLY) {
+        // SYNC mode: stock + (non-local) images only. Curated price stays.
+        if (sp.stock || sp.stock === 0) m.stock = sp.stock
+        if (sp.pancakeId) m.pancakeId = sp.pancakeId
+
+        // Parent imageUrl + images: only refresh from Pancake if the current
+        // value is NOT a local /public path (the owner overrode it manually).
+        if (sp.images.length && !isLocalPath(m.imageUrl)) {
+          m.imageUrl = sp.images[0]
+          m.images   = sp.images
+        }
+
+        // Per-variant: match by sku first, then name, then index. Update stock
+        // always; update image only if existing isn't local.
+        if (sp.variants.length && Array.isArray(m.variants)) {
+          for (let vi = 0; vi < sp.variants.length; vi++) {
+            const newV = sp.variants[vi]
+            const existingV =
+              m.variants.find((v) => v.sku && newV.sku && (v.sku || '').toUpperCase() === (newV.sku || '').toUpperCase()) ||
+              m.variants.find((v) => v.name && newV.name && loose(v.name) === loose(newV.name)) ||
+              m.variants[vi]
+            if (!existingV) continue
+            if (newV.stock || newV.stock === 0) existingV.stock = newV.stock
+            if (newV.image && !isLocalPath(existingV.image)) existingV.image = newV.image
+          }
+        }
+      } else {
+        // FULL mode (default): refresh all real product data.
+        if (sp.price > 0) m.price = sp.price
+        if (sp.images.length) { m.imageUrl = sp.images[0]; m.images = sp.images }
+        if (sp.variants.length) m.variants = sp.variants
+        if (sp.stock || sp.stock === 0) m.stock = sp.stock
+        if (sp.pancakeId) m.pancakeId = sp.pancakeId
+      }
       updatedSkus.push(m.sku)                                 // curated fields untouched
     } else {
+      // In SYNC_ONLY mode, never add new products — the owner wants the
+      // catalog to stay exactly as it is, just refreshed.
+      if (SYNC_ONLY) {
+        skipped.push({ reason: 'sync-only: not in app', sku: sp.sku, name: sp.name })
+        continue
+      }
       let sku = (sp.sku || '').trim() || skuFromName(sp.name)
       let unique = sku, n = 2
       while (usedSku.has(unique.toUpperCase())) unique = `${sku}-${n++}`
@@ -404,14 +447,20 @@ async function main() {
   }
 
   // prune any ignored entries that already live in products.ts (so re-running
-  // this scraper REMOVES them, not just stops re-adding)
-  const prunedSkus = merged.filter((p) => isIgnored(p.pancakeId, p.name)).map((p) => p.sku)
-  const finalList = merged.filter((p) => !isIgnored(p.pancakeId, p.name))
+  // this scraper REMOVES them, not just stops re-adding). In SYNC_ONLY mode
+  // we leave products.ts membership exactly as the owner curated it.
+  const prunedSkus = SYNC_ONLY
+    ? []
+    : merged.filter((p) => isIgnored(p.pancakeId, p.name)).map((p) => p.sku)
+  const finalList = SYNC_ONLY
+    ? merged
+    : merged.filter((p) => !isIgnored(p.pancakeId, p.name))
 
   writeProductsFile(finalList)
 
   // ── summary ─────────────────────────────────────────────────────────────────
-  console.log('\n──────────── IMPORT SUMMARY ────────────')
+  console.log(`\n──────────── ${SYNC_ONLY ? 'SYNC' : 'IMPORT'} SUMMARY ────────────`)
+  if (SYNC_ONLY) console.log('Mode           : SYNC_ONLY (stock + non-local images only, never add)')
   if (prunedSkus.length) console.log(`Pruned (ignored): ${prunedSkus.join(', ')}`)
   console.log(`Total imported : ${updatedSkus.length + addedSkus.length}  (updated ${updatedSkus.length}, added ${addedSkus.length})`)
   console.log(`Updated SKUs   : ${updatedSkus.join(', ') || '(none)'}`)
