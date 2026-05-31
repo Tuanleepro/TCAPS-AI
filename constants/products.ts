@@ -34,7 +34,7 @@ export interface Product {
 export const PRODUCTS: Product[] = [
   {
     sku: "TC68",
-    name: "TC68 - NÓN SPARTAN ĐEN",
+    name: "TC68 - NÓN SPARTAN",
     line: "", style: "sport", color: "",
     price: 160000, priceBundle: 160000,
     badge: null,
@@ -52,7 +52,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "TC67",
-    name: "TC67 - NÓN SKELETON CROWN TRẮNG",
+    name: "TC67 - NÓN SKELETON",
     line: "", style: "streetwear", color: "",
     price: 160000, priceBundle: 160000,
     badge: null,
@@ -92,7 +92,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "TC65",
-    name: "TC65 - NÓN TCAPS AERIE ĐEN",
+    name: "TC65 - NÓN TCAPS AERIE",
     line: "", style: "streetwear", color: "",
     price: 160000, priceBundle: 160000,
     badge: null,
@@ -111,7 +111,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "TC63",
-    name: "TC63 - NÓN SAMURAI ĐEN",
+    name: "TC63 - NÓN SAMURAI",
     line: "", style: "streetwear", color: "",
     price: 160000, priceBundle: 160000,
     badge: null,
@@ -129,7 +129,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "NÓN TC62",
-    name: "TC62 - NÓN REAL MAN ĐEN",
+    name: "TC62 - NÓN REAL MAN",
     line: "", style: "streetwear", color: "",
     price: 160000, priceBundle: 160000,
     badge: null,
@@ -148,7 +148,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "Combo CT3",
-    name: "CT3 - NÓN TCAPS SPARTAN ĐEN",
+    name: "CT3 - NÓN TCAPS SPARTAN",
     line: "", style: "luxury", color: "",
     price: 160000, priceBundle: 160000,
     badge: null,
@@ -168,7 +168,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "TC61",
-    name: "TC61 - NÓN STALLION ĐEN",
+    name: "TC61 - NÓN BÍNH NGỌ",
     line: "", style: "sport", color: "",
     price: 160000, priceBundle: 160000,
     badge: null,
@@ -186,7 +186,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "Nón TC59",
-    name: "TC59 - NÓN LẠC HỒNG ĐEN",
+    name: "TC59 - NÓN LẠC HỒNG",
     line: "", style: "streetwear", color: "",
     price: 160000, priceBundle: 160000,
     badge: null,
@@ -205,7 +205,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "NÓN TC58",
-    name: "TC58 - NÓN KINGGOAT ĐEN",
+    name: "TC58 - NÓN KINGGOAT",
     line: "", style: "streetwear", color: "",
     price: 160000, priceBundle: 160000,
     badge: null,
@@ -224,7 +224,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "NÓN TC57",
-    name: "TC57 - NÓN TCAPS ĐEN",
+    name: "TC57 - NÓN TCAPS",
     line: "", style: "sport", color: "",
     price: 160000, priceBundle: 160000,
     badge: null,
@@ -243,7 +243,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "TC56",
-    name: "TC56 - NÓN TCAPS FOR LIFE ĐEN",
+    name: "TC56 - NÓN TCAPS FOR LIFE",
     line: "", style: "streetwear", color: "",
     price: 160000, priceBundle: 160000,
     badge: null,
@@ -262,7 +262,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "NÓN TC55",
-    name: "TC55 - NÓN WUKONG ĐEN",
+    name: "TC55 - NÓN WUKONG",
     line: "", style: "streetwear", color: "",
     price: 160000, priceBundle: 160000,
     badge: null,
@@ -281,7 +281,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "NÓN TC52",
-    name: "TC52 - NÓN KỴ SĨ ĐEN",
+    name: "TC52 - NÓN KỴ SĨ",
     line: "", style: "streetwear", color: "",
     price: 130000, priceBundle: 130000,
     badge: null,
@@ -305,7 +305,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "TC51",
-    name: "TC51 - NÓN MOTORCYCLE ĐEN",
+    name: "TC51 - NÓN MOTORCYCLE",
     line: "", style: "biker", color: "",
     price: 130000, priceBundle: 130000,
     badge: null,
@@ -328,7 +328,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "TC50",
-    name: "TC50 - NÓN PHOENIX ĐEN",
+    name: "TC50 - NÓN PHOENIX",
     line: "", style: "streetwear", color: "",
     price: 160000, priceBundle: 160000,
     badge: null,
@@ -376,7 +376,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "TC47",
-    name: "TC47 - NÓN FREEDOM ĐEN",
+    name: "TC47 - NÓN FREEDOM",
     line: "", style: "streetwear", color: "",
     price: 130000, priceBundle: 130000,
     badge: null,
@@ -395,7 +395,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "TC45",
-    name: "TC45 - NÓN GÀ ĐEN",
+    name: "TC45 - NÓN GÀ",
     line: "", style: "streetwear", color: "",
     price: 130000, priceBundle: 130000,
     badge: null,
@@ -415,7 +415,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "TC46",
-    name: "TC46 - NÓN DARK STALLION ĐEN",
+    name: "TC46 - NÓN DARK STALLION",
     line: "", style: "streetwear", color: "",
     price: 130000, priceBundle: 130000,
     badge: null,
@@ -440,7 +440,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "NÓN TC43",
-    name: "TC43 - NÓN WOLF ĐEN",
+    name: "TC43 - NÓN WOLF",
     line: "", style: "sport", color: "",
     price: 130000, priceBundle: 130000,
     badge: null,
@@ -461,7 +461,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "TC42",
-    name: "TC42 - NÓN TCAPS ĐEN",
+    name: "TC42 - NÓN TCAPS",
     line: "", style: "streetwear", color: "",
     price: 130000, priceBundle: 130000,
     badge: null,
@@ -480,7 +480,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "TC41",
-    name: "TC41 - NÓN TCAPSPL ĐEN",
+    name: "TC41 - NÓN TCAPSPL",
     line: "", style: "streetwear", color: "",
     price: 160000, priceBundle: 160000,
     badge: null,
@@ -499,7 +499,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "TC39",
-    name: "TC39 - NÓN THE WARRIORS ĐEN",
+    name: "TC39 - NÓN THE WARRIORS",
     line: "", style: "streetwear", color: "",
     price: 130000, priceBundle: 130000,
     badge: null,
@@ -520,7 +520,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "Combo CT1",
-    name: "CT1 - NÓN TCAPS ĐEN",
+    name: "CT1 - NÓN TCAPS",
     line: "", style: "minimal", color: "",
     price: 250000, priceBundle: 250000,
     badge: null,
