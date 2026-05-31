@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 const STATS = [
   { value: '150.000+', label: 'Nón đã bán' },
-  { value: '59',       label: 'Mẫu nón'    },
+  { value: '25',       label: 'Mẫu nón'    },
   { value: '4.8/5',    label: 'Đánh giá'   },
   { value: '24/7',     label: 'Phục vụ'    },
 ]
@@ -77,7 +77,7 @@ const CHANNELS = [
 ]
 
 const ORDER_STEPS = [
-  { n: '1', title: 'Chọn nón',         desc: 'Duyệt 59 mẫu nón TCAPS qua catalog hoặc thử AI để biết nón nào hợp mặt bạn.' },
+  { n: '1', title: 'Chọn nón',         desc: 'Duyệt 25 mẫu nón TCAPS qua catalog hoặc thử AI để biết nón nào hợp mặt bạn.' },
   { n: '2', title: 'Đặt hàng',         desc: 'Điền họ tên, SĐT, địa chỉ qua web / nhắn Zalo / Messenger / TikTok Shop.' },
   { n: '3', title: 'TCAPS xác nhận',   desc: 'Nhân viên gọi xác nhận đơn trong vài phút — confirm size, màu, địa chỉ.' },
   { n: '4', title: 'Nhận hàng — COD',  desc: 'Ship toàn quốc 2-4 ngày. Thanh toán khi nhận hàng (COD). Bảo hành 30 ngày.' },
@@ -195,7 +195,7 @@ export default function AboutPage() {
               href="/catalog"
               className="inline-flex items-center gap-2 h-11 px-5 rounded-xl border border-[#C9A84C]/40 hover:bg-[#C9A84C]/10 text-[#C9A84C] text-xs font-bold uppercase tracking-widest transition-colors"
             >
-              Xem toàn bộ 59 mẫu
+              Xem toàn bộ 25 mẫu
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                 <path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
