@@ -186,7 +186,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "Nón TC59",
-    name: "TC59 - NÓN LẠC HỒNG",
+    name: "TC59 - NÓN LẠC VIỆT",
     line: "", style: "streetwear", color: "",
     price: 130000, priceBundle: 130000,
     badge: null,

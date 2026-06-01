@@ -53,17 +53,6 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   // image is sent — no gallery padding — which keeps the customer's face.
   TC39: { maxRefImages: 1 },
 
-  // TC59 NÓN LẠC HỒNG — two issues:
-  //   1. Gallery is single-model close-ups (same drift as TC39).
-  //   2. The name contains "HỒNG" which the colour detector matches as
-  //      PINK, but "LẠC HỒNG" is a Vietnamese proper noun (cultural
-  //      reference, not a colour) and the cap is actually BLACK.
-  // Cap refs to 1 + force the colour lock to BLACK.
-  TC59: { maxRefImages: 1, colorOverride: 'BLACK' },
-  // Pancake parent SKU is "Nón TC59" (whitespace + diacritic) — the
-  // catalog row that powers the try-on is keyed by that exact string.
-  'Nón TC59': { maxRefImages: 1, colorOverride: 'BLACK' },
-
   // TC42 NÓN TCAPS — same face-leak as TC39/TC59. Gallery dominated by
   // single-model close-ups, output came back with a different (more
   // model-like) face every time. Drop refs to 1.
