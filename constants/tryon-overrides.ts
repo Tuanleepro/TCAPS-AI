@@ -53,10 +53,14 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   // image is sent — no gallery padding — which keeps the customer's face.
   TC39: { maxRefImages: 1 },
 
-  // TC42 NÓN TCAPS — same face-leak as TC39/TC59. Gallery dominated by
-  // single-model close-ups, output came back with a different (more
-  // model-like) face every time. Drop refs to 1.
-  TC42: { maxRefImages: 1 },
+  // TC42 NÓN TCAPS — face-leak SKU. Started at maxRefImages: 1 to kill
+  // the face drift, but at 1 ref the cap design simplified (Gemini
+  // invented a different patch graphic because it only saw one angle).
+  // Bumped to 2: variant image + one extra angle. Gives the cap design
+  // a second lock-in without enough face votes to drift the identity.
+  // If face starts drifting again drop back to 1; if the cap design
+  // is still wrong push to 3.
+  TC42: { maxRefImages: 2 },
 
   // CT1 NÓN TCAPS — catalog thumbnail features the "Đen / Kết" variant.
   // When the customer taps "THỬ NÓN" from the catalog the try-on should
