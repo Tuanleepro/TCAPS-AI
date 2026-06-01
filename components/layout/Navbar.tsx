@@ -6,6 +6,7 @@ import { useMemo, useRef, useState } from 'react'
 import { PRODUCTS } from '@/constants/products'
 import { proxyImg } from '@/lib/img'
 import { TcapsLogo } from '@/components/icons/TcapsLogo'
+import { CartButton } from '@/components/cart/CartButton'
 
 const NAV_LINKS = [
   { href: '/',         label: 'TRANG CHỦ' },
@@ -59,9 +60,14 @@ export function Navbar() {
         </div>
 
         {/* Right side */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Hat search (desktop) */}
           <HatSearch className="hidden lg:block w-56" />
+
+          {/* Cart — visible on every breakpoint so customers always see their
+              running total. Mobile keeps it next to the hamburger; desktop
+              sits before the AI Try-On pill. */}
+          <CartButton />
 
           {/* Try-On CTA */}
           <Link

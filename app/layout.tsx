@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter, Bungee } from 'next/font/google'
 import { FloatingContact } from '@/components/layout/FloatingContact'
+import { CartProvider } from '@/lib/cart/CartContext'
+import { CartDrawer } from '@/components/cart/CartDrawer'
+import { CheckoutModal } from '@/components/cart/CheckoutModal'
 import './globals.css'
 
 // Body / UI — Inter has full, correct Vietnamese diacritics and reads cleanly.
@@ -38,8 +41,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="vi" className={`${inter.variable} ${bungee.variable}`}>
       <body className="antialiased bg-[#0A0A0A] text-[#F5F5F5]">
-        {children}
-        <FloatingContact />
+        <CartProvider>
+          {children}
+          <FloatingContact />
+          <CartDrawer />
+          <CheckoutModal />
+        </CartProvider>
       </body>
     </html>
   )

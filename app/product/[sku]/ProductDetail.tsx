@@ -9,6 +9,7 @@ import { BanIcon, CapIcon, CartIcon, ChatIcon, GiftIcon, RefreshIcon, SparkleIco
 import { proxyImg } from '@/lib/img'
 import { rankCompatibility } from '@/lib/recommendation-engine'
 import { PRODUCTS } from '@/constants/products'
+import { cartKey, useCart } from '@/lib/cart/CartContext'
 
 const fmt = (n: number) => `${Math.round(n).toLocaleString('vi-VN')}₫`
 
@@ -26,6 +27,7 @@ export function ProductDetail({ product }: { product: Product }) {
     variants[0] ? variantKey(variants[0]) : '',
   )
   const [orderOpen, setOrderOpen] = useState(false)
+  const { addItem, openDrawer } = useCart()
 
   const selectedVariant = useMemo(
     () => variants.find(v => variantKey(v) === selectedVariantId) ?? null,
@@ -310,11 +312,36 @@ export function ProductDetail({ product }: { product: Product }) {
               before the CTAs. Reads as a reference, not a primary fact. */}
           <p className="text-[10.5px] text-[#6B6B6B] font-mono">Mã sản phẩm: {product.sku}</p>
 
-          {/* CTAs — MUA NGAY disabled when the selected variant is out of
-              stock (greyed + 'TẠM HẾT HÀNG' label). THỬ NÓN AI stays enabled
-              because customers can preview any variant with AI regardless
-              of stock. */}
-          <div className="grid grid-cols-2 gap-3 mt-3">
+          {/* CTAs — Three actions:
+              1. THÊM VÀO GIỎ : add the picked variant to the cart, drawer
+                 slides open so the customer sees the running total + can
+                 keep browsing for combo savings.
+              2. MUA NGAY     : the original instant-buy modal (single product
+                 + upsell). Disabled when the variant is out of stock.
+              3. THỬ NÓN AI   : virtual try-on — always enabled, customers
+                 can preview any variant regardless of stock. */}
+          <button
+            type="button"
+            onClick={() => {
+              const vSku = selectedVariant?.sku
+              const variantName = selectedVariant?.name
+              addItem({
+                key:        cartKey(product.sku, vSku),
+                sku:        product.sku,
+                variantSku: vSku,
+                name:       variantName ? `${product.name} (${variantName})` : product.name,
+                image:      selectedVariant?.image || product.imageUrl,
+                unitPrice:  currentPrice,
+              })
+              openDrawer()
+            }}
+            className="mt-3 h-12 py-3 rounded-xl border-2 border-[#C9A84C] text-[#C9A84C] hover:bg-[#C9A84C]/10 active:bg-[#C9A84C]/15 font-black text-sm tracking-wider flex items-center justify-center gap-2 transition-all"
+          >
+            <CartIcon size={16} />
+            <span>THÊM VÀO GIỎ</span>
+          </button>
+
+          <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => setOrderOpen(true)}
