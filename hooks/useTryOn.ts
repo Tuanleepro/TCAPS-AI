@@ -28,10 +28,36 @@ function nextStep(hasFace: boolean, hasHat: boolean): TryOnStep {
   return 'idle'
 }
 
-// Gemini can hiccup (rate-limit, or returns text instead of an image). Auto-retry
-// the call a few times before surfacing an error — retry, not silent fallback.
-const MAX_ATTEMPTS   = 3
-const RETRY_DELAY_MS = 7000
+// Gemini hiccups in two flavours: a generic network/text-instead-of-image
+// glitch (rare, retry quickly), and a "high demand" capacity error from
+// the upstream model (more common at peak hours — needs to wait it out).
+// We use ONE retry policy for both: exponential backoff over 3 retries
+// = 4 total attempts. The schedule below comes from the owner's spec
+// (first retry 5s, then 15s, then 30s).
+const RETRY_BACKOFF_MS = [5_000, 15_000, 30_000] as const
+const MAX_ATTEMPTS     = RETRY_BACKOFF_MS.length + 1   // 1 initial + 3 retries
+
+// "High demand" detector. Gemini surfaces capacity issues a few different
+// ways depending on the upstream region — match all of them so the retry
+// log correctly labels WHY we're waiting. Classifying it explicitly makes
+// the console reading actionable (retry warranted) instead of confusing
+// (bug?).
+const HIGH_DEMAND_PATTERNS: readonly RegExp[] = [
+  /high demand/i,
+  /currently experiencing/i,
+  /try again later/i,
+  /overloaded/i,
+  /rate.?limit/i,
+  /quota/i,
+  /resource[_ ]?exhausted/i,
+  /unavailable/i,
+  /\b503\b/,
+  /\b429\b/,
+]
+
+function classifyRetryReason(msg: string): 'high-demand' | 'other' {
+  return HIGH_DEMAND_PATTERNS.some(re => re.test(msg)) ? 'high-demand' : 'other'
+}
 
 // ── Image payload limits ─────────────────────────────────────
 // Keep the PERSON photo at full quality. Only downscale when the longest side
@@ -42,6 +68,25 @@ const ORIGINAL_MAX_BYTES  = 10 * 1024 * 1024   // send original as-is up to ~10M
 const MAX_SEND_CHARS      = 15 * 1024 * 1024   // hard cap for the data URL we POST
 const MAX_CAP_IMAGES      = 6                  // cap angles sent to Gemini per try-on (bumped 4→6 after owner added multi-angle photos in Pancake)
 
+
+/**
+ * Sleep `ms`, but resolve early (returning `true`) if `abortRef.current`
+ * flips to true mid-wait. Polls every 250ms — plenty responsive for the
+ * 5–30s backoffs we use here. Without this, hitting "reset" during a 30s
+ * Gemini backoff would still fire one more retry before the abort took
+ * effect.
+ */
+function abortableSleep(ms: number, abortRef: { current: boolean }): Promise<boolean> {
+  return new Promise(resolve => {
+    const deadline = Date.now() + ms
+    const tick = () => {
+      if (abortRef.current) return resolve(true)
+      if (Date.now() >= deadline) return resolve(false)
+      setTimeout(tick, Math.min(250, deadline - Date.now()))
+    }
+    tick()
+  })
+}
 
 function getImageDims(file: File): Promise<{ width: number; height: number }> {
   return new Promise((res, rej) => {
@@ -268,7 +313,13 @@ export function useTryOn() {
 
       for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         if (abortRef.current) return
-        console.log(`[TryOn] ▶ Gemini try-on (attempt ${attempt}/${MAX_ATTEMPTS})`,
+        // Idempotency guard — if a previous attempt already produced a
+        // result (e.g. attempt 1 succeeded but a downstream branch hadn't
+        // hit `break` for some reason), don't re-submit the same prompt.
+        // Mirrors the "không tạo prompt trùng lặp nếu video đã render"
+        // requirement from the retry spec.
+        if (data?.resultUrl) break
+        console.log(`[TryOn] ▶ Gemini try-on (attempt ${attempt}/${MAX_ATTEMPTS}) at ${new Date().toISOString()}`,
           { personKB: dataUrlKB(person.dataUrl), capRefs: garments.length })
 
         const tStart = Date.now()
@@ -304,10 +355,25 @@ export function useTryOn() {
           break
         } catch (e) {
           lastErr = e instanceof Error ? e.message : String(e)
-          console.warn(`[TryOn] ✗ attempt ${attempt}/${MAX_ATTEMPTS} failed: ${lastErr}`)
-          if (attempt < MAX_ATTEMPTS) {
-            console.log(`[TryOn] ⏳ retry in ${RETRY_DELAY_MS / 1000}s…`)
-            await new Promise(r => setTimeout(r, RETRY_DELAY_MS))
+          const reason = classifyRetryReason(lastErr)
+          console.warn(`[TryOn] ✗ attempt ${attempt}/${MAX_ATTEMPTS} failed (${reason}):`, lastErr)
+          // No more retries left → exit the loop, the caller throws below.
+          if (attempt >= MAX_ATTEMPTS) break
+          // Pick the backoff slot for THIS retry (attempt 1 fail → slot 0 = 5s).
+          const delayMs = RETRY_BACKOFF_MS[attempt - 1]
+          const startedAt = new Date()
+          const resumeAt  = new Date(startedAt.getTime() + delayMs)
+          console.log(
+            `[TryOn] ⏳ backoff retry ${attempt + 1}/${MAX_ATTEMPTS} ` +
+            `in ${delayMs / 1000}s · reason=${reason} · ` +
+            `at=${startedAt.toISOString()} · resume=${resumeAt.toISOString()}`,
+          )
+          // Wait, but bail early if the user cancelled mid-backoff (clicked
+          // reset, navigated away). abortRef is set by reset()/unmount.
+          const cancelled = await abortableSleep(delayMs, abortRef)
+          if (cancelled || abortRef.current) {
+            console.log('[TryOn] ⏹ retry cancelled by user')
+            return
           }
         }
       }
