@@ -5,6 +5,7 @@ import type { TryOnState, TryOnStep } from '@/types'
 import type { QcScore } from '@/lib/gemini/qcScore'
 import { PRODUCT_MAP } from '@/constants/products'
 import { detectColor, detectBrim, filterImagesByVariant, type BrimShape } from '@/lib/products/color'
+import { getTryOnMaxRefs } from '@/constants/tryon-overrides'
 
 const INIT: TryOnState = {
   step: 'idle',
@@ -239,15 +240,19 @@ export function useTryOn() {
         : product
           ? filterImagesByVariant(product, detectedColor, detectedBrim)
           : []
+      // Per-SKU override: some products (TC39 etc.) have full-face model
+      // galleries that bleed identity through to the customer. The override
+      // file caps refs to 1 for those SKUs — see constants/tryon-overrides.ts.
+      const maxRefs = getTryOnMaxRefs(product?.sku, MAX_CAP_IMAGES)
       const garmentUrls = sourceImages
         .filter(u => /^https?:\/\//.test(u))
-        .slice(0, MAX_CAP_IMAGES)
+        .slice(0, maxRefs)
       const garments: string[] = garmentUrls.length ? [] : [await fileToDataUrl(hatFile)]
       if (abortRef.current) return
 
       console.log('[TryOn] PERSON original :', `${person.origWidth}×${person.origHeight}px`, `${(person.origBytes / 1024).toFixed(0)}KB`)
       console.log('[TryOn] PERSON sent     :', `${person.sentWidth}×${person.sentHeight}px`, `${dataUrlKB(person.dataUrl)}KB`, `(${person.mode})`)
-      console.log('[TryOn] CAP references  :', garmentUrls.length ? `${garmentUrls.length} url(s) (server-fetched)` : '1 uploaded file')
+      console.log('[TryOn] CAP references  :', garmentUrls.length ? `${garmentUrls.length} url(s) (server-fetched, cap=${maxRefs})` : '1 uploaded file')
       console.log('[TryOn] CAP variant pin :', pinnedVariant ? `${pinnedVariant.name ?? pinnedVariant.sku}` : 'none — using gallery filter')
       console.log('[TryOn] CAP colour-lock :', detectedColor ? `${detectedColor.vn} → ${detectedColor.en}` : 'none detected (no name colour token)')
       console.log('[TryOn] CAP brim-lock   :', `${detectedBrim} (${detectedBrim === 'FLAT' ? 'NGANG' : 'CONG'})`)
