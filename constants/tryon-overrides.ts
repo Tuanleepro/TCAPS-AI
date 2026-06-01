@@ -64,6 +64,11 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   // catalog row that powers the try-on is keyed by that exact string.
   'Nón TC59': { maxRefImages: 1, colorOverride: 'BLACK' },
 
+  // TC42 NÓN TCAPS — same face-leak as TC39/TC59. Gallery dominated by
+  // single-model close-ups, output came back with a different (more
+  // model-like) face every time. Drop refs to 1.
+  TC42: { maxRefImages: 1 },
+
   // CT1 NÓN TCAPS — catalog thumbnail features the "Đen / Kết" variant.
   // When the customer taps "THỬ NÓN" from the catalog the try-on should
   // open on that variant by default (instead of the first variant in
