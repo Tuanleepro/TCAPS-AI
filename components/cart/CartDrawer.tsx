@@ -163,7 +163,7 @@ function Row({
       <div className="w-16 h-16 rounded-lg border border-[#1E1E1E] bg-[#0A0A0A] overflow-hidden shrink-0">
         {image
           // eslint-disable-next-line @next/next/no-img-element
-          ? <img src={proxyImg(image, 192)} alt={name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+          ? <img src={proxyImg(image, 128)} alt={name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
           : <div className="w-full h-full flex items-center justify-center text-[#4A4A4A]">🧢</div>}
       </div>
       <div className="flex-1 min-w-0 flex flex-col">
