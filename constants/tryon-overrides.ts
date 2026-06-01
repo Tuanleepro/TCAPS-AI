@@ -23,8 +23,22 @@
 // This file is NOT touched by scripts/pancake-scrape.mjs — it's the
 // owner-curated companion to products.ts.
 
+/** Colour tokens the COLOUR LOCK sentence understands. Must match the `en`
+ * values in lib/products/color.ts so the prompt reads naturally. */
+export type ColorOverride =
+  | 'BLACK' | 'WHITE' | 'SILVER' | 'GOLD'
+  | 'RED'   | 'BLUE'  | 'PINK'   | 'BROWN' | 'GRAY' | 'CREAM' | 'BEIGE'
+
 export interface TryOnOverride {
+  /** Number of reference cap photos to send to Gemini (default = global
+   * MAX_CAP_IMAGES). Lower for face-leak SKUs. */
   maxRefImages?: number
+  /** Force the COLOUR LOCK sent to Gemini. Use when the product name
+   * contains a colour token that's actually a proper noun (e.g.
+   * "LẠC HỒNG" matches HỒNG → PINK, but the cap is black). Set `null`
+   * to SKIP the colour lock entirely when even a fixed value would
+   * mislead Gemini. Leave `undefined` to use auto-detect from the name. */
+  colorOverride?: ColorOverride | null
 }
 
 export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
@@ -34,18 +48,37 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   // image is sent — no gallery padding — which keeps the customer's face.
   TC39: { maxRefImages: 1 },
 
-  // TC59 NÓN LẠC HỒNG — same failure mode as TC39: the multi-angle
-  // gallery is dominated by a single model facing camera, and the result
-  // came out as a CGI-rendered face instead of the customer's. Drop refs
-  // to 1 (pinned variant only).
-  TC59: { maxRefImages: 1 },
+  // TC59 NÓN LẠC HỒNG — two issues:
+  //   1. Gallery is single-model close-ups (same drift as TC39).
+  //   2. The name contains "HỒNG" which the colour detector matches as
+  //      PINK, but "LẠC HỒNG" is a Vietnamese proper noun (cultural
+  //      reference, not a colour) and the cap is actually BLACK.
+  // Cap refs to 1 + force the colour lock to BLACK.
+  TC59: { maxRefImages: 1, colorOverride: 'BLACK' },
   // Pancake parent SKU is "Nón TC59" (whitespace + diacritic) — the
   // catalog row that powers the try-on is keyed by that exact string.
-  'Nón TC59': { maxRefImages: 1 },
+  'Nón TC59': { maxRefImages: 1, colorOverride: 'BLACK' },
 }
 
 export function getTryOnMaxRefs(sku: string | undefined, fallback: number): number {
   if (!sku) return fallback
   const ov = TRYON_OVERRIDES[sku]?.maxRefImages
   return typeof ov === 'number' && ov > 0 ? ov : fallback
+}
+
+/** Resolve the colour-lock value for a given SKU. Tri-state result:
+ *  - `string` — owner-forced colour, override the auto-detected value
+ *  - `null`   — owner explicitly said "no colour lock"
+ *  - `undefined` — no override, fall back to auto-detect
+ */
+export function getTryOnColorOverride(
+  sku: string | undefined,
+): ColorOverride | null | undefined {
+  if (!sku) return undefined
+  const ov = TRYON_OVERRIDES[sku]
+  if (!ov) return undefined
+  // 'colorOverride' present but `null` → explicit skip.
+  // 'colorOverride' present and a string → explicit force.
+  // 'colorOverride' absent → no opinion.
+  return 'colorOverride' in ov ? ov.colorOverride : undefined
 }

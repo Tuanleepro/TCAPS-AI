@@ -5,7 +5,7 @@ import type { TryOnState, TryOnStep } from '@/types'
 import type { QcScore } from '@/lib/gemini/qcScore'
 import { PRODUCT_MAP } from '@/constants/products'
 import { detectColor, detectBrim, filterImagesByVariant, type BrimShape } from '@/lib/products/color'
-import { getTryOnMaxRefs } from '@/constants/tryon-overrides'
+import { getTryOnColorOverride, getTryOnMaxRefs } from '@/constants/tryon-overrides'
 
 const INIT: TryOnState = {
   step: 'idle',
@@ -268,7 +268,17 @@ export function useTryOn() {
       const lockName = pinnedVariant?.name
         ? `${product?.name ?? ''} ${pinnedVariant.name}`
         : product?.name
-      const detectedColor = lockName ? detectColor(lockName) : null
+      // Per-SKU colour override beats auto-detect. Some product names
+      // contain a Vietnamese word that LOOKS like a colour (e.g. "LẠC
+      // HỒNG" → matches HỒNG → PINK) but the cap is actually a different
+      // colour. The override file (tryon-overrides.ts) lets the owner
+      // force the correct value, or skip the lock entirely (null).
+      const autoColor = lockName ? detectColor(lockName) : null
+      const colorOv = getTryOnColorOverride(product?.sku)
+      const detectedColor =
+        colorOv === undefined ? autoColor               // no opinion → auto
+        : colorOv === null    ? null                    // explicit skip
+        :                       { vn: colorOv, en: colorOv }
       const detectedBrim: BrimShape = (lockName ? detectBrim(lockName) : null) ?? 'FLAT'
 
       // Source images: when a variant is pinned, lead with the variant photo
@@ -299,7 +309,10 @@ export function useTryOn() {
       console.log('[TryOn] PERSON sent     :', `${person.sentWidth}×${person.sentHeight}px`, `${dataUrlKB(person.dataUrl)}KB`, `(${person.mode})`)
       console.log('[TryOn] CAP references  :', garmentUrls.length ? `${garmentUrls.length} url(s) (server-fetched, cap=${maxRefs})` : '1 uploaded file')
       console.log('[TryOn] CAP variant pin :', pinnedVariant ? `${pinnedVariant.name ?? pinnedVariant.sku}` : 'none — using gallery filter')
-      console.log('[TryOn] CAP colour-lock :', detectedColor ? `${detectedColor.vn} → ${detectedColor.en}` : 'none detected (no name colour token)')
+      console.log('[TryOn] CAP colour-lock :',
+        detectedColor
+          ? `${detectedColor.en}${colorOv !== undefined ? ' (override)' : ' (auto)'}`
+          : (colorOv === null ? 'none (override skip)' : 'none detected (no name colour token)'))
       console.log('[TryOn] CAP brim-lock   :', `${detectedBrim} (${detectedBrim === 'FLAT' ? 'NGANG' : 'CONG'})`)
 
       type GeminiResp = {
