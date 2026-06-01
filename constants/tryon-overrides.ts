@@ -54,14 +54,15 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   TC39: { maxRefImages: 1 },
 
   // TC59 NÓN LẠC VIỆT — face-leak SKU. Calibration journey:
-  //   1 ref → mặt giữ được nhưng nón không bám đầu (Gemini chỉ thấy
-  //           ảnh product-shot của variant, không có reference cho fit).
-  //   2 refs → variant image + 1 gallery angle (thường có model đội nón)
-  //            → Gemini học được fit mà chưa đủ face vote để leak.
-  // Watch for face drift returning; if it does, drop back to 1 and the
-  // floating-cap is the cost of identity preservation.
-  TC59: { maxRefImages: 2 },
-  'Nón TC59': { maxRefImages: 2 },
+  //   1 ref  → mặt giữ được nhưng nón lơ lửng trên đầu.
+  //   2 refs → nón bám đầu nhưng detail bên hông sai (Gemini chưa thấy
+  //            side angle).
+  //   3 refs → variant + 2 gallery angles (thường gồm front + side).
+  //            Cap detail đầy đủ hơn, vẫn dưới ngưỡng face-leak.
+  // Watch for face drift; if it returns, drop back to 2 and accept the
+  // side-detail simplification as the cost of identity preservation.
+  TC59: { maxRefImages: 3 },
+  'Nón TC59': { maxRefImages: 3 },
 
   // TC42 NÓN TCAPS — face-leak SKU. Started at maxRefImages: 1 to kill
   // the face drift, but at 1 ref the cap design simplified (Gemini
