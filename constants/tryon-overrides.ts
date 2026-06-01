@@ -53,6 +53,14 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   // image is sent — no gallery padding — which keeps the customer's face.
   TC39: { maxRefImages: 1 },
 
+  // TC59 NÓN LẠC VIỆT — face-leak SKU. After the colour issue was fixed
+  // by renaming away from "LẠC HỒNG", the multi-angle gallery still made
+  // Gemini paint a different (more model-like) face on the customer.
+  // Dropping refs to 1 (variant only) keeps the customer's selfie. If the
+  // cap design starts simplifying, bump to 2 like TC42.
+  TC59: { maxRefImages: 1 },
+  'Nón TC59': { maxRefImages: 1 },
+
   // TC42 NÓN TCAPS — face-leak SKU. Started at maxRefImages: 1 to kill
   // the face drift, but at 1 ref the cap design simplified (Gemini
   // invented a different patch graphic because it only saw one angle).
