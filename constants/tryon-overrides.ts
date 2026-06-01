@@ -33,6 +33,15 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   // customer's selfie. Capping refs at 1 means only the pinned variant
   // image is sent — no gallery padding — which keeps the customer's face.
   TC39: { maxRefImages: 1 },
+
+  // TC59 NÓN LẠC HỒNG — same failure mode as TC39: the multi-angle
+  // gallery is dominated by a single model facing camera, and the result
+  // came out as a CGI-rendered face instead of the customer's. Drop refs
+  // to 1 (pinned variant only).
+  TC59: { maxRefImages: 1 },
+  // Pancake parent SKU is "Nón TC59" (whitespace + diacritic) — the
+  // catalog row that powers the try-on is keyed by that exact string.
+  'Nón TC59': { maxRefImages: 1 },
 }
 
 export function getTryOnMaxRefs(sku: string | undefined, fallback: number): number {
