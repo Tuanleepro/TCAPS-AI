@@ -39,6 +39,11 @@ export interface TryOnOverride {
    * to SKIP the colour lock entirely when even a fixed value would
    * mislead Gemini. Leave `undefined` to use auto-detect from the name. */
   colorOverride?: ColorOverride | null
+  /** Default variant SKU to pre-select when the customer enters the
+   * try-on flow from a "deep" link (catalog "THỬ NÓN" button, search
+   * dropdown). The product detail page IGNORES this — it always uses
+   * the variant the customer manually picked there. */
+  defaultTryOnVariant?: string
 }
 
 export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
@@ -58,12 +63,27 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   // Pancake parent SKU is "Nón TC59" (whitespace + diacritic) — the
   // catalog row that powers the try-on is keyed by that exact string.
   'Nón TC59': { maxRefImages: 1, colorOverride: 'BLACK' },
+
+  // CT1 NÓN TCAPS — catalog thumbnail features the "Đen / Kết" variant.
+  // When the customer taps "THỬ NÓN" from the catalog the try-on should
+  // open on that variant by default (instead of the first variant in
+  // the array, which is "Đen / COMBO 2 NÓN" — that combo doesn't make
+  // sense as a single try-on subject).
+  'Combo CT1': { defaultTryOnVariant: 'COMBOCT1DENKET' },
 }
 
 export function getTryOnMaxRefs(sku: string | undefined, fallback: number): number {
   if (!sku) return fallback
   const ov = TRYON_OVERRIDES[sku]?.maxRefImages
   return typeof ov === 'number' && ov > 0 ? ov : fallback
+}
+
+/** Resolve the default try-on variant SKU for a deep-link entry point
+ *  (catalog "THỬ NÓN" button, navbar search). Returns the variant SKU
+ *  to pre-select, or `undefined` to fall back to the first variant. */
+export function getDefaultTryOnVariant(sku: string | undefined): string | undefined {
+  if (!sku) return undefined
+  return TRYON_OVERRIDES[sku]?.defaultTryOnVariant
 }
 
 /** Resolve the colour-lock value for a given SKU. Tri-state result:

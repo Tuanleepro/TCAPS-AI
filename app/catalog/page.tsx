@@ -4,6 +4,7 @@ import { Navbar } from '@/components/layout/Navbar'
 import { CartIcon, SparkleIcon } from '@/components/ui/icons'
 import { PRODUCTS } from '@/constants/products'
 import { proxyImg } from '@/lib/img'
+import { getDefaultTryOnVariant } from '@/constants/tryon-overrides'
 
 const formatVnd = (n: number) => `${Math.round(n).toLocaleString('vi-VN')}₫`
 
@@ -80,14 +81,25 @@ export default function CatalogPage() {
                   <CartIcon size={14} />
                   MUA
                 </Link>
-                <Link
-                  href={`/try-on?sku=${encodeURIComponent(h.sku)}`}
-                  aria-label={`Thử nón ${h.name}`}
-                  className="h-10 rounded-lg border border-[#C9A84C]/60 hover:bg-[#C9A84C]/10 text-[#C9A84C] text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors"
-                >
-                  <SparkleIcon size={14} />
-                  THỬ NÓN
-                </Link>
+                {(() => {
+                  // Per-SKU default try-on variant (e.g. CT1 opens on "Đen / Kết"
+                  // instead of the first variant in the array). Falls back to no
+                  // `v=` so the try-on page picks the first variant as before.
+                  const v = getDefaultTryOnVariant(h.sku)
+                  const href = v
+                    ? `/try-on?sku=${encodeURIComponent(h.sku)}&v=${encodeURIComponent(v)}`
+                    : `/try-on?sku=${encodeURIComponent(h.sku)}`
+                  return (
+                    <Link
+                      href={href}
+                      aria-label={`Thử nón ${h.name}`}
+                      className="h-10 rounded-lg border border-[#C9A84C]/60 hover:bg-[#C9A84C]/10 text-[#C9A84C] text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <SparkleIcon size={14} />
+                      THỬ NÓN
+                    </Link>
+                  )
+                })()}
               </div>
             </div>
           ))}
