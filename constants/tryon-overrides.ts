@@ -61,14 +61,21 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   TC59: { maxRefImages: 2 },
   'Nón TC59': { maxRefImages: 2 },
 
-  // TC42 NÓN TCAPS — face-leak SKU. Started at maxRefImages: 1 to kill
-  // the face drift, but at 1 ref the cap design simplified (Gemini
-  // invented a different patch graphic because it only saw one angle).
-  // Bumped to 2: variant image + one extra angle. Gives the cap design
-  // a second lock-in without enough face votes to drift the identity.
-  // If face starts drifting again drop back to 1; if the cap design
-  // is still wrong push to 3.
-  TC42: { maxRefImages: 2 },
+  // TC42 NÓN TCAPS — face-leak SKU. Tried 2 refs for cap-design
+  // fidelity but the face leaked again, so identity wins: locked at 1.
+  TC42: { maxRefImages: 1 },
+
+  // ── Batch (2026-06-01) — 5 more SKUs where the same model-gallery
+  // ── pattern caused the customer's face to be replaced. Same 1-ref
+  // ── prescription. Bump per-SKU later if any of them simplifies the
+  // ── cap design too much.
+  TC43:        { maxRefImages: 1 },
+  'NÓN TC43':  { maxRefImages: 1 },   // actual SKU key in products.ts
+  TC46:        { maxRefImages: 1 },
+  TC49:        { maxRefImages: 1 },
+  'CB TC49':   { maxRefImages: 1 },   // actual SKU key in products.ts
+  TC61:        { maxRefImages: 1 },
+  TC63:        { maxRefImages: 1 },
 
   // CT1 NÓN TCAPS — catalog thumbnail features the "Đen / Kết" variant.
   // When the customer taps "THỬ NÓN" from the catalog the try-on should
