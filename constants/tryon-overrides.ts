@@ -71,7 +71,7 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   'CB TC49':   { maxRefImages: 2 },   // actual SKU key in products.ts
   TC59:        { maxRefImages: 2 },
   'Nón TC59':  { maxRefImages: 2 },   // actual SKU key in products.ts
-  TC61:        { maxRefImages: 2 },
+  TC61:        { maxRefImages: 3 },   // owner bumped from 2 — cap detail was wrong at 2
   TC63:        { maxRefImages: 2 },
   TC68:        { maxRefImages: 2 },
 
