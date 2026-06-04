@@ -47,35 +47,32 @@ export interface TryOnOverride {
 }
 
 export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
-  // TC39 NÓN THE WARRIORS — every Pancake angle is the SAME model facing
-  // the camera, so Gemini learns her face as canonical and replaces the
-  // customer's selfie. Capping refs at 1 means only the pinned variant
-  // image is sent — no gallery padding — which keeps the customer's face.
-  TC39: { maxRefImages: 1 },
-
-  // TC59 NÓN LẠC VIỆT — face-leak SKU. Sweet spot is 2 (calibrated 2026-06-01):
-  //   1 ref  → mặt giữ nhưng nón lơ lửng trên đầu.
-  //   2 refs → mặt giữ + nón bám đầu, side detail giản lược 1 chút. ✓
-  //   3 refs → side detail đúng nhưng MẶT BỊ LEAK.
-  // Identity > side-detail fidelity — 2 is the locked answer for this SKU.
-  TC59: { maxRefImages: 2 },
-  'Nón TC59': { maxRefImages: 2 },
-
-  // TC42 NÓN TCAPS — face-leak SKU. Tried 2 refs for cap-design
-  // fidelity but the face leaked again, so identity wins: locked at 1.
-  TC42: { maxRefImages: 1 },
-
-  // ── Batch (2026-06-01) — 5 more SKUs where the same model-gallery
-  // ── pattern caused the customer's face to be replaced. Same 1-ref
-  // ── prescription. Bump per-SKU later if any of them simplifies the
-  // ── cap design too much.
-  TC43:        { maxRefImages: 1 },
-  'NÓN TC43':  { maxRefImages: 1 },   // actual SKU key in products.ts
-  TC46:        { maxRefImages: 1 },
-  TC49:        { maxRefImages: 1 },
-  'CB TC49':   { maxRefImages: 1 },   // actual SKU key in products.ts
-  TC61:        { maxRefImages: 1 },
-  TC63:        { maxRefImages: 1 },
+  // ── Face-leak SKUs — all locked at maxRefImages: 2 (owner decision
+  // ── 2026-06-01, batched bump from the previous 1-ref baseline).
+  //
+  // Background: the Pancake galleries for these products are dominated by
+  // close-ups of a single model. At the global 6-ref default the model's
+  // face bled through and replaced the customer's selfie. 1 ref killed
+  // identity drift but the cap simplified (TC59 had floating-cap, TC42
+  // lost patch detail). 2 refs is the middle ground: variant image +
+  // one gallery angle (usually a model-wearing shot) gives Gemini enough
+  // signal to seat + detail the cap without enough face votes to drift
+  // the identity.
+  //
+  // Watch each SKU individually after deploy — if any one of these starts
+  // drifting the face again, drop THAT entry back to 1 and accept the
+  // side-detail simplification as the cost of identity preservation.
+  TC39:        { maxRefImages: 2 },
+  TC42:        { maxRefImages: 2 },
+  TC43:        { maxRefImages: 2 },
+  'NÓN TC43':  { maxRefImages: 2 },   // actual SKU key in products.ts
+  TC46:        { maxRefImages: 2 },
+  TC49:        { maxRefImages: 2 },
+  'CB TC49':   { maxRefImages: 2 },   // actual SKU key in products.ts
+  TC59:        { maxRefImages: 2 },
+  'Nón TC59':  { maxRefImages: 2 },   // actual SKU key in products.ts
+  TC61:        { maxRefImages: 2 },
+  TC63:        { maxRefImages: 2 },
 
   // CT1 NÓN TCAPS — catalog thumbnail features the "Đen / Kết" variant.
   // When the customer taps "THỬ NÓN" from the catalog the try-on should
