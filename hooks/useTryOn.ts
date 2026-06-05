@@ -346,6 +346,11 @@ export function useTryOn() {
               productColor: detectedColor?.en ?? null,
               productName:  product?.name ?? null,
               productBrim:  detectedBrim,
+              // Attribution for the usage log — used by /admin/usage to
+              // break costs down by SKU and to see retry rates.
+              sku:          product?.sku ?? null,
+              variantSku:   pinnedVariant?.sku ?? pinnedVariant?.name ?? null,
+              attempt,
             }),
           })
           const d = await res.json() as GeminiResp

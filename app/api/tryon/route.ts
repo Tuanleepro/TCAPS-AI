@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { scoreTryOn, evaluateQc, QC_FAIL_MESSAGE, type QcScore } from '@/lib/gemini/qcScore'
+import { appendUsageLog, type UsageLogEntry } from '@/lib/usage/log'
 
 export const maxDuration = 60
 export const runtime = 'nodejs'
@@ -224,13 +225,51 @@ async function runGeminiTryOn(person: string, garments: string[], prompt: string
 // Returns { resultUrl, elapsedMs, ... } synchronously, or { error } on failure.
 // ─────────────────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
+  // Client IP — Vercel proxies real IP through x-forwarded-for; fall back to
+  // x-real-ip / 'unknown'. The first hop is the customer; the rest are
+  // Vercel/CDN edge IPs.
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    ?? req.headers.get('x-real-ip')?.trim()
+    ?? 'unknown'
+
+  // Capture the logging shape so every exit point (success / QC-fail / error)
+  // can share one writer. We mutate as we go and call `flushLog()` at the end.
+  const logBase: Partial<UsageLogEntry> = {
+    timestamp: new Date().toISOString(),
+    ip,
+    model:    GEMINI_MODEL,
+    attempt:  1,
+    capRefs:  0,
+    numInputImages:  0,
+    numOutputImages: 0,
+    promptChars: 0,
+    outputChars: 0,
+    elapsedMs:   0,
+  }
+  const flushLog = (extra: Partial<UsageLogEntry>) => {
+    const entry = { ...logBase, ...extra } as UsageLogEntry
+    appendUsageLog(entry).catch(e =>
+      console.warn('[usage] log append failed (fail-open):', e instanceof Error ? e.message : e),
+    )
+  }
+
   try {
     const body = await req.json().catch(() => null) as
       | { person?: unknown; garment?: unknown; garments?: unknown; garmentUrls?: unknown; prompt?: unknown
           personWidth?: unknown; personHeight?: unknown
-          productColor?: unknown; productName?: unknown; productBrim?: unknown }
+          productColor?: unknown; productName?: unknown; productBrim?: unknown
+          sku?: unknown; variantSku?: unknown; attempt?: unknown }
       | null
-    if (!body) return NextResponse.json({ error: 'Body JSON không hợp lệ' }, { status: 400 })
+    if (!body) {
+      flushLog({ status: 'error', error: 'Body JSON không hợp lệ' })
+      return NextResponse.json({ error: 'Body JSON không hợp lệ' }, { status: 400 })
+    }
+    // Attribution metadata — sent by useTryOn so /admin/usage can break costs
+    // down per-SKU and we can see retry rates.
+    if (typeof body.sku        === 'string') logBase.sku        = body.sku
+    if (typeof body.variantSku === 'string') logBase.variantSku = body.variantSku
+    if (typeof body.attempt    === 'number') logBase.attempt    = body.attempt
 
     const person  = assertDataUrl(body.person, 'Ảnh selfie')
 
@@ -252,7 +291,12 @@ export async function POST(req: NextRequest) {
         : (body.garment != null ? [body.garment] : [])
       garments = rawGarments.map((g, i) => assertDataUrl(g, `Ảnh nón ${i + 1}`))
     }
-    if (!garments.length) return NextResponse.json({ error: 'Thiếu ảnh nón để thử' }, { status: 400 })
+    if (!garments.length) {
+      flushLog({ status: 'error', error: 'Thiếu ảnh nón để thử' })
+      return NextResponse.json({ error: 'Thiếu ảnh nón để thử' }, { status: 400 })
+    }
+    logBase.capRefs        = garments.length
+    logBase.numInputImages = 1 + garments.length     // 1 selfie + N cap refs
     const basePrompt =
       typeof body.prompt === 'string' && body.prompt.trim() ? body.prompt.trim() : TRYON_PROMPT
 
@@ -288,6 +332,7 @@ export async function POST(req: NextRequest) {
       : ''
 
     const prompt = basePrompt + colourLock + brimLock
+    logBase.promptChars = prompt.length
 
     // ── Exact size/dimensions of the PERSON image actually sent to Gemini ──
     const personWidth  = typeof body.personWidth  === 'number' ? body.personWidth  : null
@@ -300,6 +345,12 @@ export async function POST(req: NextRequest) {
     console.log('CAP_BRIM_LOCK  ', productBrim  ?? 'none')
 
     const { dataUrl, elapsedMs, modelText } = await runGeminiTryOn(person, garments, prompt)
+    // Gemini returned an image — capture the metering. outputChars covers any
+    // text the model emitted alongside the image; numOutputImages=1 covers the
+    // image-output tokens (the dominant cost line in flash-image).
+    logBase.elapsedMs       = elapsedMs
+    logBase.numOutputImages = 1
+    logBase.outputChars     = (modelText ?? '').length
 
     // ── Quality control via Gemini Vision (≤10s, fail-open on infra error) ──
     // Source of truth for pass/fail is `evaluateQc` (business-rule thresholds),
@@ -329,6 +380,11 @@ export async function POST(req: NextRequest) {
     }
 
     if (qcVerdict === 'fail') {
+      flushLog({
+        status:  'qc_failed',
+        error:   qc?.reason ?? 'QC failed',
+        qcScore: qc ? Math.round((qc.face_similarity + qc.hat_similarity + qc.realism) / 3) / 100 : null,
+      })
       return NextResponse.json({
         qcFailed: true,
         qc,
@@ -336,6 +392,10 @@ export async function POST(req: NextRequest) {
       })   // 200 so the client treats it as a known QC failure, not a network error
     }
 
+    flushLog({
+      status:  'success',
+      qcScore: qc ? Math.round((qc.face_similarity + qc.hat_similarity + qc.realism) / 3) / 100 : null,
+    })
     return NextResponse.json({
       resultUrl:   dataUrl,
       backend:     'gemini',
@@ -348,6 +408,7 @@ export async function POST(req: NextRequest) {
 
   } catch (err) {
     console.error('[POST /api/tryon] ✗', err)
+    flushLog({ status: 'error', error: err instanceof Error ? err.message : String(err) })
     return NextResponse.json(
       { error: err instanceof Error ? err.message : String(err) },
       { status: 500 },
