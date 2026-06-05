@@ -14,6 +14,7 @@
 
 import Link from 'next/link'
 import { readUsageLog, type UsageLogRow } from '@/lib/usage/log'
+import { ESTIMATED_SAVING_PER_HIT_USD } from '@/lib/cache/tryonCache'
 
 export const dynamic   = 'force-dynamic'    // always re-render (no static cache)
 export const revalidate = 0
@@ -81,23 +82,38 @@ function todayRows(rows: UsageLogRow[]): UsageLogRow[] {
   return rows.filter(r => dayKey(r.timestamp) === today)
 }
 
-interface Totals { count: number; cost: number; success: number; failed: number; retries: number; avgElapsed: number }
+interface Totals {
+  count:        number     // all requests (cache hits + Gemini calls)
+  geminiCalls:  number     // requests that actually hit Gemini
+  cacheHits:    number     // requests served from cache (zero Gemini cost)
+  cost:         number     // sum of costUsd (cache rows are $0 already)
+  saved:        number     // estimated USD avoided thanks to cache
+  success:      number
+  failed:       number
+  retries:      number
+  avgElapsed:   number
+}
 function summarise(rows: UsageLogRow[]): Totals {
   let cost = 0, success = 0, failed = 0, retries = 0, elapsed = 0
+  let cacheHits = 0, geminiCalls = 0
   for (const r of rows) {
     cost += r.costUsd
     if (r.status === 'success') success++
     else failed++
     if (r.attempt > 1) retries++
     elapsed += r.elapsedMs
+    if (r.cacheHit) cacheHits++; else geminiCalls++
   }
   return {
-    count:   rows.length,
+    count:       rows.length,
+    geminiCalls,
+    cacheHits,
     cost,
+    saved:       cacheHits * ESTIMATED_SAVING_PER_HIT_USD,
     success,
     failed,
     retries,
-    avgElapsed: rows.length ? elapsed / rows.length : 0,
+    avgElapsed:  rows.length ? elapsed / rows.length : 0,
   }
 }
 
@@ -143,27 +159,34 @@ export default async function UsagePage() {
 
         {/* Stat cards */}
         <section className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-          <StatCard
-            label="Hôm nay" sub="Try-on count + estimated cost"
-            value={today.count.toLocaleString('vi-VN')}
-            cost={today.cost}
-            success={today.success}
-            failed={today.failed}
-            highlight
+          <StatCard label="Hôm nay" sub="Try-on requests + cost" data={today} highlight />
+          <StatCard label="7 ngày"  sub="Last 7 days inclusive"   data={last7} />
+          <StatCard label="30 ngày" sub="Rolling month"           data={last30} />
+        </section>
+
+        {/* Cost optimization panel — surfaces cache impact + retry rate.
+            Drives the "did the cache actually save anything?" question. */}
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <MiniStat
+            label="Cache hit · 30d"
+            value={`${pct(last30.cacheHits, last30.count)}%`}
+            sub={`${last30.cacheHits.toLocaleString('vi-VN')} / ${last30.count.toLocaleString('vi-VN')} requests`}
+            accent="cache"
           />
-          <StatCard
-            label="7 ngày" sub="Last 7 days inclusive"
-            value={last7.count.toLocaleString('vi-VN')}
-            cost={last7.cost}
-            success={last7.success}
-            failed={last7.failed}
+          <MiniStat
+            label="Gemini calls · 30d"
+            value={last30.geminiCalls.toLocaleString('vi-VN')}
+            sub={`Cache saved ~${fmtUsd(last30.saved)} (~${fmtVnd(last30.saved * USD_VND)})`}
           />
-          <StatCard
-            label="30 ngày" sub="Rolling month"
-            value={last30.count.toLocaleString('vi-VN')}
-            cost={last30.cost}
-            success={last30.success}
-            failed={last30.failed}
+          <MiniStat
+            label="Retry rate · 30d"
+            value={`${pct(last30.retries, last30.count)}%`}
+            sub={`${last30.retries.toLocaleString('vi-VN')} attempts where N > 1`}
+          />
+          <MiniStat
+            label="Success rate · 30d"
+            value={`${pct(last30.success, last30.count)}%`}
+            sub={`${last30.success.toLocaleString('vi-VN')}✓ ${last30.failed.toLocaleString('vi-VN')}✗`}
           />
         </section>
 
@@ -256,7 +279,9 @@ export default async function UsagePage() {
                         <td className="py-1.5 pr-3 text-right text-[#C9A84C]">{fmtUsd(r.costUsd)}</td>
                         <td className="py-1.5 pr-3 text-right text-[#8A8A8A]">{r.elapsedMs}</td>
                         <td className="py-1.5">
-                          <StatusBadge status={r.status} />
+                          {r.cacheHit
+                            ? <span className="inline-block px-1.5 py-0.5 rounded border border-[#22A06A]/40 bg-[#22A06A]/10 text-[#22A06A] text-[10px] uppercase tracking-wider">cache</span>
+                            : <StatusBadge status={r.status} />}
                         </td>
                       </tr>
                     ))}
@@ -280,13 +305,12 @@ export default async function UsagePage() {
 // ── Sub-components ─────────────────────────────────────────────────────────
 
 function StatCard({
-  label, sub, value, cost, success, failed, highlight = false,
+  label, sub, data, highlight = false,
 }: {
-  label: string; sub: string; value: string
-  cost: number; success: number; failed: number; highlight?: boolean
+  label: string; sub: string; data: Totals; highlight?: boolean
 }) {
-  const total = success + failed
-  const rate  = total > 0 ? Math.round((success / total) * 100) : 100
+  const total = data.success + data.failed
+  const rate  = total > 0 ? Math.round((data.success / total) * 100) : 100
   return (
     <div className={[
       'rounded-2xl border p-4 flex flex-col gap-2',
@@ -294,20 +318,45 @@ function StatCard({
     ].join(' ')}>
       <p className="text-[10px] uppercase tracking-[.22em] text-[#C9A84C] font-bold">{label}</p>
       <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-black tabular-nums text-[#F5F5F5]">{value}</span>
+        <span className="text-3xl font-black tabular-nums text-[#F5F5F5]">{data.count.toLocaleString('vi-VN')}</span>
         <span className="text-[11px] text-[#6B6B6B]">try-ons</span>
       </div>
       <div className="flex items-baseline justify-between text-[11px]">
-        <span className="text-[#8A8A8A]">~{fmtUsd(cost)}</span>
-        <span className="text-[#8A8A8A] font-mono">≈ {fmtVnd(cost * USD_VND)}</span>
+        <span className="text-[#8A8A8A]">~{fmtUsd(data.cost)}</span>
+        <span className="text-[#8A8A8A] font-mono">≈ {fmtVnd(data.cost * USD_VND)}</span>
       </div>
       <div className="flex items-center justify-between text-[10.5px] text-[#6B6B6B] mt-1">
         <span>Success {rate}%</span>
-        <span>{success}✓ {failed > 0 && <span className="text-[#E05252]">{failed}✗</span>}</span>
+        <span>{data.success}✓ {data.failed > 0 && <span className="text-[#E05252]">{data.failed}✗</span>}</span>
       </div>
+      {data.cacheHits > 0 && (
+        <div className="flex items-center justify-between text-[10.5px] text-[#22A06A] mt-0.5">
+          <span>Cache {pct(data.cacheHits, data.count)}%</span>
+          <span className="font-mono">saved ~{fmtUsd(data.saved)}</span>
+        </div>
+      )}
       <p className="text-[9.5px] text-[#5A5A5A] mt-0.5">{sub}</p>
     </div>
   )
+}
+
+function MiniStat({
+  label, value, sub, accent,
+}: { label: string; value: string; sub: string; accent?: 'cache' }) {
+  return (
+    <div className="rounded-xl border border-[#1E1E1E] bg-[#0D0D0D] p-3 flex flex-col gap-1">
+      <p className="text-[9.5px] uppercase tracking-[.22em] text-[#6B6B6B] font-bold">{label}</p>
+      <p className={[
+        'text-xl font-black tabular-nums',
+        accent === 'cache' ? 'text-[#22A06A]' : 'text-[#F5F5F5]',
+      ].join(' ')}>{value}</p>
+      <p className="text-[10px] text-[#6B6B6B] leading-tight">{sub}</p>
+    </div>
+  )
+}
+
+function pct(n: number, total: number): number {
+  return total > 0 ? Math.round((n / total) * 100) : 0
 }
 
 function StatusBadge({ status }: { status: string }) {

@@ -34,12 +34,7 @@ export default function AdminPage() {
       <header className="border-b border-[#161616] bg-[#0D0D0D]">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/" className="text-xl font-black tracking-widest shimmer">TCAPS</Link>
-          <div className="flex items-center gap-3">
-            <Link href="/admin/usage" className="text-[11px] font-bold uppercase tracking-wider text-[#C9A84C] hover:text-[#E8C96A] border border-[#C9A84C]/40 hover:border-[#C9A84C] rounded px-2.5 py-1 transition-colors">
-              📊 Usage
-            </Link>
-            <span className="text-xs text-[#6B6B6B] border border-[#2A2A2A] px-2 py-0.5 rounded">Admin</span>
-          </div>
+          <span className="text-xs text-[#6B6B6B] border border-[#2A2A2A] px-2 py-0.5 rounded">Admin</span>
         </div>
       </header>
 

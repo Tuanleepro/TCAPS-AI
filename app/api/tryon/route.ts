@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { scoreTryOn, evaluateQc, QC_FAIL_MESSAGE, type QcScore } from '@/lib/gemini/qcScore'
 import { appendUsageLog, type UsageLogEntry } from '@/lib/usage/log'
+import { getCachedTryOn, setCachedTryOn, tryonCacheKey } from '@/lib/cache/tryonCache'
+import { checkAndIncrementIp } from '@/lib/ratelimit/ipLimit'
 
 export const maxDuration = 60
 export const runtime = 'nodejs'
@@ -273,6 +275,54 @@ export async function POST(req: NextRequest) {
 
     const person  = assertDataUrl(body.person, 'Ảnh selfie')
 
+    // ── Result cache (BEFORE any expensive op) ─────────────────────────────
+    // Key = SHA256(selfie bytes, sku, variant). A repeat call returns the
+    // BYTE-IDENTICAL image we generated last time — zero Gemini cost, zero
+    // quality change. This is the biggest cost lever in the pipeline; see
+    // lib/cache/tryonCache.ts for storage + TTL.
+    const cacheKey = tryonCacheKey({
+      selfieDataUrl: person,
+      sku:           logBase.sku        ?? null,
+      variantSku:    logBase.variantSku ?? null,
+    })
+    const cached = await getCachedTryOn(cacheKey)
+    if (cached) {
+      console.log('[cache] HIT', cacheKey)
+      flushLog({ status: 'success', cacheHit: true })
+      return NextResponse.json({
+        resultUrl:   cached,
+        backend:     'cache',
+        model:       GEMINI_MODEL,
+        elapsedMs:   0,
+        qc:          null,
+        promptChars: 0,
+        cached:      true,
+      })
+    }
+    console.log('[cache] MISS', cacheKey)
+
+    // ── Rate limit (only on cache miss — i.e. only when about to spend) ────
+    // 10 req/hour + 50 req/day per IP. Fails OPEN if KV is unconfigured so
+    // the app keeps working before owner provisions storage.
+    const rl = await checkAndIncrementIp(ip)
+    if (!rl.ok) {
+      console.warn('[ratelimit] BLOCK ip=', ip, '·', rl.reason)
+      flushLog({ status: 'error', error: `RATE_LIMITED: ${rl.reason}` })
+      return NextResponse.json(
+        {
+          error:        rl.reason,
+          rateLimited:  true,
+          retryAfter:   rl.retryAfter,
+          remainingHour: rl.remainingHour,
+          remainingDay:  rl.remainingDay,
+        },
+        {
+          status:  429,
+          headers: rl.retryAfter ? { 'Retry-After': String(rl.retryAfter) } : undefined,
+        },
+      )
+    }
+
     // Cap images. Preferred: `garmentUrls` (product photo URLs) fetched HERE on the
     // server — mobile in-app browsers can't reliably do cross-origin fetch/canvas,
     // so doing it server-side is what makes try-on work on phones. Fallback:
@@ -357,33 +407,45 @@ export async function POST(req: NextRequest) {
     // NOT the model's own verdict field. If QC verdict is `fail`, we refuse to
     // return the image and surface a friendly retry prompt — no auto-regen
     // (per spec: user manually retries).
+    //
+    // Cost optimization: SKIP QC on retries (attempt > 1). Rationale per spec —
+    // the Gemini gen has already been billed by the time a retry succeeds, and
+    // QC was already evaluated on attempt 1; running it again on the retry
+    // doubles the QC line for negligible insight. Worst case a slightly-off
+    // result slips through on a retry (~0.1% of all calls) — acceptable.
+    const skipQc = (logBase.attempt ?? 1) > 1
     let qc: QcScore | null = null
     let qcVerdict: 'pass' | 'fail' = 'pass'
-    try {
-      const apiKey = process.env.GEMINI_API_KEY?.trim()
-      if (apiKey && garments[0]) {
-        qc = await scoreTryOn({
-          originalDataUrl: person,
-          productDataUrl:  garments[0],    // one product reference is enough
-          resultDataUrl:   dataUrl,
-          apiKey,
-        })
-        qcVerdict = evaluateQc(qc)
-        console.log(`[QC] verdict=${qcVerdict} (model said: ${qc.verdict})  ${qc.reason ? '· ' + qc.reason : ''}`)
+    if (skipQc) {
+      console.log('[QC] SKIPPED (attempt > 1) — cost optimization')
+    } else {
+      try {
+        const apiKey = process.env.GEMINI_API_KEY?.trim()
+        if (apiKey && garments[0]) {
+          qc = await scoreTryOn({
+            originalDataUrl: person,
+            productDataUrl:  garments[0],    // one product reference is enough
+            resultDataUrl:   dataUrl,
+            apiKey,
+          })
+          qcVerdict = evaluateQc(qc)
+          console.log(`[QC] verdict=${qcVerdict} (model said: ${qc.verdict})  ${qc.reason ? '· ' + qc.reason : ''}`)
+        }
+      } catch (e) {
+        // Fail-OPEN: don't punish the user when our QC infra hiccups. The image
+        // still goes through, just without verified scores.
+        console.warn('[QC] check failed (fail-open):', e instanceof Error ? e.message : e)
+        qc = null
+        qcVerdict = 'pass'
       }
-    } catch (e) {
-      // Fail-OPEN: don't punish the user when our QC infra hiccups. The image
-      // still goes through, just without verified scores.
-      console.warn('[QC] check failed (fail-open):', e instanceof Error ? e.message : e)
-      qc = null
-      qcVerdict = 'pass'
     }
 
     if (qcVerdict === 'fail') {
       flushLog({
-        status:  'qc_failed',
-        error:   qc?.reason ?? 'QC failed',
-        qcScore: qc ? Math.round((qc.face_similarity + qc.hat_similarity + qc.realism) / 3) / 100 : null,
+        status:   'qc_failed',
+        cacheHit: false,
+        error:    qc?.reason ?? 'QC failed',
+        qcScore:  qc ? Math.round((qc.face_similarity + qc.hat_similarity + qc.realism) / 3) / 100 : null,
       })
       return NextResponse.json({
         qcFailed: true,
@@ -392,8 +454,19 @@ export async function POST(req: NextRequest) {
       })   // 200 so the client treats it as a known QC failure, not a network error
     }
 
+    // ── Cache write (fire-and-forget) ─────────────────────────────────────
+    // Only successful results land in cache. QC-failed images are not cached
+    // — that path returns early above so the user retries fresh, not from a
+    // sticky bad output. Fire-and-forget: cache write must NOT delay the
+    // user's response. Set failures (e.g. value larger than KV plan limit)
+    // are logged but not surfaced.
+    setCachedTryOn(cacheKey, dataUrl).catch(e =>
+      console.warn('[cache] set failed (fail-open):', e instanceof Error ? e.message : e),
+    )
+
     flushLog({
-      status:  'success',
+      status:   'success',
+      cacheHit: false,
       qcScore: qc ? Math.round((qc.face_similarity + qc.hat_similarity + qc.realism) / 3) / 100 : null,
     })
     return NextResponse.json({
