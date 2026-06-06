@@ -36,14 +36,24 @@ const TRYON_PROMPT =
 
   '(1.b) FACIAL IDENTITY & FEATURES — preserve EXACTLY. The face, facial features (eyes, eye ' +
   'spacing, eyebrows, nose, mouth, lips, jawline, chin, cheekbones), face shape and proportions, ' +
-  'skin tone, skin TEXTURE, expression, hair and hairline MUST be IDENTICAL to image 1. Preserve ' +
-  'EVERY facial detail: acne, blemishes, freckles, moles, scars, eye-bags, dark circles, pores, ' +
-  'slight asymmetries, oiliness — ALL stay. Do NOT smooth skin, whiten skin, or add makeup. Do NOT ' +
-  'slim/sharpen/sculpt the jawline. Do NOT enlarge or open the eyes. Do NOT plump, thin or reshape ' +
-  'the lips. Do NOT narrow or reshape the nose. Do NOT raise or reshape the eyebrows. Do NOT ' +
-  'redraw, age, change gender, or swap the face. Do NOT make the person look more model-like, ' +
-  'handsome, or "glow-up" / TikTok-filter version of themselves. A viewer must INSTANTLY recognise ' +
-  'the SAME exact selfie face — not a polished look-alike. NO blemish or acne cleanup is allowed. ' +
+  'expression, hair and hairline MUST be IDENTICAL to image 1. ' +
+  // 2026-06-06: owner reversed the strict "no skin cleanup" policy. Light
+  // natural retouching is now allowed — customers were rejecting results
+  // that showed every blemish. Identity stays inviolable: structure, gaze,
+  // proportions, permanent markers (moles/scars/freckles), and recognisable
+  // face must NOT change. Only short-term skin appearance may be softened.
+  'You MAY apply LIGHT, NATURAL skin retouching: gentle smoothing of visible acne / pimples / ' +
+  'temporary blemishes, soft pore reduction, slight evening of skin tone, reduction of oiliness ' +
+  'or shine. Think "a clear day with good lighting", NOT "Instagram filter" or "TikTok beauty ' +
+  'mode". The skin TEXTURE must remain believable — never plastic, airbrushed, porcelain or glassy. ' +
+  'PERMANENT identity markers MUST be preserved: moles, scars, distinctive birthmarks, prominent ' +
+  'freckle patterns, eye-bags, dark circles, slight facial asymmetries. ' +
+  'Do NOT slim/sharpen/sculpt the jawline. Do NOT enlarge or open the eyes. Do NOT plump, thin or ' +
+  'reshape the lips. Do NOT narrow or reshape the nose. Do NOT raise or reshape the eyebrows. ' +
+  'Do NOT redraw, age, change gender, or swap the face. Do NOT whiten the skin to a noticeably ' +
+  'fairer tone than image 1. Do NOT make the person look like a DIFFERENT, more model-like or ' +
+  '"glow-up" version of themselves — a viewer must INSTANTLY recognise the SAME person, just ' +
+  'photographed on a better day. ' +
 
   'RULE 2 — IMAGES 2+ ARE CAP-ONLY REFERENCES (anti-scene-swap, non-negotiable): images 2 and ' +
   'onward show the SAME cap from different angles (front / side / back / detail). These reference ' +
