@@ -24,38 +24,21 @@ interface KeyArgs {
   selfieDataUrl: string
   sku?:          string | null
   variantSku?:   string | null
-  /** Colour LOCK sent to Gemini (e.g. 'BLACK', 'PINK'). When the owner
-   * changes the colorOverride for a SKU, the cached output IS no longer
-   * canonical — including colour in the key forces a fresh render. */
-  color?:        string | null
-  /** Brim LOCK sent to Gemini ('FLAT' | 'CURVED'). Same reason as colour. */
-  brim?:         string | null
 }
 
 /**
- * Stable cache key from (selfie bytes, sku, variant, colour, brim).
+ * Stable cache key from (selfie bytes, sku, variant).
  *
  * Hashes the BASE64 payload of the selfie (skipping the data URL prefix) so
  * the key doesn't shift between PNG/JPEG MIME variants of identical bytes.
  * Returns a short SHA256 prefix — collision probability at 2^96 is well
  * below the rate of any TCAPS-scale traffic.
- *
- * Colour + brim are part of the key because they're independent inputs to
- * Gemini (the COLOUR LOCK + BRIM LOCK prompt suffixes). Without them, a SKU
- * whose colorOverride changed mid-deploy would keep serving the old colour
- * from cache until the 30-day TTL expired.
  */
 export function tryonCacheKey(args: KeyArgs): string {
   const comma   = args.selfieDataUrl.indexOf(',')
   const payload = comma >= 0 ? args.selfieDataUrl.slice(comma + 1) : args.selfieDataUrl
   const selfieHash = crypto.createHash('sha256').update(payload).digest('hex').slice(0, 24)
-  const composite  = [
-    selfieHash,
-    args.sku        ?? '',
-    args.variantSku ?? '',
-    args.color      ?? '',
-    args.brim       ?? '',
-  ].join('|')
+  const composite  = [selfieHash, args.sku ?? '', args.variantSku ?? ''].join('|')
   const keyHash    = crypto.createHash('sha256').update(composite).digest('hex').slice(0, 32)
   return KEY_PREFIX + keyHash
 }
