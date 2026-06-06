@@ -423,7 +423,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     sku: "TC42",
-    name: "TC42 - NÓN TCAPS",
+    name: "TC42 - NÓN LOGO SÓI TCAPS",
     line: "", style: "streetwear", color: "",
     price: 130000, priceBundle: 130000,
     badge: null,
