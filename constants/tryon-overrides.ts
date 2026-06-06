@@ -73,7 +73,7 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   'Nón TC59':  { maxRefImages: 2 },   // actual SKU key in products.ts
   TC61:        { maxRefImages: 2 },
   TC63:        { maxRefImages: 2 },
-  TC67:        { maxRefImages: 2 },
+  TC67:        { maxRefImages: 3 },   // owner bumped from 2 — needed extra cap detail
   TC68:        { maxRefImages: 2 },
 
   // CT1 NÓN TCAPS — catalog thumbnail features the "Đen / Kết" variant.
