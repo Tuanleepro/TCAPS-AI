@@ -50,6 +50,7 @@ const isLocalPath = (s) => typeof s === 'string' && s.startsWith('/')
 // re-clobber the manual fix in products.ts on every run.
 const PINNED_IMAGE_URLS = {
   TC46: 'https://content.pancake.vn/2-2512/2025/12/8/ec2768ecb1c60190902f3199e71ad4d1dd4578af.jpg',
+  TC30: 'https://content.pancake.vn/2-2512/2025/12/11/181ac89e7432747255b8c29bc1491f86f22ce285.jpg',
 }
 const pinnedFor = (sku) => PINNED_IMAGE_URLS[(sku || '').trim()] ?? null
 
