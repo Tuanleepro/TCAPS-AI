@@ -60,12 +60,6 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   // "Nón TC59" / "CB TC49"). Those entries were removed when the global
   // dropped 6 → 2 on 2026-06-06.
 
-  // TC46 NÓN DARK STALLION — horse-graphic detail simplified at the
-  // global 2-ref default (badge artwork came back cartoony / wrong colour
-  // accents). Owner observed this on the CONG/ĐỎ variant; bumping refs
-  // gives Gemini a second design angle to lock the patch artwork against.
-  TC46:        { maxRefImages: 3 },
-
   // CT1 NÓN TCAPS — catalog thumbnail features the "Đen / Kết" variant.
   // When the customer taps "THỬ NÓN" from the catalog the try-on should
   // open on that variant by default (instead of the first variant in
