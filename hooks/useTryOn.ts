@@ -281,17 +281,31 @@ export function useTryOn() {
         :                       { vn: colorOv, en: colorOv }
       const detectedBrim: BrimShape = (lockName ? detectBrim(lockName) : null) ?? 'FLAT'
 
-      // Source images: when a variant is pinned, lead with the variant photo
-      // (canonical colour) and then PAD with the rest of the parent gallery
-      // so Gemini sees multiple angles. The COLOUR LOCK + BRIM LOCK sentences
-      // in the prompt keep it from drifting to a sibling colour even though
-      // the gallery may contain photos of other variants. Without a pin we
-      // fall back to the colour+brim filter as before.
-      const galleryAngles = (product?.images ?? []).filter(
-        u => /^https?:\/\//.test(u) && u !== pinnedVariant?.image,
+      // Source images: canonical reference + safe angle padding.
+      //
+      // Lead image (= image #1 sent to Gemini, the strongest visual prior):
+      //   - When a variant is pinned (customer tapped a chip) → variant.image
+      //   - Otherwise → product.imageUrl (the "representative" photo the
+      //     customer saw on the catalog / banner)
+      //
+      // Padding (image #2..N for cap-detail fidelity): all OTHER gallery
+      // photos, EXCLUDING any photo that's the canonical of a DIFFERENT
+      // variant. Sibling-variant canonicals introduce wrong colourways
+      // (e.g. picking NGANG/TRẮNG but the gallery also carries the
+      // NGANG/ĐEN canonical → Gemini can't tell which the customer wants
+      // and sometimes renders the wrong colour). Excluding them stops the
+      // leak across BOTH the pinned and un-pinned paths.
+      const leadImage = pinnedVariant?.image ?? product?.imageUrl ?? null
+      const otherVariantImages = new Set<string>(
+        (product?.variants ?? [])
+          .map(v => v.image)
+          .filter((u): u is string => typeof u === 'string' && u.length > 0 && u !== leadImage),
       )
-      const sourceImages = pinnedVariant?.image
-        ? [pinnedVariant.image, ...galleryAngles]
+      const safeGalleryAngles = (product?.images ?? []).filter(u =>
+        /^https?:\/\//.test(u) && u !== leadImage && !otherVariantImages.has(u),
+      )
+      const sourceImages = leadImage
+        ? [leadImage, ...safeGalleryAngles]
         : product
           ? filterImagesByVariant(product, detectedColor, detectedBrim)
           : []
