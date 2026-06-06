@@ -177,6 +177,25 @@ async function runGeminiTryOn(person: string, garments: string[], prompt: string
   console.log('[Gemini]   capRefs :', gParts.length, 'image(s) —', gParts.map(g => `${(g.data.length / 1024).toFixed(0)}KB`).join(', '))
   console.log('[Gemini]   prompt  :', prompt)
 
+  // Structured payload trace per owner spec — confirms what reaches Gemini.
+  // imageParts.length = 1 (selfie) + N (caps); textParts = 1.
+  // Gemini gen-AI inline_data hard limit is ~20MB per request, ~7MB per
+  // image. Our compressed JPEGs run ~200-500KB each so a 20-ref payload is
+  // ~4-6MB total — well under the ceiling.
+  const personBytes = Math.round((p.data.length * 3) / 4)
+  const capBytes    = gParts.map(g => Math.round((g.data.length * 3) / 4))
+  const totalBytes  = personBytes + capBytes.reduce((s, n) => s + n, 0)
+  console.log(JSON.stringify({
+    log:            'gemini.payload',
+    imagePartsLen:  1 + gParts.length,
+    textPartsLen:   1,
+    selfie:         { mimeType: p.mimeType, bytes: personBytes },
+    caps:           gParts.map((g, i) => ({ idx: i, mimeType: g.mimeType, bytes: capBytes[i] })),
+    totalImageBytes: totalBytes,
+    geminiInlineLimitBytes: 20 * 1024 * 1024,
+    promptChars:    prompt.length,
+  }))
+
   const t0 = Date.now()
   let res: Response
   try {
@@ -224,6 +243,22 @@ async function runGeminiTryOn(person: string, garments: string[], prompt: string
 
   console.log('[Gemini]   finish  :', cand?.finishReason ?? 'n/a', '| parts:', parts.length, '| image:', !!out, '| text:', textParts ? `"${textParts.slice(0, 160)}"` : 'none')
   if (json?.promptFeedback?.blockReason) console.warn('[Gemini]   blocked :', json.promptFeedback.blockReason)
+
+  // Mirror server-side payload count vs Gemini's reported usage so we can
+  // verify NO image was dropped at the API boundary. Gemini reports
+  // usageMetadata.promptTokenCount (text+image) but doesn't enumerate
+  // image-by-image. The strongest signal we have is "no error + image
+  // returned" which by the v1beta contract means every inline_data part
+  // we sent was processed.
+  console.log(JSON.stringify({
+    log:              'gemini.response',
+    sentImageParts:   1 + gParts.length,
+    finishReason:     cand?.finishReason ?? null,
+    blockReason:      json?.promptFeedback?.blockReason ?? null,
+    candidateParts:   parts.length,
+    hasOutputImage:   !!out,
+    usageMetadata:    json?.usageMetadata ?? null,
+  }))
 
   if (!out?.data) {
     const block = json?.promptFeedback?.blockReason
