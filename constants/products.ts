@@ -384,7 +384,7 @@ export const PRODUCTS: Product[] = [
     description: "",
     faceShapes: ["oval", "round", "heart"],
     topFor: ["oval"],
-    imageUrl: "https://content.pancake.vn/2-2512/2025/12/10/09dd54588db71064be641e645ce120ed3910fe2e.jpg", overlayUrl: "",
+    imageUrl: "https://content.pancake.vn/2-2512/2025/12/8/ec2768ecb1c60190902f3199e71ad4d1dd4578af.jpg", overlayUrl: "",
     tags: [],
     images: ["https://content.pancake.vn/2-2512/2025/12/10/09dd54588db71064be641e645ce120ed3910fe2e.jpg", "https://content.pancake.vn/2-2512/2025/12/8/3ec68f7b6eca6e1e9a01ef2f236130a2ecaf99e5.jpg", "https://content.pancake.vn/2-2511/2025/11/9/de1b1bcc4726f22bf05ebe27bc22b48163557770.jpg", "https://content.pancake.vn/2-2511/2025/11/2/07d79524ee471f954a293b7dbe321d71532e9247.jpg", "https://content.pancake.vn/2-2511/2025/11/2/14bdd6a52665c2344dfe7f9a3c654397623dea57.jpg", "https://content.pancake.vn/2-2511/2025/11/2/763ba8d3cf85f071a39bf10157eecd089ff02bf6.jpg", "https://content.pancake.vn/2-2603/2026/3/2/818230076c5f7ffb7cc924066c18a696479e88e1.jpg", "https://content.pancake.vn/2-2512/2025/12/10/9adf9472f1b9cb0061d1b6f9eb8fb3bc03997e3a.jpg", "https://content.pancake.vn/2-2512/2025/12/8/ec2768ecb1c60190902f3199e71ad4d1dd4578af.jpg", "https://content.pancake.vn/2-2511/2025/11/9/3aedec9c70c73ad12b3afcb645af51ab52e09607.jpg", "https://content.pancake.vn/2-2605/2026/5/31/fd9f2bd2db573c09d3626d2c821b0b14960101be.png", "https://content.pancake.vn/2-2603/2026/3/2/77ec86a1465ec23eccf462de9fec2c6a1eb56a16.jpg", "https://content.pancake.vn/2-2605/2026/5/31/1da8c36876e08ceaf645c0d6b7c2109dc8ba0404.png"],
     variants: [

@@ -23,9 +23,18 @@ export function ProductDetail({ product }: { product: Product }) {
   // Use sku as the variant identifier when present, otherwise fall back to
   // name. ProductVariant in the catalog has sku/name as optional.
   const variantKey = (v: typeof variants[number]) => v.sku ?? v.name ?? ''
-  const [selectedVariantId, setSelectedVariantId] = useState<string>(
-    variants[0] ? variantKey(variants[0]) : '',
-  )
+  // Default to the variant whose IMAGE matches the parent product.imageUrl
+  // (= the "representative" photo on the catalog + the one Gemini will use
+  // as the canonical reference when "THỬ NÓN AI" is tapped without an
+  // explicit colour change). Falls back to the first variant when no match.
+  // This stops the bug where the hero shows white but the try-on bakes
+  // black because the first variant's image happened to be a different
+  // colourway.
+  const [selectedVariantId, setSelectedVariantId] = useState<string>(() => {
+    const matchHero = variants.find(v => v.image && v.image === product.imageUrl)
+    if (matchHero) return variantKey(matchHero)
+    return variants[0] ? variantKey(variants[0]) : ''
+  })
   const [orderOpen, setOrderOpen] = useState(false)
   const { addItem, openDrawer } = useCart()
 
