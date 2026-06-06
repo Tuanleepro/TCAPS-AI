@@ -360,23 +360,29 @@ export async function POST(req: NextRequest) {
     const basePrompt =
       typeof body.prompt === 'string' && body.prompt.trim() ? body.prompt.trim() : TRYON_PROMPT
 
-    // ── Colour lock ──────────────────────────────────────────────────────────
-    // If the client knows the cap's primary colour (parsed from the product
-    // name, e.g. "TRẮNG" → WHITE), append an explicit colour-lock sentence to
-    // the prompt. Text + image together pin the colour MUCH harder than image
-    // alone — Gemini was otherwise occasionally outputting the wrong colourway
-    // (black skull cap when the product was the WHITE variant) because its
-    // prior on streetwear skull-graphic caps is heavily black.
+    // ── Colour lock — DISABLED 2026-06-06 ───────────────────────────────────
+    // Owner reported that detected colours from variant names ("CONG / XANH",
+    // "CONG / ĐỎ", etc.) were forcing the ENTIRE cap to render in that
+    // colour, when in reality the variant token usually names just an
+    // ACCENT (e.g. TC46 CONG/XANH = black cap with cyan accents, not a
+    // fully-blue cap). The COLOUR LOCK overrode the variant.image reference
+    // and produced wrong-colour outputs across the catalog.
+    //
+    // The variant.image (lead ref) + product.imageUrl (design anchor) carry
+    // enough colour signal on their own now. If a specific SKU regresses
+    // (e.g. white→black drift on a skull-graphic SKU), we can add a per-SKU
+    // colour-lock toggle in TRYON_OVERRIDES instead of forcing it globally.
+    //
+    // productColor still parsed (for the log) but NOT injected into the prompt.
     const productColor =
       typeof body.productColor === 'string' && /^[A-Z]+$/.test(body.productColor.trim())
         ? body.productColor.trim().toUpperCase()
         : null
     const productName =
       typeof body.productName === 'string' ? body.productName.trim() : null
+    const colourLock = ''
+    void productColor   // suppress unused-var while we keep it for the log
 
-    const colourLock = productColor
-      ? ` MANDATORY COLOUR LOCK: the cap's base colour is ${productColor}. The cap in the OUTPUT MUST be ${productColor} — NOT black, NOT a darker shade, NOT a different colourway, NOT recoloured to match the outfit or scene. This overrides any visual ambiguity in the reference images: if any reference appears to show a different colour variant, IGNORE that — the cap is ${productColor}.`
-      : ''
 
     // ── Brim shape lock ──────────────────────────────────────────────────────
     // Snapback brim (FLAT/lưỡi ngang) vs baseball brim (CURVED/lưỡi cong) is a
