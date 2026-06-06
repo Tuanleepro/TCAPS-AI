@@ -76,7 +76,8 @@ export function ResultPanel({
       <div className="w-full max-w-md mx-auto mb-2">
         <BeforeAfterSlider beforeUrl={originalUrl} afterUrl={resultUrl} />
       </div>
-      <p className="text-center text-xs text-[#6B6B6B] mb-4">Kéo thanh trượt để so sánh ảnh gốc ↔ ảnh try-on</p>
+      <p className="text-center text-xs text-[#6B6B6B] mb-1">Kéo thanh trượt để so sánh ảnh gốc ↔ ảnh try-on</p>
+      <p className="text-center text-[11px] text-[#C9A84C]/80 mb-4">✨ Hãy tạo lại kết quả nếu thấy không vừa ý nhé</p>
 
       {/* ── Gemini Vision QC checklist — only shown when QC passed ────────── */}
       {qc && <QcChecklist qc={qc} />}
