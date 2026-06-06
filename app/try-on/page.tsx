@@ -345,12 +345,21 @@ function SelectedHatBanner({
 }) {
   const variants    = product.variants ?? []
   const hasVariants = variants.length > 0
+  // Hero thumb follows the chipped variant so tapping NGANG/ĐEN swaps the
+  // 56×56 preview to that variant's photo (was previously hardcoded to
+  // product.imageUrl, so the thumb stayed on the parent canonical even
+  // after the customer changed variant).
+  const activeVariant = selectedVariantSku
+    ? variants.find(v => (v.sku ?? v.name) === selectedVariantSku) ?? null
+    : null
+  const thumbUrl = activeVariant?.image || product.imageUrl
   return (
     <div className="flex items-center gap-3 rounded-xl border border-[#C9A84C]/25 bg-[#C9A84C]/6 p-3 fade-in-up">
       <div className="relative w-14 h-14 rounded-lg overflow-hidden bg-[#0A0A0A] shrink-0 flex items-center justify-center">
-        {product.imageUrl ? (
+        {thumbUrl ? (
           <Image
-            src={proxyImg(product.imageUrl, 96)}
+            key={thumbUrl}
+            src={proxyImg(thumbUrl, 96)}
             alt={product.name}
             fill
             unoptimized
