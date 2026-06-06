@@ -53,32 +53,28 @@ export interface TryOnOverride {
 }
 
 export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
-  // ── Face-leak SKUs — capped at maxRefImages: 1 ──────────────────────────
+  // ── Face-leak SKUs — capped at maxRefImages: 2 ──────────────────────────
   //
   // Global default is 20 (send entire Pancake gallery) for cap-detail
-  // fidelity. Some SKUs have Pancake galleries that still carry photos
-  // of a single model wearing the cap — those leak the model's face onto
-  // the customer's selfie when included as refs. The fix is to cap THESE
-  // SKUs at 1 ref (variant.image only, no gallery padding) so Gemini
-  // can't learn the model's identity.
-  //
-  // Identity > cap detail. If a specific SKU's design suffers too much
-  // at 1 ref (e.g. brim underside detail missing), individually bump it
-  // to 2 here and re-check the face. If face leaks at 2, accept the
-  // simplification.
-  TC39:        { maxRefImages: 1 },
-  TC42:        { maxRefImages: 1 },
-  TC43:        { maxRefImages: 1 },
-  'NÓN TC43':  { maxRefImages: 1 },
-  TC49:        { maxRefImages: 1 },
-  'CB TC49':   { maxRefImages: 1 },
-  TC56:        { maxRefImages: 1 },
-  TC59:        { maxRefImages: 1 },
-  'Nón TC59':  { maxRefImages: 1 },
-  TC61:        { maxRefImages: 1 },
-  TC63:        { maxRefImages: 1 },
-  TC67:        { maxRefImages: 1 },
-  TC68:        { maxRefImages: 1 },
+  // fidelity. These SKUs had Pancake galleries that still carried photos
+  // of a model wearing the cap, which leaked the model's face onto the
+  // customer's selfie at high ref counts. Capping at 2 (variant.image +
+  // one gallery angle) gives Gemini a second look at the cap for detail
+  // without bringing in enough "model face" signal to drift the identity.
+  // Owner-set 2026-06-07 — was 1 ref, bumped to 2 for cap-detail recovery.
+  TC39:        { maxRefImages: 2 },
+  TC42:        { maxRefImages: 2 },
+  TC43:        { maxRefImages: 2 },
+  'NÓN TC43':  { maxRefImages: 2 },
+  TC49:        { maxRefImages: 2 },
+  'CB TC49':   { maxRefImages: 2 },
+  TC56:        { maxRefImages: 2 },
+  TC59:        { maxRefImages: 2 },
+  'Nón TC59':  { maxRefImages: 2 },
+  TC61:        { maxRefImages: 2 },
+  TC63:        { maxRefImages: 2 },
+  TC67:        { maxRefImages: 2 },
+  TC68:        { maxRefImages: 2 },
 
   // TC46 NÓN DARK STALLION — pinnedImageUrl kept (Pancake's API returns
   // the wrong primary). maxRefImages override removed: global cap is now
