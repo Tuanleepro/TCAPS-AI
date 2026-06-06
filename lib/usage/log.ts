@@ -20,6 +20,7 @@
 //   M error          short error message (truncated to 240 chars)
 //   N qc_score       optional composite QC score (0–1) if available
 //   O cache_hit      'TRUE' / 'FALSE' — was result served from cache (zero Gemini cost)?
+//   P qc_ran         'TRUE' / 'FALSE' — did smart-QC fire (or was it skipped)?
 //
 // The sheet is auto-created on first write — if "TRYON_LOG" doesn't exist
 // yet, ensureSheet() inserts it with the header row, then appends.
@@ -35,7 +36,7 @@ const SHEET_TAB = 'TRYON_LOG'
 const LOG_HEADERS = [
   'timestamp', 'ip', 'model', 'sku', 'variant_sku', 'attempt',
   'cap_refs', 'input_tokens', 'output_tokens', 'cost_usd',
-  'elapsed_ms', 'status', 'error', 'qc_score', 'cache_hit',
+  'elapsed_ms', 'status', 'error', 'qc_score', 'cache_hit', 'qc_ran',
 ] as const
 
 // ── Pricing (USD per 1M tokens) ────────────────────────────────────────────
@@ -74,6 +75,8 @@ export interface UsageLogEntry {
    *  and the per-call cost is effectively $0. Dashboard reports this as
    *  "saved cost" against the same baseline as fresh calls. */
   cacheHit?:    boolean
+  /** True when the QC pass ran (smart-QC may skip when output looks clean). */
+  qcRan?:       boolean
 }
 
 export interface UsageLogRow {
@@ -92,6 +95,7 @@ export interface UsageLogRow {
   error:        string
   qcScore:      number | null
   cacheHit:     boolean
+  qcRan:        boolean
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -196,11 +200,12 @@ export async function appendUsageLog(entry: UsageLogEntry): Promise<void> {
     (entry.error ?? '').slice(0, 240),
     typeof entry.qcScore === 'number' ? Number(entry.qcScore.toFixed(3)) : '',
     isCacheHit ? 'TRUE' : 'FALSE',
+    entry.qcRan ? 'TRUE' : 'FALSE',
   ]
 
   await sheets.spreadsheets.values.append({
     spreadsheetId:    sheetId,
-    range:            `${SHEET_TAB}!A:O`,
+    range:            `${SHEET_TAB}!A:P`,
     valueInputOption: 'USER_ENTERED',
     insertDataOption: 'INSERT_ROWS',
     requestBody:      { values: [row] },
@@ -221,7 +226,7 @@ export async function readUsageLog(opts: { limit?: number } = {}): Promise<Usage
   try {
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range:         `${SHEET_TAB}!A2:O`,   // skip header row
+      range:         `${SHEET_TAB}!A2:P`,   // skip header row
       valueRenderOption: 'UNFORMATTED_VALUE',
     })
     const rows = res.data.values ?? []
@@ -246,6 +251,7 @@ export async function readUsageLog(opts: { limit?: number } = {}): Promise<Usage
       // Sheets' auto-formatting (a literal `true` becomes a checkbox).
       // Older rows from before the column existed → undefined → false.
       cacheHit:     r[14] === true || r[14] === 'TRUE' || r[14] === 'true',
+      qcRan:        r[15] === true || r[15] === 'TRUE' || r[15] === 'true',
     }))
   } catch (e: unknown) {
     // Common case: sheet doesn't exist yet (fresh install, no try-ons logged).

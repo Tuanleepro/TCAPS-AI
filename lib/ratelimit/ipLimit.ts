@@ -14,10 +14,13 @@
 
 import { kvAvailable, kvIncrWithTtl } from '@/lib/redis/kv'
 
-const HOUR_LIMIT = 10
-const DAY_LIMIT  = 50
-const HOUR_TTL   = 3600       // seconds
-const DAY_TTL    = 86_400
+// 2026-06-06: tightened from 10/hour to 10/10-minutes. Daily cap stays at 50
+// as a safety net for distributed-burst abuse (one IP fanning small bursts
+// across the day from many residential proxies).
+const SHORT_WINDOW_LIMIT = 10
+const SHORT_WINDOW_TTL   = 10 * 60         // seconds
+const DAY_LIMIT          = 50
+const DAY_TTL            = 86_400
 
 export interface RateLimitResult {
   ok:            boolean
@@ -28,40 +31,39 @@ export interface RateLimitResult {
 }
 
 const ALLOW: RateLimitResult = {
-  ok: true, remainingHour: HOUR_LIMIT, remainingDay: DAY_LIMIT,
+  ok: true, remainingHour: SHORT_WINDOW_LIMIT, remainingDay: DAY_LIMIT,
 }
 
 /**
- * Increment hourly + daily counters for `ip` and check both limits.
- * Returns ALLOW if either KV is missing OR ip is unknown (we don't want to
- * blanket-block requests we can't attribute).
+ * Increment short-window (10-min) + daily counters for `ip` and check both
+ * limits. Returns ALLOW if KV is missing OR ip is unknown (we don't want
+ * to blanket-block requests we can't attribute). On block, also LOG so the
+ * owner can review abuse patterns in Vercel logs / Sheets.
  */
 export async function checkAndIncrementIp(ip: string): Promise<RateLimitResult> {
   if (!kvAvailable() || !ip || ip === 'unknown') return ALLOW
 
   // Use ":" separators so the keys are inspectable in Redis CLI / Upstash UI.
-  const hourKey = `tcaps:rl:tryon:h:${ip}`
-  const dayKey  = `tcaps:rl:tryon:d:${ip}`
+  // "w10" = 10-minute window. Kept the legacy "h" key prefix unchanged so
+  // any in-flight counters expire naturally rather than getting orphaned.
+  const shortKey = `tcaps:rl:tryon:w10:${ip}`
+  const dayKey   = `tcaps:rl:tryon:d:${ip}`
 
-  // Two sequential calls (each is a 2-cmd pipeline = 1 round-trip). Total
-  // overhead per request: ~100ms. The pipeline helper EXPIRE-on-INCR keeps
-  // counters scoped to their window without us having to track wall time.
-  const [hourCount, dayCount] = await Promise.all([
-    kvIncrWithTtl(hourKey, HOUR_TTL),
-    kvIncrWithTtl(dayKey,  DAY_TTL),
+  // Two parallel calls (each is a 2-cmd pipeline = 1 round-trip).
+  const [shortCount, dayCount] = await Promise.all([
+    kvIncrWithTtl(shortKey, SHORT_WINDOW_TTL),
+    kvIncrWithTtl(dayKey,   DAY_TTL),
   ])
 
-  // If either side returned null (KV outage mid-pipeline), fail OPEN — better
-  // to let a single request through than to block a legitimate customer
-  // because of our infra.
-  if (hourCount === null || dayCount === null) return ALLOW
+  // If either side returned null (KV outage mid-pipeline), fail OPEN.
+  if (shortCount === null || dayCount === null) return ALLOW
 
-  const remainingHour = Math.max(0, HOUR_LIMIT - hourCount)
-  const remainingDay  = Math.max(0, DAY_LIMIT  - dayCount)
+  const remainingHour = Math.max(0, SHORT_WINDOW_LIMIT - shortCount)  // name kept for caller compat
+  const remainingDay  = Math.max(0, DAY_LIMIT          - dayCount)
 
-  // Check daily FIRST — exceeding the daily cap is the more durable block
-  // (resets at midnight, not in 60min), so it's the most useful retry hint.
+  // Check daily FIRST — the durable block.
   if (dayCount > DAY_LIMIT) {
+    console.warn(`[ratelimit] BLOCK day ip=${ip} count=${dayCount}/${DAY_LIMIT}`)
     return {
       ok:            false,
       reason:        `Bạn đã vượt giới hạn ${DAY_LIMIT} lượt thử/ngày. Vui lòng quay lại sau.`,
@@ -69,11 +71,12 @@ export async function checkAndIncrementIp(ip: string): Promise<RateLimitResult> 
       remainingHour, remainingDay: 0,
     }
   }
-  if (hourCount > HOUR_LIMIT) {
+  if (shortCount > SHORT_WINDOW_LIMIT) {
+    console.warn(`[ratelimit] BLOCK short ip=${ip} count=${shortCount}/${SHORT_WINDOW_LIMIT} (10-min window)`)
     return {
       ok:            false,
-      reason:        `Bạn đã vượt giới hạn ${HOUR_LIMIT} lượt thử/giờ. Vui lòng thử lại sau ${HOUR_TTL / 60} phút.`,
-      retryAfter:    HOUR_TTL,
+      reason:        `Bạn đã vượt giới hạn ${SHORT_WINDOW_LIMIT} lượt thử/${SHORT_WINDOW_TTL / 60} phút. Vui lòng thử lại sau ${SHORT_WINDOW_TTL / 60} phút.`,
+      retryAfter:    SHORT_WINDOW_TTL,
       remainingHour: 0, remainingDay,
     }
   }

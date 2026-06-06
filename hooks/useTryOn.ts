@@ -63,7 +63,7 @@ function classifyRetryReason(msg: string): 'high-demand' | 'other' {
 // Keep the PERSON photo at full quality. Only downscale when the longest side
 // exceeds 2048px; otherwise send the ORIGINAL file bytes (no resize, no
 // recompress). Must stay in sync with MAX_DATAURL_CHARS in app/api/tryon/route.ts.
-const PERSON_MAX_DIM      = 2048
+const PERSON_MAX_DIM      = 1280   // 2026-06-06 owner: 2048→1280 — Gemini face-detect still rock solid below 1.5K, saves ~30% input image tokens
 const ORIGINAL_MAX_BYTES  = 10 * 1024 * 1024   // send original as-is up to ~10MB
 const MAX_SEND_CHARS      = 15 * 1024 * 1024   // hard cap for the data URL we POST
 const MAX_CAP_IMAGES      = 2                  // cap angles sent to Gemini per try-on (owner-set 2026-06-06 — applies to ALL SKUs to fully suppress face/colour leak; previously 6 with per-SKU overrides down to 2)
@@ -124,6 +124,12 @@ function scaleImageToDataUrl(
       const c = document.createElement('canvas'); c.width = w; c.height = h
       const x = c.getContext('2d')
       if (!x) { rej(new Error('Canvas 2D unavailable')); return }
+      // High-quality downscale (closest the browser gets to bicubic/Lanczos).
+      // Without this, downscaling from 4K phone selfies to 1280 leaves
+      // visible aliasing on the face that can throw off Gemini's identity
+      // tokenisation.
+      x.imageSmoothingEnabled = true
+      x.imageSmoothingQuality = 'high'
       x.drawImage(img, 0, 0, w, h)
       let dataUrl = c.toDataURL('image/png')                          // prefer PNG (lossless)
       if (dataUrl.length > MAX_SEND_CHARS) dataUrl = c.toDataURL('image/jpeg', 0.95)  // fallback

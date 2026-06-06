@@ -285,15 +285,31 @@ export async function POST(req: NextRequest) {
 
     const person  = assertDataUrl(body.person, 'Ảnh selfie')
 
+    // Parse the COLOUR + BRIM locks early so they can participate in the
+    // cache key. Two requests with the same selfie + sku + variant but
+    // different colour overrides must NOT alias each other in cache (e.g.
+    // owner just changed colorOverride for an SKU — the old cached output
+    // is no longer canonical and should be re-rendered).
+    const productColor =
+      typeof body.productColor === 'string' && /^[A-Z]+$/.test(body.productColor.trim())
+        ? body.productColor.trim().toUpperCase()
+        : null
+    const productBrim =
+      body.productBrim === 'FLAT' || body.productBrim === 'CURVED'
+        ? body.productBrim
+        : null
+
     // ── Result cache (BEFORE any expensive op) ─────────────────────────────
-    // Key = SHA256(selfie bytes, sku, variant). A repeat call returns the
-    // BYTE-IDENTICAL image we generated last time — zero Gemini cost, zero
-    // quality change. This is the biggest cost lever in the pipeline; see
-    // lib/cache/tryonCache.ts for storage + TTL.
+    // Key = SHA256(selfie bytes, sku, variant, color, brim). A repeat call
+    // returns the BYTE-IDENTICAL image we generated last time — zero Gemini
+    // cost, zero quality change. This is the biggest cost lever in the
+    // pipeline; see lib/cache/tryonCache.ts for storage + TTL.
     const cacheKey = tryonCacheKey({
       selfieDataUrl: person,
       sku:           logBase.sku        ?? null,
       variantSku:    logBase.variantSku ?? null,
+      color:         productColor,
+      brim:          productBrim,
     })
     const cached = await getCachedTryOn(cacheKey)
     if (cached) {
@@ -360,33 +376,17 @@ export async function POST(req: NextRequest) {
     const basePrompt =
       typeof body.prompt === 'string' && body.prompt.trim() ? body.prompt.trim() : TRYON_PROMPT
 
-    // ── Colour lock ──────────────────────────────────────────────────────────
-    // If the client knows the cap's primary colour (parsed from the product
-    // name, e.g. "TRẮNG" → WHITE), append an explicit colour-lock sentence to
-    // the prompt. Text + image together pin the colour MUCH harder than image
-    // alone — Gemini was otherwise occasionally outputting the wrong colourway
-    // (black skull cap when the product was the WHITE variant) because its
-    // prior on streetwear skull-graphic caps is heavily black.
-    const productColor =
-      typeof body.productColor === 'string' && /^[A-Z]+$/.test(body.productColor.trim())
-        ? body.productColor.trim().toUpperCase()
-        : null
+    // ── Colour + brim lock prompt fragments ────────────────────────────────
+    // productColor + productBrim were parsed earlier (before the cache key)
+    // so they could participate in the cache fingerprint. Here we turn them
+    // into prompt-suffix sentences. Text + image together pin the colour /
+    // brim MUCH harder than image alone — Gemini was otherwise occasionally
+    // outputting the wrong colourway / swapping snapback↔baseball brims.
     const productName =
       typeof body.productName === 'string' ? body.productName.trim() : null
-
     const colourLock = productColor
       ? ` MANDATORY COLOUR LOCK: the cap's base colour is ${productColor}. The cap in the OUTPUT MUST be ${productColor} — NOT black, NOT a darker shade, NOT a different colourway, NOT recoloured to match the outfit or scene. This overrides any visual ambiguity in the reference images: if any reference appears to show a different colour variant, IGNORE that — the cap is ${productColor}.`
       : ''
-
-    // ── Brim shape lock ──────────────────────────────────────────────────────
-    // Snapback brim (FLAT/lưỡi ngang) vs baseball brim (CURVED/lưỡi cong) is a
-    // defining feature the customer chose. Gemini was swapping them when the
-    // product gallery contained both variants. Text-locking the brim shape
-    // prevents that drift.
-    const productBrim =
-      body.productBrim === 'FLAT' || body.productBrim === 'CURVED'
-        ? body.productBrim
-        : null
     const brimLock = productBrim
       ? ` MANDATORY BRIM LOCK: the cap's brim is ${productBrim === 'FLAT' ? 'FLAT and STRAIGHT (lưỡi ngang) — completely horizontal, NOT curved, NOT bent down at the sides' : 'CURVED (lưỡi cong) — bent down at the sides like a traditional baseball cap, NOT flat'}. The brim shape in the OUTPUT MUST be ${productBrim}. If any reference image appears to show the opposite brim shape, IGNORE that — this cap is ${productBrim}.`
       : ''
@@ -418,17 +418,46 @@ export async function POST(req: NextRequest) {
     // return the image and surface a friendly retry prompt — no auto-regen
     // (per spec: user manually retries).
     //
-    // Cost optimization: SKIP QC on retries (attempt > 1). Rationale per spec —
-    // the Gemini gen has already been billed by the time a retry succeeds, and
-    // QC was already evaluated on attempt 1; running it again on the retry
-    // doubles the QC line for negligible insight. Worst case a slightly-off
-    // result slips through on a retry (~0.1% of all calls) — acceptable.
-    const skipQc = (logBase.attempt ?? 1) > 1
+    // Cost optimization (Smart QC, 2026-06-06):
+    //
+    // Old behaviour: QC ran on EVERY first-attempt result (always 1 extra
+    // Gemini call). That's ~$0.001/call, ~3% of per-session cost. Worth it
+    // when results were unreliable; less worth it now that the head-lock +
+    // canonical-lead + per-SKU overrides have stabilised output quality.
+    //
+    // New behaviour: QC runs ONLY when the Gemini response carries a SIGNAL
+    // of trouble — small image bytes (placeholder / corruption), model
+    // emitted text alongside the image (usually an error/refusal), or an
+    // abnormal finishReason. In the clean-success path (~95% of calls) we
+    // trust the image and ship it without a second Gemini round-trip.
+    //
+    // Still SKIPPED outright on retries (attempt > 1) per the original
+    // cost-skip rule — that branch keeps its same comment as before.
+    const skipQcRetry = (logBase.attempt ?? 1) > 1
+
+    // Compute the SUSPECT signals from the just-rendered output:
+    //   • image bytes < 50KB → suspiciously small (placeholder / black frame)
+    //   • image bytes > 5MB  → unusually large (could be wrong format)
+    //   • modelText non-empty → Gemini emitted explanation, often a refusal
+    //   • elapsedMs < 1500ms  → too fast to be a real generation
+    const outBytes  = Math.round((splitDataUrl(dataUrl).data.length * 3) / 4)
+    const suspect =
+      outBytes < 50 * 1024 ||
+      outBytes > 5_000_000 ||
+      !!(modelText && modelText.trim().length > 0) ||
+      elapsedMs < 1500
+    const skipQc = skipQcRetry || !suspect
+
     let qc: QcScore | null = null
     let qcVerdict: 'pass' | 'fail' = 'pass'
-    if (skipQc) {
+    let qcRan = false
+    if (skipQcRetry) {
       console.log('[QC] SKIPPED (attempt > 1) — cost optimization')
+    } else if (!suspect) {
+      console.log(`[QC] SKIPPED (clean signals: ${outBytes}B, modelText="${(modelText ?? '').slice(0, 60)}", ${elapsedMs}ms) — smart-qc optimization`)
     } else {
+      console.log(`[QC] RUN (suspect signal — bytes=${outBytes}, modelText=${(modelText ?? '').length}ch, elapsed=${elapsedMs}ms)`)
+      qcRan = true
       try {
         const apiKey = process.env.GEMINI_API_KEY?.trim()
         if (apiKey && garments[0]) {
@@ -449,11 +478,14 @@ export async function POST(req: NextRequest) {
         qcVerdict = 'pass'
       }
     }
+    // void to silence unused-var lints; skipQc is computed for clarity.
+    void skipQc
 
     if (qcVerdict === 'fail') {
       flushLog({
         status:   'qc_failed',
         cacheHit: false,
+        qcRan,
         error:    qc?.reason ?? 'QC failed',
         qcScore:  qc ? Math.round((qc.face_similarity + qc.hat_similarity + qc.realism) / 3) / 100 : null,
       })
@@ -477,6 +509,7 @@ export async function POST(req: NextRequest) {
     flushLog({
       status:   'success',
       cacheHit: false,
+      qcRan,
       qcScore: qc ? Math.round((qc.face_similarity + qc.hat_similarity + qc.realism) / 3) / 100 : null,
     })
     return NextResponse.json({
