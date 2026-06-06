@@ -281,26 +281,23 @@ export function useTryOn() {
         :                       { vn: colorOv, en: colorOv }
       const detectedBrim: BrimShape = (lockName ? detectBrim(lockName) : null) ?? 'FLAT'
 
-      // Source images: canonical reference + safe angle padding.
+      // Source images: variant lead + safe gallery angles only.
       //
-      // Lead image (= image #1 sent to Gemini, the strongest visual prior):
-      //   - When a variant is pinned (customer tapped a chip) → variant.image
-      //   - Otherwise → product.imageUrl (the "representative" photo the
-      //     customer saw on the catalog / banner)
+      // Lead image (ref #1, strongest visual prior):
+      //   - Variant pinned → variant.image
+      //   - Otherwise → product.imageUrl (the catalog/banner photo)
       //
-      // Ref #2 priority — the "design anchor":
-      //   When the customer picked a variant, prefer product.imageUrl as
-      //   the second reference. It's the curated canonical photo for the
-      //   SKU; sending it alongside the variant photo gives Gemini two
-      //   complementary views of the SAME product (same logo, same patch,
-      //   same construction) and the COLOUR LOCK in the prompt keeps it
-      //   from drifting to the parent's colour. Without this, the second
-      //   ref used to fall back to a "safe gallery angle" — those tend to
-      //   be lifestyle / packaging / detail shots that confuse the design.
+      // Padding (ref #2..N): non-variant gallery photos. Sibling-variant
+      // canonicals are excluded so the prompt doesn't carry wrong colourways.
       //
-      // Padding (ref #3..N for cap-detail fidelity, when maxRefs > 2):
-      //   non-variant gallery photos. Sibling-variant canonicals are still
-      //   excluded since they'd inject the wrong colourway.
+      // Note (2026-06-06): the earlier "design anchor" trick (slotting
+      // product.imageUrl in as ref #2 when a variant was pinned) was
+      // reverted — it caused detail drift on SKUs whose owner-pinned
+      // canonical was a SPECIFIC variant photo (e.g. TC30's pinned
+      // canonical = CONG/ĐEN VÀNG). When the customer picked a different
+      // variant (e.g. NGANG/TRẮNG), Gemini saw the two visually different
+      // variants and produced a generic hybrid. Trusting variant.image +
+      // safe gallery angles keeps the design correct.
       const leadImage = pinnedVariant?.image ?? product?.imageUrl ?? null
       const otherVariantImages = new Set<string>(
         (product?.variants ?? [])
@@ -310,20 +307,8 @@ export function useTryOn() {
       const safeGalleryAngles = (product?.images ?? []).filter(u =>
         /^https?:\/\//.test(u) && u !== leadImage && !otherVariantImages.has(u),
       )
-      // Build the source list. When a variant is pinned AND product.imageUrl
-      // differs from the lead, slot it in as ref #2 (design anchor). Then
-      // pad with safe gallery angles, deduped against everything already in
-      // the list.
-      const composed: string[] = []
-      if (leadImage) composed.push(leadImage)
-      if (pinnedVariant?.image && product?.imageUrl && product.imageUrl !== leadImage) {
-        composed.push(product.imageUrl)
-      }
-      for (const u of safeGalleryAngles) {
-        if (!composed.includes(u)) composed.push(u)
-      }
-      const sourceImages = composed.length
-        ? composed
+      const sourceImages = leadImage
+        ? [leadImage, ...safeGalleryAngles]
         : product
           ? filterImagesByVariant(product, detectedColor, detectedBrim)
           : []
