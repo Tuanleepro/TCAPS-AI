@@ -69,7 +69,7 @@ export function UploadZone({ type, file, previewUrl, onFile, disabled, loading }
   const label = isHat ? 'Ảnh nón PNG' : 'Ảnh selfie'
   const hint  = isHat
     ? 'PNG nền trong suốt · tối đa 15MB'
-    : 'Mọi định dạng ảnh điện thoại (JPG · PNG · WEBP · HEIC · AVIF)'
+    : '*Lưu ý sử dụng ảnh rõ mặt'
 
   return (
     <div className="flex flex-col gap-2 w-full">
