@@ -35,6 +35,56 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 }
 
 /**
+ * Decode a Blob into something canvas can draw, WITH EXIF orientation
+ * baked in. iPhone selfies tag the JPEG with a rotation/mirror EXIF
+ * payload — the browser respects it for `<img>` PREVIEW rendering, but a
+ * naïve `<img>` → canvas roundtrip drops the transform, so the saved file
+ * comes out rotated or mirrored compared to what the customer saw in the
+ * camera. `createImageBitmap(blob, { imageOrientation: 'from-image' })`
+ * applies the EXIF transform to the BITMAP itself, so drawImage just works.
+ *
+ * Falls back to `<img>` decode when createImageBitmap isn't available
+ * (very old browsers) — those users will see the old behaviour, but they
+ * won't be the iPhone-selfie cohort affected by this bug.
+ */
+async function decodeWithOrientation(source: Blob): Promise<{
+  src: CanvasImageSource
+  width: number
+  height: number
+  cleanup: () => void
+}> {
+  if (typeof createImageBitmap === 'function') {
+    try {
+      const bitmap = await createImageBitmap(source, { imageOrientation: 'from-image' })
+      return {
+        src:     bitmap,
+        width:   bitmap.width,
+        height:  bitmap.height,
+        cleanup: () => bitmap.close(),
+      }
+    } catch (e) {
+      // Some browsers throw on the orientation option even when they
+      // support createImageBitmap. Fall through to the <img> path so the
+      // upload still works (just without EXIF orientation).
+      console.warn('[upload] createImageBitmap with from-image failed, falling back:', e)
+    }
+  }
+  const url = URL.createObjectURL(source)
+  try {
+    const img = await loadImage(url)
+    return {
+      src:     img,
+      width:   img.naturalWidth,
+      height:  img.naturalHeight,
+      cleanup: () => URL.revokeObjectURL(url),
+    }
+  } catch (e) {
+    URL.revokeObjectURL(url)
+    throw e
+  }
+}
+
+/**
  * Convert a user-selected image File into a resized JPEG File.
  * Throws {@link UnsupportedImageError} if the browser can't decode it.
  */
@@ -56,39 +106,44 @@ export async function fileToJpeg(file: File): Promise<File> {
     }
   }
 
-  // Decode (jpg/png/webp/avif + the heic2any JPEG output), then re-encode JPEG.
-  const url = URL.createObjectURL(source)
-  let img: HTMLImageElement
+  // Decode (jpg/png/webp/avif + the heic2any JPEG output) with EXIF
+  // orientation honoured, then re-encode JPEG.
+  let decoded: Awaited<ReturnType<typeof decodeWithOrientation>>
   try {
-    img = await loadImage(url)
+    decoded = await decodeWithOrientation(source)
   } catch (e) {
     console.error('[upload] browser could not decode image:', file.type || '(empty)', e)
     throw new UnsupportedImageError()
-  } finally {
-    URL.revokeObjectURL(url)
   }
 
-  const scale = Math.min(1, MAX_DIM / Math.max(img.naturalWidth, img.naturalHeight))
-  const w = Math.max(1, Math.round(img.naturalWidth * scale))
-  const h = Math.max(1, Math.round(img.naturalHeight * scale))
+  const { src: imgSrc, width: srcW, height: srcH, cleanup } = decoded
 
-  const canvas = document.createElement('canvas')
-  canvas.width = w
-  canvas.height = h
-  const ctx = canvas.getContext('2d')
-  if (!ctx) throw new UnsupportedImageError()
-  // White backdrop so transparent PNGs/WEBPs don't flatten to black in JPEG.
-  ctx.fillStyle = '#ffffff'
-  ctx.fillRect(0, 0, w, h)
-  ctx.drawImage(img, 0, 0, w, h)
+  try {
+    const scale = Math.min(1, MAX_DIM / Math.max(srcW, srcH))
+    const w = Math.max(1, Math.round(srcW * scale))
+    const h = Math.max(1, Math.round(srcH * scale))
 
-  const blob = await new Promise<Blob | null>(resolve =>
-    canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY),
-  )
-  if (!blob) throw new UnsupportedImageError()
+    const canvas = document.createElement('canvas')
+    canvas.width = w
+    canvas.height = h
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new UnsupportedImageError()
+    // White backdrop so transparent PNGs/WEBPs don't flatten to black in JPEG.
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, w, h)
+    ctx.drawImage(imgSrc, 0, 0, w, h)
 
-  const baseName = file.name.replace(/\.[^.]+$/, '') || 'photo'
-  const result = new File([blob], `${baseName}.jpg`, { type: 'image/jpeg' })
-  console.log('[upload] AFTER convert :', { name: result.name, type: result.type, size: result.size, dims: `${w}×${h}` })
-  return result
+    const blob = await new Promise<Blob | null>(resolve =>
+      canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY),
+    )
+    if (!blob) throw new UnsupportedImageError()
+
+    const baseName = file.name.replace(/\.[^.]+$/, '') || 'photo'
+    const result = new File([blob], `${baseName}.jpg`, { type: 'image/jpeg' })
+    console.log('[upload] AFTER convert :', { name: result.name, type: result.type, size: result.size, dims: `${w}×${h}` })
+    return result
+  } finally {
+    cleanup()
+  }
 }
+
