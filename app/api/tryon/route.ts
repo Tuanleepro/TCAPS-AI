@@ -71,7 +71,10 @@ const TRYON_PROMPT =
   '(i) silhouette and crown shape (height, panel count, structured vs unstructured); ' +
   '(ii) BRIM SHAPE — flat/straight (snapback "lưỡi ngang") vs curved (baseball "lưỡi cong") is a ' +
   'defining feature; do NOT swap one for the other under any circumstances; ' +
-  '(iii) brim length and underside colour; ' +
+  '(iii) brim length AND brim-surface graphics — if the reference shows any print / patch / ' +
+  'embroidery / artwork ON THE TOP SURFACE (visor face) of the brim, reproduce it on the TOP, ' +
+  'NOT the underside. If the reference shows artwork on the UNDERSIDE only, keep it on the ' +
+  'underside. Do NOT swap the top and underside placements. Underside colour: preserve as shown; ' +
   '(iv) base colour and any colour blocking — do NOT recolour to match the outfit or scene; ' +
   '(v) materials and texture (cotton, mesh, leather, suede, velvet); panel seams and stitching; ' +
   '(vi) the EXACT logo / text / wordmark / graphic / pattern / patch / embroidery — every line, ' +
