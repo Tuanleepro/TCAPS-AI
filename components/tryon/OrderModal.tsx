@@ -61,6 +61,21 @@ export function OrderModal({ open, product, onClose }: Props) {
   const [primaryQty, setPrimaryQty] = useState(1)
   const [extras,     setExtras]     = useState<Set<string>>(new Set())  // SKUs ticked
   const [upsellSearch, setUpsellSearch] = useState('')                   // filters the horizontal upsell strip
+  // Per-upsell variant pick — keyed by parent SKU, value is variant.sku ?? variant.name.
+  // Initialised to each multi-variant product's first variant so a tap on the card
+  // (without picking a chip) still resolves to a concrete variant. Single-variant
+  // products are absent from this map.
+  const [extraVariants, setExtraVariants] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {}
+    for (const p of UPSELL_POOL) {
+      if (p.variants && p.variants.length > 0) {
+        const first = p.variants[0]
+        const k = first.sku ?? first.name
+        if (k) init[p.sku] = k
+      }
+    }
+    return init
+  })
 
   const [name,     setName]     = useState('')
   const [phone,    setPhone]    = useState('')
@@ -135,8 +150,22 @@ export function OrderModal({ open, product, onClose }: Props) {
   const extraItems: OrderItem[] = useMemo(
     () => upsellItems
       .filter(p => extras.has(p.sku))
-      .map(p => ({ sku: p.sku, name: p.name, unit: p.priceBundle, qty: 1, thumb: p.imageUrl })),
-    [upsellItems, extras],
+      .map(p => {
+        // Resolve to the variant the customer chipped (if the product has
+        // variants) so the order row matches what they actually picked.
+        const vKey    = extraVariants[p.sku]
+        const variant = vKey && p.variants
+          ? p.variants.find(v => (v.sku ?? v.name) === vKey)
+          : null
+        return {
+          sku:   variant?.sku  ?? p.sku,
+          name:  variant?.name ? `${p.name} (${variant.name})` : p.name,
+          unit:  variant?.price ?? p.priceBundle,
+          qty:   1,
+          thumb: variant?.image ?? p.imageUrl,
+        }
+      }),
+    [upsellItems, extras, extraVariants],
   )
   const allItems: OrderItem[] = useMemo(
     () => [{ ...primary, qty: primaryQty }, ...extraItems],
@@ -160,6 +189,15 @@ export function OrderModal({ open, product, onClose }: Props) {
       if (next.has(sku)) next.delete(sku); else next.add(sku)
       return next
     })
+  }, [])
+
+  // Pick a variant for an upsell. Tapping a chip ALSO ticks the upsell card
+  // (intent is obvious — customer wouldn't pick a colour for a product they're
+  // not adding). De-ticking the card keeps the variant choice so the next tick
+  // remembers their last colour.
+  const pickExtraVariant = useCallback((sku: string, variantKey: string) => {
+    setExtraVariants(prev => ({ ...prev, [sku]: variantKey }))
+    setExtras(prev => prev.has(sku) ? prev : new Set(prev).add(sku))
   }, [])
 
   // ── Validation + submit ────────────────────────────────────────────────
@@ -348,6 +386,8 @@ export function OrderModal({ open, product, onClose }: Props) {
                             product={p}
                             checked={extras.has(p.sku)}
                             onToggle={() => toggleExtra(p.sku)}
+                            selectedVariantKey={extraVariants[p.sku] ?? null}
+                            onPickVariant={(k) => pickExtraVariant(p.sku, k)}
                           />
                         ))}
                       </div>
@@ -489,14 +529,32 @@ function PrimaryProductCard({
 // so multiple fit in the viewport and the carousel-like swipe affordance
 // reads naturally. The check indicator floats over the thumbnail rather
 // than taking its own row, leaving more room for the name + price below.
+//
+// Outer element is a <div> (not <button>) so the variant chips below the
+// price can be their own <button>s — buttons can't legally nest. Clicks on
+// the thumbnail + name area still toggle the card via the inner buttons.
 function UpsellCard({
-  product, checked, onToggle,
-}: { product: Product; checked: boolean; onToggle: () => void }) {
+  product, checked, onToggle, selectedVariantKey, onPickVariant,
+}: {
+  product: Product
+  checked: boolean
+  onToggle: () => void
+  selectedVariantKey: string | null
+  onPickVariant: (variantKey: string) => void
+}) {
+  const variants    = product.variants ?? []
+  const hasVariants = variants.length > 1     // 1-variant SKUs don't need a picker
+  // Resolve which variant photo to show as the hero. When the customer hasn't
+  // explicitly chipped one yet (selectedVariantKey === null) but the product
+  // is multi-variant, fall back to the first variant — matches the parent's
+  // default initialization in extraVariants.
+  const activeVariant = hasVariants
+    ? variants.find(v => (v.sku ?? v.name) === selectedVariantKey) ?? variants[0]
+    : null
+  const heroUrl = activeVariant?.image || product.imageUrl
+
   return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-pressed={checked}
+    <div
       className={[
         'shrink-0 w-[130px] flex flex-col rounded-xl border-2 overflow-hidden text-left transition-all duration-150',
         checked
@@ -504,10 +562,16 @@ function UpsellCard({
           : 'border-[#1E1E1E] bg-[#0A0A0A] hover:border-[#C9A84C]/40',
       ].join(' ')}
     >
-      <div className="relative aspect-square bg-[#0A0A0A] overflow-hidden">
-        {product.imageUrl
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-pressed={checked}
+        aria-label={`${checked ? 'Bỏ chọn' : 'Chọn'} ${product.name}`}
+        className="relative aspect-square bg-[#0A0A0A] overflow-hidden block w-full"
+      >
+        {heroUrl
           // eslint-disable-next-line @next/next/no-img-element
-          ? <img src={proxyImg(product.imageUrl, 256)} alt={product.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+          ? <img src={proxyImg(heroUrl, 256)} alt={product.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
           : <div className="w-full h-full flex items-center justify-center text-[#4A4A4A] text-2xl">🧢</div>}
         <span
           aria-hidden
@@ -524,12 +588,47 @@ function UpsellCard({
             </svg>
           )}
         </span>
-      </div>
-      <div className="px-2 py-1.5">
+      </button>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="px-2 pt-1.5 text-left"
+      >
         <p className="text-[11px] font-bold text-[#F5F5F5] leading-tight line-clamp-2 min-h-[2.4em]">{product.name}</p>
         <p className="text-[11px] text-[#C9A84C] font-mono mt-0.5">{fmt(product.priceBundle)}</p>
-      </div>
-    </button>
+      </button>
+
+      {/* Variant chip strip — horizontal scroll so multi-colour SKUs (up to
+          8 for TC46) fit inside the 130px card without blowing height up.
+          Tapping a chip pins this card's variant AND ticks the checkbox so
+          the customer's intent gets captured in one tap. */}
+      {hasVariants && (
+        <div className="px-2 pb-1.5 pt-1 flex gap-1 overflow-x-auto scrollbar-thin">
+          {variants.map(v => {
+            const key = v.sku ?? v.name ?? ''
+            if (!key) return null
+            const on = (selectedVariantKey ?? (variants[0].sku ?? variants[0].name)) === key
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => onPickVariant(key)}
+                aria-pressed={on}
+                title={v.name || key}
+                className={[
+                  'shrink-0 h-5 px-1.5 rounded border text-[9px] font-bold uppercase tracking-wider whitespace-nowrap transition-colors',
+                  on
+                    ? 'border-[#C9A84C] bg-[#C9A84C]/15 text-[#C9A84C]'
+                    : 'border-[#2A2A2A] text-[#8A8A8A] hover:border-[#C9A84C]/50 hover:text-[#C8C8C8]',
+                ].join(' ')}
+              >
+                {v.name || key}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
   )
 }
 
