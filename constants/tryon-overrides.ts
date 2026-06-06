@@ -47,35 +47,18 @@ export interface TryOnOverride {
 }
 
 export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
-  // ── Face-leak SKUs — all locked at maxRefImages: 2 (owner decision
-  // ── 2026-06-01, batched bump from the previous 1-ref baseline).
+  // Per-SKU maxRefImages overrides are NOT needed right now — the global
+  // default in hooks/useTryOn.ts is 2, which is what every face-leak SKU
+  // was already pinned to. If a specific SKU later needs 1 (e.g. cap
+  // detail acceptable, identity bleeds at 2) or 3+ (e.g. clean
+  // product-only gallery, no face-leak risk), add an entry here for
+  // just that SKU.
   //
-  // Background: the Pancake galleries for these products are dominated by
-  // close-ups of a single model. At the global 6-ref default the model's
-  // face bled through and replaced the customer's selfie. 1 ref killed
-  // identity drift but the cap simplified (TC59 had floating-cap, TC42
-  // lost patch detail). 2 refs is the middle ground: variant image +
-  // one gallery angle (usually a model-wearing shot) gives Gemini enough
-  // signal to seat + detail the cap without enough face votes to drift
-  // the identity.
-  //
-  // Watch each SKU individually after deploy — if any one of these starts
-  // drifting the face again, drop THAT entry back to 1 and accept the
-  // side-detail simplification as the cost of identity preservation.
-  TC39:        { maxRefImages: 2 },
-  TC42:        { maxRefImages: 2 },
-  TC43:        { maxRefImages: 2 },
-  'NÓN TC43':  { maxRefImages: 2 },   // actual SKU key in products.ts
-  TC46:        { maxRefImages: 2 },
-  TC49:        { maxRefImages: 2 },
-  'CB TC49':   { maxRefImages: 2 },   // actual SKU key in products.ts
-  TC56:        { maxRefImages: 2 },
-  TC59:        { maxRefImages: 2 },
-  'Nón TC59':  { maxRefImages: 2 },   // actual SKU key in products.ts
-  TC61:        { maxRefImages: 2 },
-  TC63:        { maxRefImages: 2 },
-  TC67:        { maxRefImages: 2 },
-  TC68:        { maxRefImages: 2 },
+  // History: this map carried explicit `{ maxRefImages: 2 }` for TC39 /
+  // TC42 / TC43 / TC46 / TC49 / TC56 / TC59 / TC61 / TC63 / TC67 / TC68
+  // (with both legacy + clean SKU keys where Pancake used a prefix like
+  // "Nón TC59" / "CB TC49"). Those entries were removed when the global
+  // dropped 6 → 2 on 2026-06-06.
 
   // CT1 NÓN TCAPS — catalog thumbnail features the "Đen / Kết" variant.
   // When the customer taps "THỬ NÓN" from the catalog the try-on should
