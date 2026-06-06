@@ -28,14 +28,16 @@ function nextStep(hasFace: boolean, hasHat: boolean): TryOnStep {
   return 'idle'
 }
 
-// Gemini hiccups in two flavours: a generic network/text-instead-of-image
-// glitch (rare, retry quickly), and a "high demand" capacity error from
-// the upstream model (more common at peak hours — needs to wait it out).
-// We use ONE retry policy for both: exponential backoff over 3 retries
-// = 4 total attempts. The schedule below comes from the owner's spec
-// (first retry 5s, then 15s, then 30s).
-const RETRY_BACKOFF_MS = [5_000, 15_000, 30_000] as const
-const MAX_ATTEMPTS     = RETRY_BACKOFF_MS.length + 1   // 1 initial + 3 retries
+// 2026-06-06: retries DISABLED per owner — every retry was a fresh Gemini
+// image-gen call (~$0.04 each), so a worst-case 3-retry session cost ~$0.16
+// instead of $0.04. Single-attempt only now. If Gemini fails (network,
+// capacity, refusal), the error surfaces to the user and they can manually
+// tap "Thử lại" — which is just a fresh /api/tryon round-trip.
+//
+// Keeping the loop scaffolding + classifier in place so re-enabling retries
+// is a single-line change (RETRY_BACKOFF_MS = [5_000, 15_000, 30_000]).
+const RETRY_BACKOFF_MS: readonly number[] = []
+const MAX_ATTEMPTS     = RETRY_BACKOFF_MS.length + 1   // 1 (no retries)
 
 // "High demand" detector. Gemini surfaces capacity issues a few different
 // ways depending on the upstream region — match all of them so the retry
