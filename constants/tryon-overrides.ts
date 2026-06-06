@@ -53,18 +53,32 @@ export interface TryOnOverride {
 }
 
 export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
-  // Per-SKU maxRefImages overrides are NOT needed right now — the global
-  // default in hooks/useTryOn.ts is 2, which is what every face-leak SKU
-  // was already pinned to. If a specific SKU later needs 1 (e.g. cap
-  // detail acceptable, identity bleeds at 2) or 3+ (e.g. clean
-  // product-only gallery, no face-leak risk), add an entry here for
-  // just that SKU.
+  // ── Face-leak SKUs — capped at maxRefImages: 1 ──────────────────────────
   //
-  // History: this map carried explicit `{ maxRefImages: 2 }` for TC39 /
-  // TC42 / TC43 / TC46 / TC49 / TC56 / TC59 / TC61 / TC63 / TC67 / TC68
-  // (with both legacy + clean SKU keys where Pancake used a prefix like
-  // "Nón TC59" / "CB TC49"). Those entries were removed when the global
-  // dropped 6 → 2 on 2026-06-06.
+  // Global default is 20 (send entire Pancake gallery) for cap-detail
+  // fidelity. Some SKUs have Pancake galleries that still carry photos
+  // of a single model wearing the cap — those leak the model's face onto
+  // the customer's selfie when included as refs. The fix is to cap THESE
+  // SKUs at 1 ref (variant.image only, no gallery padding) so Gemini
+  // can't learn the model's identity.
+  //
+  // Identity > cap detail. If a specific SKU's design suffers too much
+  // at 1 ref (e.g. brim underside detail missing), individually bump it
+  // to 2 here and re-check the face. If face leaks at 2, accept the
+  // simplification.
+  TC39:        { maxRefImages: 1 },
+  TC42:        { maxRefImages: 1 },
+  TC43:        { maxRefImages: 1 },
+  'NÓN TC43':  { maxRefImages: 1 },
+  TC49:        { maxRefImages: 1 },
+  'CB TC49':   { maxRefImages: 1 },
+  TC56:        { maxRefImages: 1 },
+  TC59:        { maxRefImages: 1 },
+  'Nón TC59':  { maxRefImages: 1 },
+  TC61:        { maxRefImages: 1 },
+  TC63:        { maxRefImages: 1 },
+  TC67:        { maxRefImages: 1 },
+  TC68:        { maxRefImages: 1 },
 
   // TC46 NÓN DARK STALLION — pinnedImageUrl kept (Pancake's API returns
   // the wrong primary). maxRefImages override removed: global cap is now
