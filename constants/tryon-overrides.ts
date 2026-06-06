@@ -67,16 +67,10 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   // dropped 6 → 2 on 2026-06-06.
 
   // TC46 NÓN DARK STALLION — pinnedImageUrl kept (Pancake's API returns
-  // the wrong primary). maxRefImages bumped to 6 (2026-06-06): owner
-  // cleaned up the Pancake gallery to ~2 photos per variant (front +
-  // brim underside with "Stallion" wordmark). At 1 ref the underside
-  // detail was missing entirely; at 2 it was incomplete. 6 refs lets
-  // Gemini see the underside angle alongside the variant photo without
-  // hitting the old green-leak ceiling (the gallery is now curated, no
-  // longer carries detail shots from a single colourway).
+  // the wrong primary). maxRefImages override removed: global cap is now
+  // 20, which covers TC46's 13-photo gallery in full.
   TC46: {
     pinnedImageUrl: 'https://content.pancake.vn/2-2512/2025/12/8/ec2768ecb1c60190902f3199e71ad4d1dd4578af.jpg',
-    maxRefImages:   6,
   },
 
   // TC30 NÓN SÓI ĐÊM TCAPS — owner picked CONG/ĐEN VÀNG (gold-badge black)

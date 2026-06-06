@@ -68,7 +68,7 @@ function classifyRetryReason(msg: string): 'high-demand' | 'other' {
 const PERSON_MAX_DIM      = 2048
 const ORIGINAL_MAX_BYTES  = 10 * 1024 * 1024   // send original as-is up to ~10MB
 const MAX_SEND_CHARS      = 15 * 1024 * 1024   // hard cap for the data URL we POST
-const MAX_CAP_IMAGES      = 2                  // cap angles sent to Gemini per try-on (owner-set 2026-06-06 — applies to ALL SKUs to fully suppress face/colour leak; previously 6 with per-SKU overrides down to 2)
+const MAX_CAP_IMAGES      = 20                 // 2026-06-06 owner: send ALL Pancake photos (each variant curated to ~2 photos in POS — front + brim underside). 20 is a safety ceiling; real galleries are smaller, e.g. TC46 has 13.
 
 
 /**
