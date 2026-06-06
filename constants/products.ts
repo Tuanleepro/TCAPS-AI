@@ -51,7 +51,7 @@ export const PRODUCTS: Product[] = [
       { sku: "TC30",              name: "NGANG / TRẮNG",   price: 130000, stock: -3,  image: "" },
       { sku: "TC30CONGTRANGFULL", name: "CONG / TRẮNG",    price: 130000, stock: -3,  image: "" },
       { sku: "TC30CONGDO",        name: "CONG / ĐỎ",       price: 130000, stock: -5,  image: "https://content.pancake.vn/2-25/2025/1/12/a4ad68f64d9fbeafd1ca273355b0c46c2c771002.jpg" },
-      { sku: "TC30CONGXANH",      name: "CONG / XANH",     price: 130000, stock: -32, image: "" }
+      { sku: "TC30CONGXANH",      name: "CONG / XANH",     price: 130000, stock: -32, image: "https://content.pancake.vn/2-25/2025/1/12/cb1567918a130df058465a916984cf84bcda6e2b.jpg" }
     ],
     stock: 311,
     pancakeId: "b8fe8b04-ad1b-4d78-916e-170fe27cb158",
