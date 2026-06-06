@@ -390,16 +390,25 @@ async function main() {
 
         // Per-variant: match by sku first, then name, then index. Update stock
         // always; update image only if existing isn't local.
+        //
+        // Bootstrap case (2026-06-06): when the app row is a fresh stub with
+        // an EMPTY variants array but Pancake has variants, copy them across
+        // wholesale. Without this, adding a new product to the app required
+        // hand-typing each variant SKU before SYNC_ONLY could populate it.
         if (sp.variants.length && Array.isArray(m.variants)) {
-          for (let vi = 0; vi < sp.variants.length; vi++) {
-            const newV = sp.variants[vi]
-            const existingV =
-              m.variants.find((v) => v.sku && newV.sku && (v.sku || '').toUpperCase() === (newV.sku || '').toUpperCase()) ||
-              m.variants.find((v) => v.name && newV.name && loose(v.name) === loose(newV.name)) ||
-              m.variants[vi]
-            if (!existingV) continue
-            if (newV.stock || newV.stock === 0) existingV.stock = newV.stock
-            if (newV.image && !isLocalPath(existingV.image)) existingV.image = newV.image
+          if (m.variants.length === 0) {
+            m.variants = sp.variants.map((v) => ({ ...v }))
+          } else {
+            for (let vi = 0; vi < sp.variants.length; vi++) {
+              const newV = sp.variants[vi]
+              const existingV =
+                m.variants.find((v) => v.sku && newV.sku && (v.sku || '').toUpperCase() === (newV.sku || '').toUpperCase()) ||
+                m.variants.find((v) => v.name && newV.name && loose(v.name) === loose(newV.name)) ||
+                m.variants[vi]
+              if (!existingV) continue
+              if (newV.stock || newV.stock === 0) existingV.stock = newV.stock
+              if (newV.image && !isLocalPath(existingV.image)) existingV.image = newV.image
+            }
           }
         }
       } else {
