@@ -44,6 +44,15 @@ const HEADLESS = process.env.HEADLESS === '1'
 const SYNC_ONLY = process.env.SYNC_ONLY === '1'
 const isLocalPath = (s) => typeof s === 'string' && s.startsWith('/')
 
+// Mirror of pinnedImageUrl in constants/tryon-overrides.ts. When Pancake's
+// API returns the wrong image[0] for an SKU (POS UI shows one canonical,
+// API returns another), pin the correct URL here so SYNC_ONLY doesn't
+// re-clobber the manual fix in products.ts on every run.
+const PINNED_IMAGE_URLS = {
+  TC46: 'https://content.pancake.vn/2-2512/2025/12/8/ec2768ecb1c60190902f3199e71ad4d1dd4578af.jpg',
+}
+const pinnedFor = (sku) => PINNED_IMAGE_URLS[(sku || '').trim()] ?? null
+
 fs.mkdirSync(OUT_DIR, { recursive: true })
 
 const isLoginUrl = (u) => /login|signin|sign-in|\/auth|account\.pancake/i.test(u)
@@ -381,11 +390,23 @@ async function main() {
         if (sp.stock || sp.stock === 0) m.stock = sp.stock
         if (sp.pancakeId) m.pancakeId = sp.pancakeId
 
-        // Parent imageUrl + images: only refresh from Pancake if the current
-        // value is NOT a local /public path (the owner overrode it manually).
+        // Parent imageUrl + images: refresh from Pancake unless either
+        //   (a) the current value is a local /public path (owner override), or
+        //   (b) this SKU is in PINNED_IMAGE_URLS (Pancake API returns the
+        //       wrong primary — keep the pinned URL but still refresh the
+        //       gallery so other angles update).
+        const pinned = pinnedFor(m.sku)
         if (sp.images.length && !isLocalPath(m.imageUrl)) {
-          m.imageUrl = sp.images[0]
-          m.images   = sp.images
+          if (pinned) {
+            m.imageUrl = pinned
+            // Move pinned URL to the front of the new gallery if Pancake
+            // already lists it; otherwise prepend so the canonical leads.
+            const fromApi = sp.images.filter((u) => u !== pinned)
+            m.images = sp.images.includes(pinned) ? [pinned, ...fromApi] : [pinned, ...fromApi]
+          } else {
+            m.imageUrl = sp.images[0]
+            m.images   = sp.images
+          }
         }
 
         // Per-variant: match by sku first, then name, then index. Update stock

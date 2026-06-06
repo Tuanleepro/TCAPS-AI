@@ -44,6 +44,12 @@ export interface TryOnOverride {
    * dropdown). The product detail page IGNORES this — it always uses
    * the variant the customer manually picked there. */
   defaultTryOnVariant?: string
+  /** Force the catalog / product-detail "representative" image to this
+   * URL, regardless of what Pancake's API returns as images[0]. Used
+   * when the POS UI shows one photo as primary but the API keeps
+   * returning a different one. The scraper checks this override and
+   * skips overwriting imageUrl during SYNC_ONLY when set. */
+  pinnedImageUrl?: string
 }
 
 export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
@@ -59,6 +65,14 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   // (with both legacy + clean SKU keys where Pancake used a prefix like
   // "Nón TC59" / "CB TC49"). Those entries were removed when the global
   // dropped 6 → 2 on 2026-06-06.
+
+  // TC46 NÓN DARK STALLION — Pancake POS UI shows the CONG/VÀNG (gold-
+  // curved) variant as the primary, but the Pancake API has been returning
+  // NGANG/ĐỎ (red-flat) as images[0] regardless. Owner has tried reordering
+  // multiple times; the change visually sticks in POS but the API doesn't
+  // reflect it. Pinning here keeps the catalog/hero on the yellow until
+  // Pancake's side gets sorted.
+  TC46:        { pinnedImageUrl: 'https://content.pancake.vn/2-2512/2025/12/8/ec2768ecb1c60190902f3199e71ad4d1dd4578af.jpg' },
 
   // CT1 NÓN TCAPS — catalog thumbnail features the "Đen / Kết" variant.
   // When the customer taps "THỬ NÓN" from the catalog the try-on should
