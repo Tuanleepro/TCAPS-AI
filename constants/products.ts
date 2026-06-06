@@ -45,15 +45,15 @@ export const PRODUCTS: Product[] = [
     tags: [],
     images: ["https://content.pancake.vn/2-24/2024/11/21/c58f8b2a3edfcc2158ce850237496e2c2c349c36.jpg", "https://content.pancake.vn/2-24/2024/11/15/ef198ab9ccd3fffe03a8f09d697734e895d15f8b.jpg", "https://content.pancake.vn/2-24/2024/11/21/87438e4efc3c1399af7ef668b7e1d09d5781c98f.jpg", "https://content.pancake.vn/2-24/2024/11/21/af512301afcd0efc8729fc543e8f51aebe4d54d2.jpg", "https://content.pancake.vn/2-24/2024/11/21/5df798461aa5dc8c5584a8bba2d97596986d9151.jpg", "https://content.pancake.vn/2-24/2024/11/21/eb33229e83e83b60cb786c4eacd6d4da64cf8b19.jpg", "https://content.pancake.vn/2-24/2024/11/21/990bc1315cbc2ce90ddb94c52557ee54df1247cd.jpg", "https://content.pancake.vn/2-24/2024/11/21/6887aa8c9184af777ca6533071fdf93e62171053.jpg", "https://content.pancake.vn/2-25/2025/3/31/62d88aa4ccecbdb302d2b2867b4fede66ba342c1.jpg", "https://content.pancake.vn/2-25/2025/1/12/a4ad68f64d9fbeafd1ca273355b0c46c2c771002.jpg", "https://content.pancake.vn/2-24/2024/11/24/4b740a3d92a6e17270b4c0b0594513645570432b.jpg", "https://content.pancake.vn/2-2512/2025/12/28/e96defcb9bf4aef0f06d1200e350aca216207b2b.jpg", "https://content.pancake.vn/2-2512/2025/12/11/f793ee147053c8f94614e35b94f812d7b5e3faab.jpg", "https://content.pancake.vn/2-25/2025/1/12/40034f5a76aed8a8b419144a3f09298e38171c01.jpg", "https://content.pancake.vn/2-25/2025/1/12/cb1567918a130df058465a916984cf84bcda6e2b.jpg", "https://content.pancake.vn/2-2512/2025/12/11/181ac89e7432747255b8c29bc1491f86f22ce285.jpg", "https://content.pancake.vn/2-2512/2025/12/11/3c8714583b0f113b18e7ede40e3b3b8ad3ca6553.jpg", "https://content.pancake.vn/2-2512/2025/12/11/48d230f9c23aca12ab1ed9a34b81a36db1e1be6b.jpg", "https://content.pancake.vn/2-2512/2025/12/11/aa9b63db93abbfa7448837064f5019a5947a8290.jpg"],
     variants: [
-      { sku: "TC30CONGDENVANG",   name: "CONG / ĐEN VÀNG", price: 130000, stock: 496, image: "https://content.pancake.vn/2-2512/2025/12/11/181ac89e7432747255b8c29bc1491f86f22ce285.jpg" },
-      { sku: "TC30CONGDEN",       name: "CONG / ĐEN",      price: 130000, stock: 5,   image: "https://content.pancake.vn/2-24/2024/11/24/4b740a3d92a6e17270b4c0b0594513645570432b.jpg" },
-      { sku: "TC30NGANGDEN",      name: "NGANG / ĐEN",     price: 130000, stock: -26, image: "https://content.pancake.vn/2-25/2025/3/31/62d88aa4ccecbdb302d2b2867b4fede66ba342c1.jpg" },
-      { sku: "TC30",              name: "NGANG / TRẮNG",   price: 130000, stock: -3,  image: "https://content.pancake.vn/2-24/2024/11/21/c58f8b2a3edfcc2158ce850237496e2c2c349c36.jpg" },
-      { sku: "TC30CONGTRANGFULL", name: "CONG / TRẮNG",    price: 130000, stock: -3,  image: "https://content.pancake.vn/2-25/2025/1/12/a4ad68f64d9fbeafd1ca273355b0c46c2c771002.jpg" },
-      { sku: "TC30CONGDO",        name: "CONG / ĐỎ",       price: 130000, stock: -5,  image: "https://content.pancake.vn/2-25/2025/1/12/40034f5a76aed8a8b419144a3f09298e38171c01.jpg" },
-      { sku: "TC30CONGXANH",      name: "CONG / XANH",     price: 130000, stock: -32, image: "https://content.pancake.vn/2-25/2025/1/12/cb1567918a130df058465a916984cf84bcda6e2b.jpg" }
+      { sku: "TC30CONGDENVANG", name: "CONG / ĐEN VÀNG", price: 130000, stock: 475, image: "https://content.pancake.vn/2-2512/2025/12/11/181ac89e7432747255b8c29bc1491f86f22ce285.jpg" },
+      { sku: "TC30CONGDEN", name: "CONG / ĐEN", price: 130000, stock: -98, image: "https://content.pancake.vn/2-24/2024/11/24/4b740a3d92a6e17270b4c0b0594513645570432b.jpg" },
+      { sku: "TC30NGANGDEN", name: "NGANG / ĐEN", price: 130000, stock: -26, image: "https://content.pancake.vn/2-25/2025/3/31/62d88aa4ccecbdb302d2b2867b4fede66ba342c1.jpg" },
+      { sku: "TC30", name: "NGANG / TRẮNG", price: 130000, stock: -3, image: "https://content.pancake.vn/2-24/2024/11/21/c58f8b2a3edfcc2158ce850237496e2c2c349c36.jpg" },
+      { sku: "TC30CONGTRANGFULL", name: "CONG / TRẮNG", price: 130000, stock: -3, image: "https://content.pancake.vn/2-25/2025/1/12/a4ad68f64d9fbeafd1ca273355b0c46c2c771002.jpg" },
+      { sku: "TC30CONGDO", name: "CONG / ĐỎ", price: 130000, stock: -5, image: "https://content.pancake.vn/2-25/2025/1/12/40034f5a76aed8a8b419144a3f09298e38171c01.jpg" },
+      { sku: "TC30CONGXANH", name: "CONG / XANH", price: 130000, stock: -32, image: "https://content.pancake.vn/2-25/2025/1/12/cb1567918a130df058465a916984cf84bcda6e2b.jpg" }
     ],
-    stock: 311,
+    stock: 308,
     pancakeId: "b8fe8b04-ad1b-4d78-916e-170fe27cb158",
   },
   {
@@ -87,11 +87,11 @@ export const PRODUCTS: Product[] = [
     tags: [],
     images: ["https://content.pancake.vn/2-2605/2026/5/31/9f1402482b7c25901a05ad8de9edd7ae1f8c3996.png", "https://content.pancake.vn/2-2605/2026/5/31/ca8e8bf7c0682d19b40daac54c25001fb229fe89.jpg", "https://content.pancake.vn/2-2605/2026/5/20/6ad92817552e211955abfdc6db3f92188fbf4480.jpg", "https://content.pancake.vn/2-2605/2026/5/31/c086b972960c6d046d56c373785d603f971a370d.png", "https://content.pancake.vn/2-2605/2026/5/15/e37f1cfd8391468e63cbb3dc3e8ea0e5cb34415c.jpg"],
     variants: [
-      { sku: "TC67NGANGTRANG", name: "NGANG / TRẮNG", price: 130000, stock: -17, image: "https://content.pancake.vn/2-2605/2026/5/31/9f1402482b7c25901a05ad8de9edd7ae1f8c3996.png" },
+      { sku: "TC67NGANGTRANG", name: "NGANG / TRẮNG", price: 130000, stock: -18, image: "https://content.pancake.vn/2-2605/2026/5/31/9f1402482b7c25901a05ad8de9edd7ae1f8c3996.png" },
       { sku: "TC67NGANGDEN", name: "NGANG / ĐEN", price: 130000, stock: 121, image: "https://content.pancake.vn/2-2605/2026/5/20/6ad92817552e211955abfdc6db3f92188fbf4480.jpg" },
       { sku: "TC67CONGTRANG", name: "CONG / TRẮNG", price: 130000, stock: -5, image: "https://content.pancake.vn/2-2605/2026/5/15/e37f1cfd8391468e63cbb3dc3e8ea0e5cb34415c.jpg" }
     ],
-    stock: 99,
+    stock: 98,
     pancakeId: "5f39279c-9415-46c3-b87a-f963f5087c08",
   },
   {
@@ -203,9 +203,9 @@ export const PRODUCTS: Product[] = [
     tags: [],
     images: ["https://content.pancake.vn/2-2601/2026/1/24/6c4bcd380a1eba95c7c2e631eee2e960464ca98a.jpg", "https://content.pancake.vn/2-2601/2026/1/24/b7bcbf6ad108644be25c4ab932b4a98f23bfc693.jpg", "https://content.pancake.vn/2-2601/2026/1/24/85290c30bef6306885b40f4b8946efd36d8e2bba.jpg", "https://content.pancake.vn/2-2601/2026/1/24/66654aff446dcfce8f1f47e6fe121cdeadf49ce5.jpg", "https://content.pancake.vn/2-2601/2026/1/24/b3a7f60420dafb73591a977e433976bf2972a420.jpg", "https://content.pancake.vn/2-2601/2026/1/22/d9e4216bbf1be166d0546d057dcee74b78848eb5.jpg"],
     variants: [
-      { sku: "TC61LUOICONG", name: "Lưỡi Cong", price: 130000, stock: 264, image: "https://content.pancake.vn/2-2601/2026/1/24/6c4bcd380a1eba95c7c2e631eee2e960464ca98a.jpg" }
+      { sku: "TC61LUOICONG", name: "Lưỡi Cong", price: 130000, stock: 262, image: "https://content.pancake.vn/2-2601/2026/1/24/6c4bcd380a1eba95c7c2e631eee2e960464ca98a.jpg" }
     ],
-    stock: 264,
+    stock: 262,
     pancakeId: "20ce8853-3700-4c3d-8b25-fe7e47a5b711",
   },
   {
@@ -221,10 +221,10 @@ export const PRODUCTS: Product[] = [
     tags: [],
     images: ["https://content.pancake.vn/2-2601/2026/1/11/7e4a0cc9c74ff6572c716faf8a33969219ab2b87.jpg", "https://content.pancake.vn/2-2601/2026/1/11/508d528af7b66dd053e234886e6159fdf49ad1e9.jpg", "https://content.pancake.vn/2-2601/2026/1/11/e76937891b46bbe87844afdee013915a4f1ded7c.jpg", "https://content.pancake.vn/2-2601/2026/1/11/1ecc23fdef5f04ee6814e868a2d38ad79fcdc027.jpg", "https://content.pancake.vn/2-2601/2026/1/4/c9f0a6a0a2d57e94483087a0e9f9dead541ee62c.jpg", "https://content.pancake.vn/2-2605/2026/5/31/4be997e50309d6e5bde21492fa9981683d164008.png"],
     variants: [
-      { sku: "NONTC59SNAPBACK", name: "Snapback", price: 130000, stock: 190, image: "https://content.pancake.vn/2-2601/2026/1/11/7e4a0cc9c74ff6572c716faf8a33969219ab2b87.jpg" },
+      { sku: "NONTC59SNAPBACK", name: "Snapback", price: 130000, stock: 191, image: "https://content.pancake.vn/2-2601/2026/1/11/7e4a0cc9c74ff6572c716faf8a33969219ab2b87.jpg" },
       { sku: "NONTC59LUOICONG", name: "Lưỡi Cong", price: 130000, stock: 483, image: "https://content.pancake.vn/2-2601/2026/1/4/c9f0a6a0a2d57e94483087a0e9f9dead541ee62c.jpg" }
     ],
-    stock: 673,
+    stock: 674,
     pancakeId: "83f2ecb4-ab71-4646-bdc8-4bc909b08222",
   },
   {
@@ -477,10 +477,10 @@ export const PRODUCTS: Product[] = [
     tags: [],
     images: ["https://content.pancake.vn/2-2602/2026/2/22/8ce81b59d7b0457d68daa0190e1d06014bad61a2.jpg", "https://content.pancake.vn/2-2603/2026/3/9/6d61058b7c8187a2050539b18bf4267281b8c965.png", "https://content.pancake.vn/2-2605/2026/5/31/7d99bd50bec7e1e8f9e60793de97ec43c89fae2f.png", "https://content.pancake.vn/2-2603/2026/3/14/2c25d213cef5892d2c90085ef0fb950615b4a0a1.png", "https://content.pancake.vn/2-2605/2026/5/31/0e14fda54e8a58d33a2a202f936115c59d68a794.png"],
     variants: [
-      { sku: "TC41DENNGANG", name: "Đen / NGANG", price: 130000, stock: 117, image: "https://content.pancake.vn/2-2602/2026/2/22/8ce81b59d7b0457d68daa0190e1d06014bad61a2.jpg" },
+      { sku: "TC41DENNGANG", name: "Đen / NGANG", price: 130000, stock: 116, image: "https://content.pancake.vn/2-2602/2026/2/22/8ce81b59d7b0457d68daa0190e1d06014bad61a2.jpg" },
       { sku: "TC41DENCONG", name: "Đen / CONG", price: 130000, stock: -3, image: "https://content.pancake.vn/2-2603/2026/3/14/2c25d213cef5892d2c90085ef0fb950615b4a0a1.png" }
     ],
-    stock: 114,
+    stock: 113,
     pancakeId: "03f147fa-b540-449a-a06e-8bc799dd4368",
   },
   {
@@ -496,12 +496,12 @@ export const PRODUCTS: Product[] = [
     tags: [],
     images: ["https://content.pancake.vn/2-25/2025/6/12/3d8a953e41340d2bd370ace666172dd15ac5de21.jpg", "https://content.pancake.vn/2-25/2025/8/14/8223c1da5c7ace01c9b283cf12df077ada8b02a9.jpg", "https://content.pancake.vn/2-2603/2026/3/27/9126633fc9417e4c52c09283f149748b9cbbf697.jpg", "https://content.pancake.vn/2-25/2025/6/12/2ccae2b367dd56df1c94b0fccf0814a700aa26a0.jpg", "https://content.pancake.vn/2-25/2025/8/29/95b90b134c83d16f1ee90f748a52d8eaad2c44a6.jpg", "https://content.pancake.vn/2-25/2025/9/22/88eb3f73a0f83892763b4e92335073b46001f2f2.jpg"],
     variants: [
-      { sku: "TC39DENSNAPBACK", name: "Đen / Snapback", price: 130000, stock: 45, image: "https://content.pancake.vn/2-25/2025/6/12/3d8a953e41340d2bd370ace666172dd15ac5de21.jpg" },
-      { sku: "TC39DENKET", name: "Đen / Kết", price: 130000, stock: 94, image: "https://content.pancake.vn/2-25/2025/6/12/2ccae2b367dd56df1c94b0fccf0814a700aa26a0.jpg" },
+      { sku: "TC39DENSNAPBACK", name: "Đen / Snapback", price: 130000, stock: 44, image: "https://content.pancake.vn/2-25/2025/6/12/3d8a953e41340d2bd370ace666172dd15ac5de21.jpg" },
+      { sku: "TC39DENKET", name: "Đen / Kết", price: 130000, stock: 93, image: "https://content.pancake.vn/2-25/2025/6/12/2ccae2b367dd56df1c94b0fccf0814a700aa26a0.jpg" },
       { sku: "TC39MAUSNAPBACK", name: "MÀU XANH / Snapback", price: 130000, stock: -38, image: "https://content.pancake.vn/2-25/2025/8/29/95b90b134c83d16f1ee90f748a52d8eaad2c44a6.jpg" },
       { sku: "Tc39 Trắng snapback", name: "TRẮNG / Snapback", price: 130000, stock: -17, image: "https://content.pancake.vn/2-25/2025/9/22/88eb3f73a0f83892763b4e92335073b46001f2f2.jpg" }
     ],
-    stock: 84,
+    stock: 82,
     pancakeId: "dc44d50e-e888-45df-a15f-0100ffeba950",
   },
   {
