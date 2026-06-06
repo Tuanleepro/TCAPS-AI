@@ -118,21 +118,13 @@ function TryOnMain() {
   // Pick a hat from the in-page product grid: fetch its photo → load it as the
   // hat (same pipeline as catalog ?sku / file upload). Does NOT auto-run — the
   // user still presses "Thử Nón Ngay" once the selfie is added too.
-  const pickProduct = useCallback((p: Product, variantSku?: string | null) => {
+  const pickProduct = useCallback((p: Product) => {
     if (!p.imageUrl || hatLoading) return
-    // Variant pin: when the customer clicks a colour chip we send THAT
-    // variant's photo as the canonical reference (drives both the gallery
-    // filter and the cache key on the server). When picking by clicking
-    // the card itself with no variant chosen, fall back to the parent
-    // imageUrl + null pin (server uses the colour/brim filter as before).
-    const variant = variantSku && p.variants
-      ? p.variants.find(v => v.sku === variantSku || v.name === variantSku) ?? null
-      : null
-    const imageUrl = variant?.image || p.imageUrl
-    appliedKeyRef.current = `${p.sku}::${variant?.sku ?? variant?.name ?? ''}`
+    // No specific variant when picking from the grid → clear the variant pin.
+    appliedKeyRef.current = `${p.sku}::`               // block the ?sku effect from re-loading
     setHatLoading(true)
-    productImageToFile(imageUrl, p.sku)
-      .then(file => setHatFile(file, p.sku, variant?.sku ?? variant?.name ?? null))
+    productImageToFile(p.imageUrl, p.sku)
+      .then(file => setHatFile(file, p.sku, null))
       .catch(err => console.warn('[TryOn] pick hat failed:', err))
       .finally(() => setHatLoading(false))
   }, [setHatFile, hatLoading])
@@ -287,7 +279,7 @@ function TryOnMain() {
 // (e.g. an unsupported API on an old mobile WebKit), surface the error and
 // fall back to a no-image name list so the customer can still pick a hat.
 class PickerBoundary extends Component<
-  { products: Product[]; onPick: (p: Product, variantSku?: string | null) => void; children: ReactNode },
+  { products: Product[]; onPick: (p: Product) => void; children: ReactNode },
   { error: Error | null }
 > {
   state: { error: Error | null } = { error: null }
@@ -355,24 +347,9 @@ function SelectedHatBanner({ product, loading }: { product: Product; loading: bo
 function HatPicker({ selectedSku, loading, onPick }: {
   selectedSku: string | null
   loading: boolean
-  onPick: (p: Product, variantSku?: string | null) => void
+  onPick: (p: Product) => void
 }) {
   const [q, setQ] = useState('')
-  // Per-SKU variant selection — preserved when the customer scrolls through
-  // other cards and comes back. Keyed by parent SKU. Defaults to the first
-  // variant of any product with >1 variant so the chip strip never has a
-  // "no chip selected" gap.
-  const [variantPicks, setVariantPicks] = useState<Record<string, string>>(() => {
-    const init: Record<string, string> = {}
-    for (const p of PICKABLE) {
-      if (p.variants && p.variants.length > 1) {
-        const first = p.variants[0]
-        const k = first.sku ?? first.name
-        if (k) init[p.sku] = k
-      }
-    }
-    return init
-  })
   const items = useMemo(() => {
     const n = norm(q.trim())
     return n ? PICKABLE.filter(p => norm(p.name).includes(n) || norm(p.sku).includes(n)) : PICKABLE
@@ -404,38 +381,28 @@ function HatPicker({ selectedSku, loading, onPick }: {
         {items.length === 0 ? (
           <p className="col-span-full text-center text-sm text-[#6B6B6B] py-8">Không tìm thấy nón nào.</p>
         ) : items.map(p => {
-          const sel        = p.sku === selectedSku
-          const variants   = p.variants ?? []
-          const hasVariants = variants.length > 1
-          const pickedKey  = variantPicks[p.sku]
-          const pickedVariant = hasVariants
-            ? variants.find(v => (v.sku ?? v.name) === pickedKey) ?? null
-            : null
-          // When variants exist, the card's hero image follows the chip.
-          const heroUrl = pickedVariant?.image || p.imageUrl
+          const sel = p.sku === selectedSku
           return (
-            <div
+            <button
               key={p.sku}
+              type="button"
+              onClick={() => onPick(p)}
+              aria-pressed={sel}
               className={[
-                'relative w-full rounded-xl border text-left flex flex-col overflow-hidden',
+                'group relative block w-full rounded-xl border text-left',
                 sel ? 'border-[#C9A84C] ring-2 ring-[#C9A84C]/50' : 'border-[#1E1E1E]',
               ].join(' ')}
             >
-              {/* Image acts as the card-pick button. Tapping it selects the
-                  product with whichever variant is currently chipped (or null
-                  when the product has only one). Inline height as elsewhere
-                  in this picker — Tailwind h-28 collapsed under iOS WebView. */}
-              <button
-                type="button"
-                onClick={() => onPick(p, pickedKey ?? null)}
-                aria-pressed={sel}
-                aria-label={`Chọn ${p.name}${pickedVariant?.name ? ` ${pickedVariant.name}` : ''}`}
-                style={{ display: 'block', position: 'relative', height: '112px', background: '#0A0A0A' }}
-                className="w-full"
-              >
+              {/* Image height is set via INLINE STYLE, not a Tailwind class.
+                  On the user's iOS Safari/Zalo WebView the class-based height
+                  (`h-28`) did not take effect and the thumbnail collapsed to a
+                  thin strip; an inline height renders reliably (no dependency on
+                  the external stylesheet loading/applying). Confirmed fixed on a
+                  real device. */}
+              <span style={{ display: 'block', position: 'relative', height: '112px', background: '#0A0A0A' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={proxyImg(heroUrl, 256)}
+                  src={proxyImg(p.imageUrl, 256)}
                   alt={p.name}
                   decoding="async"
                   style={{ width: '100%', height: '112px', objectFit: 'contain', display: 'block' }}
@@ -447,52 +414,9 @@ function HatPicker({ selectedSku, loading, onPick }: {
                     </span>
                   </span>
                 )}
-              </button>
-
-              {/* Name */}
-              <button
-                type="button"
-                onClick={() => onPick(p, pickedKey ?? null)}
-                className="px-1.5 pt-1.5 text-[11px] font-semibold text-[#F5F5F5] leading-tight line-clamp-2 min-h-[2.6em] text-left"
-              >
-                {p.name}
-              </button>
-
-              {/* Variant chip strip — shown for any SKU with more than one
-                  variant. Horizontal scroll so multi-variant products don't
-                  blow up the card height. Tap a chip → mark this card's
-                  variant choice AND pick the product so the AI immediately
-                  switches to that variant photo. */}
-              {hasVariants && (
-                <div className="px-1.5 pb-1.5 pt-0.5 flex gap-1 overflow-x-auto scrollbar-thin">
-                  {variants.map(v => {
-                    const key   = v.sku ?? v.name ?? ''
-                    if (!key) return null
-                    const chipOn = pickedKey === key
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => {
-                          setVariantPicks(prev => ({ ...prev, [p.sku]: key }))
-                          onPick(p, key)
-                        }}
-                        aria-pressed={chipOn}
-                        title={v.name || key}
-                        className={[
-                          'shrink-0 px-1.5 h-5 rounded border text-[9px] font-bold uppercase tracking-wider whitespace-nowrap transition-colors',
-                          chipOn
-                            ? 'border-[#C9A84C] bg-[#C9A84C]/15 text-[#C9A84C]'
-                            : 'border-[#2A2A2A] text-[#8A8A8A] hover:border-[#C9A84C]/40 hover:text-[#C8C8C8]',
-                        ].join(' ')}
-                      >
-                        {v.name || key}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
+              </span>
+              <span className="block px-1.5 py-1.5 text-[11px] font-semibold text-[#F5F5F5] leading-tight line-clamp-2 min-h-[2.6em]">{p.name}</span>
+            </button>
           )
         })}
       </div>
