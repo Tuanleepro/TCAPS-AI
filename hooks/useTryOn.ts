@@ -294,13 +294,19 @@ export function useTryOn() {
       //   - Otherwise → product.imageUrl (the "representative" photo the
       //     customer saw on the catalog / banner)
       //
-      // Padding (image #2..N for cap-detail fidelity): all OTHER gallery
-      // photos, EXCLUDING any photo that's the canonical of a DIFFERENT
-      // variant. Sibling-variant canonicals introduce wrong colourways
-      // (e.g. picking NGANG/TRẮNG but the gallery also carries the
-      // NGANG/ĐEN canonical → Gemini can't tell which the customer wants
-      // and sometimes renders the wrong colour). Excluding them stops the
-      // leak across BOTH the pinned and un-pinned paths.
+      // Ref #2 priority — the "design anchor":
+      //   When the customer picked a variant, prefer product.imageUrl as
+      //   the second reference. It's the curated canonical photo for the
+      //   SKU; sending it alongside the variant photo gives Gemini two
+      //   complementary views of the SAME product (same logo, same patch,
+      //   same construction) and the COLOUR LOCK in the prompt keeps it
+      //   from drifting to the parent's colour. Without this, the second
+      //   ref used to fall back to a "safe gallery angle" — those tend to
+      //   be lifestyle / packaging / detail shots that confuse the design.
+      //
+      // Padding (ref #3..N for cap-detail fidelity, when maxRefs > 2):
+      //   non-variant gallery photos. Sibling-variant canonicals are still
+      //   excluded since they'd inject the wrong colourway.
       const leadImage = pinnedVariant?.image ?? product?.imageUrl ?? null
       const otherVariantImages = new Set<string>(
         (product?.variants ?? [])
@@ -310,8 +316,20 @@ export function useTryOn() {
       const safeGalleryAngles = (product?.images ?? []).filter(u =>
         /^https?:\/\//.test(u) && u !== leadImage && !otherVariantImages.has(u),
       )
-      const sourceImages = leadImage
-        ? [leadImage, ...safeGalleryAngles]
+      // Build the source list. When a variant is pinned AND product.imageUrl
+      // differs from the lead, slot it in as ref #2 (design anchor). Then
+      // pad with safe gallery angles, deduped against everything already in
+      // the list.
+      const composed: string[] = []
+      if (leadImage) composed.push(leadImage)
+      if (pinnedVariant?.image && product?.imageUrl && product.imageUrl !== leadImage) {
+        composed.push(product.imageUrl)
+      }
+      for (const u of safeGalleryAngles) {
+        if (!composed.includes(u)) composed.push(u)
+      }
+      const sourceImages = composed.length
+        ? composed
         : product
           ? filterImagesByVariant(product, detectedColor, detectedBrim)
           : []
