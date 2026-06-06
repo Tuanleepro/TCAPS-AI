@@ -53,28 +53,18 @@ export interface TryOnOverride {
 }
 
 export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
-  // ── Face-leak SKUs — capped at maxRefImages: 2 ──────────────────────────
+  // ── No per-SKU maxRefImages overrides ──────────────────────────────────
   //
-  // Global default is 20 (send entire Pancake gallery) for cap-detail
-  // fidelity. These SKUs had Pancake galleries that still carried photos
-  // of a model wearing the cap, which leaked the model's face onto the
-  // customer's selfie at high ref counts. Capping at 2 (variant.image +
-  // one gallery angle) gives Gemini a second look at the cap for detail
-  // without bringing in enough "model face" signal to drift the identity.
-  // Owner-set 2026-06-07 — was 1 ref, bumped to 2 for cap-detail recovery.
-  TC39:        { maxRefImages: 2 },
-  TC42:        { maxRefImages: 2 },
-  TC43:        { maxRefImages: 2 },
-  'NÓN TC43':  { maxRefImages: 2 },
-  TC49:        { maxRefImages: 2 },
-  'CB TC49':   { maxRefImages: 2 },
-  TC56:        { maxRefImages: 2 },
-  TC59:        { maxRefImages: 2 },
-  'Nón TC59':  { maxRefImages: 2 },
-  TC61:        { maxRefImages: 2 },
-  TC63:        { maxRefImages: 2 },
-  TC67:        { maxRefImages: 2 },
-  TC68:        { maxRefImages: 2 },
+  // 2026-06-07 owner: all SKUs use the global cap from hooks/useTryOn.ts
+  // (20 images max). Pancake's `images[]` for each product is curated
+  // owner-side, so trusting the whole gallery gives Gemini the richest
+  // reference set without per-SKU hard-coding.
+  //
+  // History: a face-leak cohort (TC39/42/43/49/56/59/61/63/67/68) was
+  // previously capped at 2 to suppress model-face leak. The overrides were
+  // removed when owner cleaned the Pancake galleries to product-only shots
+  // — if face-leak returns on a specific SKU, the right fix is to clean
+  // that SKU's Pancake gallery, not re-add an SKU override here.
 
   // TC46 NÓN DARK STALLION — pinnedImageUrl kept (Pancake's API returns
   // the wrong primary). maxRefImages override removed: global cap is now

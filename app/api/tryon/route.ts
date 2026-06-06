@@ -66,6 +66,14 @@ const TRYON_PROMPT =
   'most severe failure mode and is FORBIDDEN. ' +
 
   'RULE 3 — REPRODUCE THE CAP FROM IMAGES 2+ WITH EVERY DETAIL INTACT (most critical for the cap): ' +
+  'Use ALL reference images TOGETHER as a single source of truth. Each reference shows a different ' +
+  'angle or surface of the SAME physical cap — fuse the information from every image. Preserve ' +
+  'exactly: hat shape, visor shape, stitching, embroidery, logos, tags, underbrim graphics, button ' +
+  'colour, edge piping, side panels, eyelets, snap closure, sweatband. Do NOT invent, simplify, ' +
+  'redraw or reinterpret any detail. If a detail appears in ONE reference but not another, that ' +
+  'detail still EXISTS — include it in the output. If a detail is unclear or partly obscured in ' +
+  'every reference, PRESERVE it as the highest-resolution reference shows it rather than inventing ' +
+  'a new design. ' +
   'study ALL the cap references together. The cap in the output must match the product cap ' +
   'pixel-faithfully — NOTHING about its design may change. Reproduce EXACTLY: ' +
   '(i) silhouette and crown shape (height, panel count, structured vs unstructured); ' +
@@ -412,6 +420,21 @@ export async function POST(req: NextRequest) {
     console.log('CAP_REFERENCE_IMAGES', garments.length)
     console.log('CAP_COLOUR_LOCK', productColor ?? 'none', productName ? `(${productName})` : '')
     console.log('CAP_BRIM_LOCK  ', productBrim  ?? 'none')
+
+    // Structured ref log per owner spec: product id + image count + URLs.
+    // The URLs we received as body.garmentUrls are the raw Pancake gallery
+    // entries the client picked. Useful for debugging when an output looks
+    // wrong: paste any URL into a browser and verify what Gemini actually saw.
+    const garmentUrlsForLog = Array.isArray(body.garmentUrls)
+      ? body.garmentUrls.filter((u): u is string => typeof u === 'string')
+      : []
+    console.log(JSON.stringify({
+      log:        'gemini.refs',
+      productId:  logBase.sku ?? null,
+      variantSku: logBase.variantSku ?? null,
+      refCount:   garments.length,
+      refUrls:    garmentUrlsForLog,
+    }))
 
     const { dataUrl, elapsedMs, modelText } = await runGeminiTryOn(person, garments, prompt)
     // Gemini returned an image — capture the metering. outputChars covers any
