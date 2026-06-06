@@ -66,13 +66,24 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   // "Nón TC59" / "CB TC49"). Those entries were removed when the global
   // dropped 6 → 2 on 2026-06-06.
 
-  // TC46 NÓN DARK STALLION — Pancake POS UI shows the CONG/VÀNG (gold-
-  // curved) variant as the primary, but the Pancake API has been returning
-  // NGANG/ĐỎ (red-flat) as images[0] regardless. Owner has tried reordering
-  // multiple times; the change visually sticks in POS but the API doesn't
-  // reflect it. Pinning here keeps the catalog/hero on the yellow until
-  // Pancake's side gets sorted.
-  TC46:        { pinnedImageUrl: 'https://content.pancake.vn/2-2512/2025/12/8/ec2768ecb1c60190902f3199e71ad4d1dd4578af.jpg' },
+  // TC46 NÓN DARK STALLION — two pins:
+  // 1. pinnedImageUrl — Pancake POS UI shows the CONG/VÀNG (gold-curved)
+  //    variant as the primary, but the Pancake API has been returning
+  //    NGANG/ĐỎ (red-flat) as images[0] regardless. Owner has tried
+  //    reordering multiple times; the change visually sticks in POS but
+  //    the API doesn't reflect it. Pinning here keeps the catalog/hero
+  //    on the yellow until Pancake's side gets sorted.
+  // 2. maxRefImages: 1 — TC46 has 8 colour variants. After excluding
+  //    sibling variant canonicals from the gallery, the remaining "safe
+  //    angles" include detail shots of the XANH (blue) variant's brim
+  //    underside in green. Sending those alongside any non-XANH variant
+  //    leaked the green underside onto every output (orange cap with
+  //    green brim under, etc.). Capping at 1 ref means we only send the
+  //    picked variant.image — no padding, no leak.
+  TC46: {
+    pinnedImageUrl: 'https://content.pancake.vn/2-2512/2025/12/8/ec2768ecb1c60190902f3199e71ad4d1dd4578af.jpg',
+    maxRefImages:   1,
+  },
 
   // TC30 NÓN SÓI ĐÊM TCAPS — owner picked CONG/ĐEN VÀNG (gold-badge black)
   // as the canonical hero. Pancake's variant API doesn't tell us which
