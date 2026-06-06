@@ -115,16 +115,35 @@ function TryOnMain() {
   const product  = state.selectedSku ? PRODUCT_MAP[state.selectedSku] ?? null : null
   const faceShape = state.faceResult?.faceShape ?? null
 
+  // Per-banner variant pin — which colour of the currently SELECTED product
+  // is active. The banner uses it to highlight the right chip; pickProduct
+  // resets it when the customer switches to a different SKU.
+  const [selectedVariantSku, setSelectedVariantSku] = useState<string | null>(null)
+
   // Pick a hat from the in-page product grid: fetch its photo → load it as the
   // hat (same pipeline as catalog ?sku / file upload). Does NOT auto-run — the
   // user still presses "Thử Nón Ngay" once the selfie is added too.
-  const pickProduct = useCallback((p: Product) => {
+  // When `variantSku` is given (banner chip click), we lock to that variant
+  // and use its photo as the canonical reference. Otherwise default to the
+  // product's first variant (or none for single-variant SKUs).
+  const pickProduct = useCallback((p: Product, variantSku?: string | null) => {
     if (!p.imageUrl || hatLoading) return
-    // No specific variant when picking from the grid → clear the variant pin.
-    appliedKeyRef.current = `${p.sku}::`               // block the ?sku effect from re-loading
+    const variants = p.variants ?? []
+    // Pick the variant the customer asked for, else the first one (so multi-
+    // variant SKUs always have a chip highlighted instead of showing an
+    // ambiguous "none selected" state).
+    const pickKey = variantSku
+      ?? (variants.length ? variants[0].sku ?? variants[0].name ?? null : null)
+    const variant = pickKey
+      ? variants.find(v => v.sku === pickKey || v.name === pickKey) ?? null
+      : null
+    const imageUrl = variant?.image || p.imageUrl
+    const finalKey = variant?.sku ?? variant?.name ?? null
+    appliedKeyRef.current = `${p.sku}::${finalKey ?? ''}`
     setHatLoading(true)
-    productImageToFile(p.imageUrl, p.sku)
-      .then(file => setHatFile(file, p.sku, null))
+    setSelectedVariantSku(finalKey)
+    productImageToFile(imageUrl, p.sku)
+      .then(file => setHatFile(file, p.sku, finalKey))
       .catch(err => console.warn('[TryOn] pick hat failed:', err))
       .finally(() => setHatLoading(false))
   }, [setHatFile, hatLoading])
@@ -220,7 +239,14 @@ function TryOnMain() {
               <span className="text-[11px] font-bold uppercase tracking-[.15em] text-[#C9A84C]">Chọn nón</span>
               {product && <span className="text-xs text-[#6B6B6B] truncate max-w-[180px]">Đã chọn: {product.name}</span>}
             </div>
-            {product && <SelectedHatBanner product={product} loading={hatLoading} />}
+            {product && (
+              <SelectedHatBanner
+                product={product}
+                loading={hatLoading}
+                selectedVariantSku={selectedVariantSku}
+                onPickVariant={vSku => pickProduct(product, vSku)}
+              />
+            )}
             <PickerBoundary products={PICKABLE} onPick={pickProduct}>
               <HatPicker selectedSku={state.selectedSku} loading={hatLoading} onPick={pickProduct} />
             </PickerBoundary>
@@ -309,7 +335,16 @@ class PickerBoundary extends Component<
   }
 }
 
-function SelectedHatBanner({ product, loading }: { product: Product; loading: boolean }) {
+function SelectedHatBanner({
+  product, loading, selectedVariantSku, onPickVariant,
+}: {
+  product: Product
+  loading: boolean
+  selectedVariantSku: string | null
+  onPickVariant: (variantSku: string) => void
+}) {
+  const variants    = product.variants ?? []
+  const hasVariants = variants.length > 0
   return (
     <div className="flex items-center gap-3 rounded-xl border border-[#C9A84C]/25 bg-[#C9A84C]/6 p-3 fade-in-up">
       <div className="relative w-14 h-14 rounded-lg overflow-hidden bg-[#0A0A0A] shrink-0 flex items-center justify-center">
@@ -334,10 +369,45 @@ function SelectedHatBanner({ product, loading }: { product: Product; loading: bo
           </div>
         )}
       </div>
-      <div className="min-w-0">
-        <p className="text-[10px] uppercase tracking-[.15em] text-[#C9A84C]">Nón đã chọn</p>
-        <p className="text-sm font-bold text-[#F5F5F5] truncate" title={product.name}>{product.name}</p>
-        <p className="text-xs text-[#C9A84C] font-mono">{formatVnd(product.price)}</p>
+
+      {/* Name + price on the left, variant chips on the right. The chips
+          row wraps if multi-variant + narrow viewport; on mobile two chips
+          per line is fine because the banner already lives in the picker
+          column, not the full hero area. */}
+      <div className="min-w-0 flex-1 flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] uppercase tracking-[.15em] text-[#C9A84C]">Nón đã chọn</p>
+          <p className="text-sm font-bold text-[#F5F5F5] truncate" title={product.name}>{product.name}</p>
+          <p className="text-xs text-[#C9A84C] font-mono">{formatVnd(product.price)}</p>
+        </div>
+        {hasVariants && (
+          <div className="flex flex-wrap gap-1 justify-end shrink-0 max-w-[55%]">
+            {variants.map(v => {
+              const key = v.sku ?? v.name ?? ''
+              if (!key) return null
+              const on = selectedVariantSku === key
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => onPickVariant(key)}
+                  aria-pressed={on}
+                  title={v.name || key}
+                  disabled={loading}
+                  className={[
+                    'h-6 px-2 rounded-md border text-[10px] font-bold uppercase tracking-wider whitespace-nowrap transition-colors',
+                    on
+                      ? 'border-[#C9A84C] bg-[#C9A84C]/15 text-[#C9A84C]'
+                      : 'border-[#2A2A2A] text-[#8A8A8A] hover:border-[#C9A84C]/50 hover:text-[#C8C8C8]',
+                    loading ? 'opacity-50 cursor-wait' : '',
+                  ].join(' ')}
+                >
+                  {v.name || key}
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )
