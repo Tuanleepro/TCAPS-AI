@@ -69,6 +69,7 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   TC46:        { maxRefImages: 2 },
   TC49:        { maxRefImages: 2 },
   'CB TC49':   { maxRefImages: 2 },   // actual SKU key in products.ts
+  TC56:        { maxRefImages: 2 },
   TC59:        { maxRefImages: 2 },
   'Nón TC59':  { maxRefImages: 2 },   // actual SKU key in products.ts
   TC61:        { maxRefImages: 2 },
