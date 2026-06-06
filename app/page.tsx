@@ -62,7 +62,7 @@ export default function HomePage() {
             </svg>
           </div>
           <HeroBeforeAfterCard
-            src="/Screenshot 2026-05-31 150637.png"
+            src="/Screenshot 2026-06-06 170824.png"
             label="AI Try-On"
             accent="gold"
             priority
