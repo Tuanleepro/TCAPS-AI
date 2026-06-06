@@ -77,8 +77,12 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   // TC30 NÓN SÓI ĐÊM TCAPS — owner picked CONG/ĐEN VÀNG (gold-badge black)
   // as the canonical hero. Pancake's variant API doesn't tell us which
   // variant photo is "primary", so we pin the URL here to keep the hero
-  // stable across syncs.
-  TC30:        { pinnedImageUrl: 'https://content.pancake.vn/2-2512/2025/12/11/181ac89e7432747255b8c29bc1491f86f22ce285.jpg' },
+  // stable across syncs. defaultTryOnVariant makes the catalog "THỬ NÓN"
+  // button deep-link straight to that variant so the AI matches the hero.
+  TC30: {
+    pinnedImageUrl:      'https://content.pancake.vn/2-2512/2025/12/11/181ac89e7432747255b8c29bc1491f86f22ce285.jpg',
+    defaultTryOnVariant: 'TC30CONGDENVANG',
+  },
 
   // CT1 NÓN TCAPS — catalog thumbnail features the "Đen / Kết" variant.
   // When the customer taps "THỬ NÓN" from the catalog the try-on should
