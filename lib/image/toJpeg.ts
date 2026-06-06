@@ -86,10 +86,23 @@ async function decodeWithOrientation(source: Blob): Promise<{
 
 /**
  * Convert a user-selected image File into a resized JPEG File.
+ *
+ * When `mirror: true` is passed, the output is horizontally flipped after
+ * decoding. This is what we want for selfies: phone front cameras save the
+ * un-mirrored pixel data (so background text reads correctly), but the LIVE
+ * preview the customer saw during capture was mirrored — Apple turned
+ * "Mirror Front Camera" ON by default in iOS 14, and most users now have
+ * the mental model "selfie = mirror view of me". Showing them the un-mirrored
+ * file reads as "the photo is flipped, my face looks wrong". Mirroring on
+ * upload restores the camera-preview view.
+ *
  * Throws {@link UnsupportedImageError} if the browser can't decode it.
  */
-export async function fileToJpeg(file: File): Promise<File> {
-  console.log('[upload] BEFORE convert:', { name: file.name, type: file.type || '(empty)', size: file.size })
+export async function fileToJpeg(
+  file: File,
+  options?: { mirror?: boolean },
+): Promise<File> {
+  console.log('[upload] BEFORE convert:', { name: file.name, type: file.type || '(empty)', size: file.size, mirror: !!options?.mirror })
 
   let source: Blob = file
 
@@ -131,6 +144,14 @@ export async function fileToJpeg(file: File): Promise<File> {
     // White backdrop so transparent PNGs/WEBPs don't flatten to black in JPEG.
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, w, h)
+    if (options?.mirror) {
+      // Horizontal flip: translate to the right edge, scale -1 on X, then
+      // draw at (0,0). The +scale(1,1) is implicit on Y so the image stays
+      // upright. ctx is reset by the canvas itself when this function returns,
+      // so no save()/restore() needed.
+      ctx.translate(w, 0)
+      ctx.scale(-1, 1)
+    }
     ctx.drawImage(imgSrc, 0, 0, w, h)
 
     const blob = await new Promise<Blob | null>(resolve =>

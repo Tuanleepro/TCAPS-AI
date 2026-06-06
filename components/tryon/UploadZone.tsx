@@ -49,7 +49,11 @@ export function UploadZone({ type, file, previewUrl, onFile, disabled, loading }
 
     setConverting(true)
     try {
-      onFile(await fileToJpeg(f))
+      // Mirror face uploads — phone front cameras save UN-mirrored pixels but
+      // the live preview the customer just saw was MIRRORED (iOS 14+ default).
+      // Flipping on upload restores the camera-preview view they expected; the
+      // try-on AI receives the mirrored image so the output also matches.
+      onFile(await fileToJpeg(f, { mirror: true }))
     } catch (err2) {
       setErr(err2 instanceof UnsupportedImageError
         ? err2.message
