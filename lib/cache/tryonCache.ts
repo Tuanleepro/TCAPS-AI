@@ -17,7 +17,7 @@
 import crypto from 'node:crypto'
 import { kvAvailable, kvDel, kvGet, kvSet } from '@/lib/redis/kv'
 
-const KEY_PREFIX  = 'tcaps:tryon:v12:'  // 2026-06-07 bumped — invalidates v11 so TC56 cache clears for the new mesh-trucker promptHint (all-mesh front panel, honeycomb texture, brim-underside cursive Tcaps signature).
+const KEY_PREFIX  = 'tcaps:tryon:v13:'  // 2026-06-07 bumped — invalidates v12 so the strengthened brimLock takes effect (NGANG-pick was rendering CURVED). Old NGANG-curved cache entries get blown away.
 const TTL_SECONDS = 30 * 24 * 60 * 60     // 30 days
 
 interface KeyArgs {

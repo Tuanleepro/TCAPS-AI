@@ -557,8 +557,15 @@ export async function POST(req: NextRequest) {
       body.productBrim === 'FLAT' || body.productBrim === 'CURVED'
         ? body.productBrim
         : null
+    // ── Brim lock — hard contract between owner pick and output ─────────────
+    // Owner observed (2026-06-07): Gemini was rendering FLAT-pick variants
+    // (NGANG) as CURVED because its trucker-cap prior dominates. Strengthen:
+    // explicit failure language + repeat lock at start AND end of prompt.
     const brimLock = productBrim
-      ? ` MANDATORY BRIM LOCK: the cap's brim is ${productBrim === 'FLAT' ? 'FLAT and STRAIGHT (lưỡi ngang) — completely horizontal, NOT curved, NOT bent down at the sides' : 'CURVED (lưỡi cong) — bent down at the sides like a traditional baseball cap, NOT flat'}. The brim shape in the OUTPUT MUST be ${productBrim}. If any reference image appears to show the opposite brim shape, IGNORE that — this cap is ${productBrim}.`
+      ? ` ╔══ CAP BRIM SHAPE — HARD LOCK ══╗ The customer picked the ${productBrim === 'FLAT' ? 'NGANG (FLAT/STRAIGHT brim)' : 'CONG (CURVED brim)'} variant. The output cap brim MUST be ${productBrim === 'FLAT' ? 'PERFECTLY FLAT and HORIZONTAL — a straight horizontal plank, completely parallel to the ground, with ZERO downward curve at the sides, ZERO bend, ZERO tilt-down at the corners (like a snapback / flat-bill cap)' : 'CURVED downward at the sides — bent down at the corners like a traditional baseball cap, with a visible curve from the centre out to the edges'}. ` +
+        `If your output brim is ${productBrim === 'FLAT' ? 'curved / bent / sloped downward at any angle' : 'flat / horizontal / straight without curvature'}, you have FAILED this lock. ` +
+        `This is NON-NEGOTIABLE — even if reference photos appear ambiguous, the brim shape in the OUTPUT is ${productBrim === 'FLAT' ? 'FLAT' : 'CURVED'}. ` +
+        `Reminder at end of prompt: brim = ${productBrim === 'FLAT' ? 'FLAT/NGANG (straight horizontal)' : 'CURVED/CONG (bent down at sides)'}.`
       : ''
 
     // Per-SKU prompt hint — owner-curated text guidance for caps with
