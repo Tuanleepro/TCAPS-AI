@@ -227,16 +227,24 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
     promptHint:
       'TC49 NÓN MONOGRAM HỌA TIẾT — design verification: ' +
       'CONSTRUCTION: TAPESTRY / JACQUARD WOVEN FABRIC base (NOT solid ' +
-      'fabric). The fabric has a visible PICTOGRAPHIC PATTERN with ' +
-      'stylised CARTOON CHARACTER FACES / HEADS woven into the fabric in ' +
-      'earth tones (pink, beige, blue, grey, brown). The woven texture is ' +
-      'a defining feature — must be visible. ' +
-      'BRIM: same tapestry fabric, with WHITE PIPING / TRIM along the brim ' +
-      'edges. ' +
-      'FRONT-CENTRE PATCH: WHITE CIRCULAR/ROUND patch with a metallic ' +
-      '"TC" / "t" TCAPS logo (gold or silver). ' +
-      'COLOUR PALETTE: earth tones (NOT pure black) — pink/beige/blue/' +
-      'grey woven pattern + white patch + white brim trim.',
+      'fabric, NOT smooth twill). The fabric has a visible PICTOGRAPHIC ' +
+      'PATTERN with stylised CARTOON CHARACTER FACES / HEADS woven into ' +
+      'the fabric. The woven jacquard texture is a defining feature — the ' +
+      'individual woven threads + character motifs must be clearly visible. ' +
+      'PATTERN COLOURS: TC49 ships in multiple colourways (Đen, CAM, VÀNG, ' +
+      'ĐỎ) — each with a different palette. Đen = muted earth tones (pink, ' +
+      'beige, blue, grey, brown); CAM = vibrant orange + teal + red + ' +
+      'burgundy; VÀNG = yellow-dominant; ĐỎ = red-dominant. The pattern ' +
+      'colours MUST match image 2 (the LEAD ref) EXACTLY. NEVER default to ' +
+      'a fixed palette. Image 2 is the colour authority. ' +
+      'BRIM: same tapestry fabric as the crown, with WHITE PIPING / TRIM ' +
+      'along the brim edges (the white trim is consistent across all ' +
+      'colourways). ' +
+      'FRONT-CENTRE PATCH: WHITE CIRCULAR / ROUND patch with a metallic ' +
+      '"TC" / "t" TCAPS logo (gold or silver). The white circular patch + ' +
+      'metallic logo are consistent across all colourways. ' +
+      'CAP FIT: the cap must sit SNUG on the head — brim rests just above ' +
+      'the eyebrows, NOT floating high above the hair.',
   },
 
   TC45: {
