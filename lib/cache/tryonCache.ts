@@ -17,7 +17,7 @@
 import crypto from 'node:crypto'
 import { kvAvailable, kvDel, kvGet, kvSet } from '@/lib/redis/kv'
 
-const KEY_PREFIX  = 'tcaps:tryon:v9:'   // 2026-06-07 bumped — invalidates v8 so TC63 (and any future SKU with a per-SKU promptHint override) re-runs through the augmented prompt and caches the corrected design.
+const KEY_PREFIX  = 'tcaps:tryon:v10:'  // 2026-06-07 bumped — invalidates v9 so the new Combo CT3 promptHint (bucket-hat → baseball cap silhouette fix) takes effect. Same fix path as TC63.
 const TTL_SECONDS = 30 * 24 * 60 * 60     // 30 days
 
 interface KeyArgs {

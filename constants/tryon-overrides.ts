@@ -97,6 +97,38 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   // sense as a single try-on subject).
   'Combo CT1': { defaultTryOnVariant: 'COMBOCT1DENKET' },
 
+  // Combo CT3 — TCAPS SPARTAN luxury cap. Owner observed Gemini rendering
+  // this as a BUCKET HAT instead of a baseball cap — likely misreading
+  // the decorative "BUILT IN SILENCE" leather strap as a bucket-hat band.
+  // The hint locks the silhouette (baseball cap with curved brim) and
+  // describes each design element so Gemini can verify its output.
+  'Combo CT3': {
+    promptHint:
+      'COMBO CT3 SPARTAN CAP — silhouette + design verification: ' +
+      'SHAPE: this is a STRUCTURED BASEBALL CAP / SNAPBACK with a CURVED BRIM ' +
+      '(lưỡi cong). It is NOT a bucket hat. NOT a fisherman hat. NOT a beanie. ' +
+      'NOT a flat-brim cap. The crown is rounded and structured, the brim ' +
+      'extends forward like a typical baseball cap. The output MUST be a ' +
+      'baseball cap silhouette. ' +
+      'DECORATIVE LEATHER STRAP: a thin BLACK LEATHER STRAP wraps around the ' +
+      'BASE of the crown (at the seam where crown meets brim). The strap has ' +
+      'GOLD text "BUILT IN SILENCE" on the front section near the brim and ' +
+      'small gold quatrefoil / cross motifs spaced along its length. This ' +
+      'strap is a decorative band on the cap surface — it is NOT a bucket-hat ' +
+      'band, NOT a brim, NOT a separate item. ' +
+      'FRONT-RIGHT PATCH: vertical rectangular patch (taller than wide), ' +
+      'black background, gold elements: "TCPS" text on top with a small ' +
+      'Spartan helmet icon, surrounded by small gold quatrefoil motifs. ' +
+      'SIDE PANELS: gold PYRAMIDAL STUDS (4-sided pyramid / cone studs) ' +
+      'placed at intervals on the side panels. ' +
+      'BRIM: BLACK LEATHER TRIM along the brim edge with small gold ' +
+      'quatrefoil motifs. Brim shape is CURVED. ' +
+      'BACK: "FORGED BY PRESSURE" text in gold across the back panels + ' +
+      '"Gentle" text on the back closure strap. ' +
+      'OVERALL AESTHETIC: luxury streetwear — gold studs + leather trim + ' +
+      'gold text + Spartan branding on a black baseball cap base.',
+  },
+
   // TC63 NÓN SAMURAI — owner observed Gemini misreading the complex
   // Japanese-themed front patch (rendered as a generic square cherry-
   // blossom design instead of the actual vertical kanji+wave layout).
