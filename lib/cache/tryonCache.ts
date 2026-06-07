@@ -17,7 +17,7 @@
 import crypto from 'node:crypto'
 import { kvAvailable, kvDel, kvGet, kvSet } from '@/lib/redis/kv'
 
-const KEY_PREFIX  = 'tcaps:tryon:v18:'  // 2026-06-07 bumped — invalidates v17 so the TC49 colourway fix (was locked to muted earth tones, now defers to image 2 across Đen/CAM/VÀNG/ĐỎ variants) + cap-fit emphasis take effect.
+const KEY_PREFIX  = 'tcaps:tryon:v19:'  // 2026-06-07 bumped — invalidates v18 so TC45 audit fix (patch is SHIELD-shaped not generic, ROSE-GOLD not orange/red, FRONT-CENTER not left) takes effect.
 const TTL_SECONDS = 30 * 24 * 60 * 60     // 30 days
 
 interface KeyArgs {

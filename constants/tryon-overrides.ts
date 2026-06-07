@@ -250,16 +250,27 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   TC45: {
     promptHint:
       'TC45 NÓN GÀ (Rooster) — design verification: ' +
-      'BASE: black baseball cap, curved brim. ' +
-      'FRONT-LEFT GRAPHIC: small detailed ROOSTER / CHICKEN illustration ' +
-      'in ORANGE / RED, drawn in Vietnamese folk-art / tranh dân gian ' +
-      'style — the rooster is standing in profile facing left, with ' +
-      'detailed feathers and tail plumes. Compact size, not large. ' +
-      'BELOW ROOSTER: small "Tcaps" text in ORANGE. ' +
-      'RIGHT SIDE: small red/orange rectangular tag. ' +
-      'OVERALL: simple, clean black cap with a small but detailed orange ' +
-      'rooster on the left front. Do NOT enlarge or simplify the rooster — ' +
-      'it must look like a hand-drawn folk illustration, not a generic icon.',
+      'BASE: black baseball cap. ' +
+      'BRIM SHAPE: TC45 ships in 3 variants — NGANG/Đen (FLAT brim, ' +
+      'snapback), CONG/Đen (CURVED brim), CONG LƯỚI/Đen (curved brim + ' +
+      'mesh trucker). Match the brim shape to the customer pick via the ' +
+      'brim lock. ' +
+      'FRONT-CENTRE PATCH (signature design): SHIELD-SHAPED patch (heraldic ' +
+      'shield with rounded/pointed bottom, NOT rectangular, NOT square). ' +
+      'The patch is centred on the FRONT panel. ' +
+      'PATCH CONTENT: a detailed ROOSTER / CHICKEN illustration standing ' +
+      'in profile facing LEFT, with detailed feathers, raised tail plumes, ' +
+      'and prominent comb / wattle — Vietnamese folk-art / tranh dân gian ' +
+      'style. Below the rooster: "Tcaps" text in gothic / medieval script. ' +
+      'PATCH COLOUR: the rooster + "Tcaps" text are in ROSE-GOLD / COPPER ' +
+      'tones on a black patch background. NOT bright orange, NOT red — a ' +
+      'soft metallic rose-gold / copper finish. ' +
+      'RIGHT SIDE TAG: small RECTANGULAR tag with 2 mini rose-gold rooster ' +
+      'icons + a small black eyelet next to it. ' +
+      'CAP FIT: snug on the head, brim rests just above the eyebrows — NOT ' +
+      'floating high. ' +
+      'OVERALL: minimalist premium look — black cap + rose-gold rooster ' +
+      'shield patch as the focal point.',
   },
 
   'NÓN TC43': {
