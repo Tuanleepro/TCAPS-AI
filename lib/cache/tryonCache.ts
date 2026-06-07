@@ -17,7 +17,7 @@
 import crypto from 'node:crypto'
 import { kvAvailable, kvDel, kvGet, kvSet } from '@/lib/redis/kv'
 
-const KEY_PREFIX  = 'tcaps:tryon:v4:'   // 2026-06-07 bumped — invalidates v3 entries cached by the lenient QC (TC68 face-swap PASSed with identity≈85 from rater). New QC prompt + identity threshold 85 + fail-into-retry on infra fail.
+const KEY_PREFIX  = 'tcaps:tryon:v5:'   // 2026-06-07 bumped — invalidates v4 entries from before the anti-model-leak prompt + escalating retry hints. Forces fresh runs through the upgraded prompt for SKUs where Gemini was copying the cap-ref model (TC68, etc).
 const TTL_SECONDS = 30 * 24 * 60 * 60     // 30 days
 
 interface KeyArgs {

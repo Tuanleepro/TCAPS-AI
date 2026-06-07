@@ -37,15 +37,48 @@ function qcPassed(s: QcScore): boolean {
       && s.realism         >= QC_PASS.realism
 }
 
-function buildRetryHint(s: QcScore): string {
+function buildRetryHint(s: QcScore, attempt: number): string {
   const issues: string[] = []
-  if (s.face_changed) issues.push('the face from image 1 was changed or regenerated')
-  if (s.face_similarity < QC_PASS.identity) issues.push(`identity preservation = ${(s.face_similarity/10).toFixed(1)}/10 (target ≥ 8) — the user did not look like themselves`)
-  if (s.hat_similarity  < QC_PASS.cap)      issues.push(`cap accuracy = ${(s.hat_similarity /10).toFixed(1)}/10 (target ≥ 8) — cap detail did not match the product references`)
-  if (s.realism         < QC_PASS.realism)  issues.push(`realism = ${(s.realism            /10).toFixed(1)}/10 (target ≥ 7) — the output looked artificial`)
+  if (s.face_changed) issues.push('face was changed/regenerated')
+  if (s.face_similarity < QC_PASS.identity) issues.push(`identity = ${(s.face_similarity/10).toFixed(1)}/10 (target ≥ 8.5)`)
+  if (s.hat_similarity  < QC_PASS.cap)      issues.push(`cap accuracy = ${(s.hat_similarity /10).toFixed(1)}/10 (target ≥ 8)`)
+  if (s.realism         < QC_PASS.realism)  issues.push(`realism = ${(s.realism            /10).toFixed(1)}/10 (target ≥ 7)`)
   if (!issues.length) return ''
-  return ' [RETRY HINT] Previous attempt failed QC. Issues: ' + issues.join('; ')
-       + '. This attempt MUST prioritise preserving the FACE IDENTITY from image 1 above all else — keep original face pixels wherever possible, even if it means a slightly less polished cap or scene.'
+
+  // Detect the "wrong person" case — face_similarity < 50 means QC saw a
+  // different individual, not just glow-up. Escalate accordingly.
+  const wrongPerson = s.face_similarity < 50
+
+  // Severity scales with attempt number. Each successive retry tells Gemini
+  // the failure mode is REPEATED and demands progressively stricter behaviour.
+  const severity =
+    attempt === 1 ? 'PREVIOUS ATTEMPT FAILED'
+  : attempt === 2 ? 'TWO PREVIOUS ATTEMPTS FAILED — this is recurring'
+  : attempt === 3 ? 'THREE PREVIOUS ATTEMPTS FAILED — last chance'
+  :                 'PREVIOUS ATTEMPTS REPEATEDLY FAILED'
+
+  const lines: string[] = [
+    ` [RETRY HINT — attempt ${attempt + 1}] ${severity}.`,
+    ` Issues from previous attempt: ${issues.join('; ')}.`,
+  ]
+  if (s.reason) lines.push(` QC rater said: "${s.reason}".`)
+
+  if (wrongPerson) {
+    // Wrong-person case — escalate hard. This is the TC68 failure mode.
+    lines.push(
+      ' CRITICAL FAILURE MODE: the person in your last output was a DIFFERENT individual from image 1 — likely the MODEL from a cap reference photo, not the user.',
+      ' YOU MUST NOT do this again. The person in image 1 is the user. Look at image 1 carefully:',
+      ' note their ethnicity, gender, age, face shape, hair, skin tone. The output MUST show THAT PERSON wearing the cap.',
+      ' If any cap reference contains a model — IGNORE that model completely. The person comes ONLY from image 1.',
+    )
+  } else {
+    lines.push(
+      ' This attempt MUST prioritise preserving the FACE IDENTITY from image 1 above all else.',
+      ' Keep original face pixels wherever possible. Do not beautify, do not slim, do not whiten.',
+      ' A slightly less polished cap on the SAME person is a success.',
+    )
+  }
+  return lines.join('')
 }
 
 // Try-on = put THIS cap on THIS person. The HEAD/FACE is a locked, untouchable
@@ -57,6 +90,20 @@ const TRYON_PROMPT =
   'GOAL: take the person in image 1 and show them wearing the cap from image 2, in ONE realistic ' +
   'photo. You MAY restyle their clothing and background to match the cap, but their HEAD and FACE ' +
   'must stay EXACTLY as in image 1. ' +
+
+  '╔══ CRITICAL ANTI-MODEL-LEAK WARNING (read first) ══╗ ' +
+  'Cap reference photos (images 2+) frequently show a MODEL wearing the cap — often a Western ' +
+  "male/female fashion model on a styled street scene. That model is NOT the user. The user is " +
+  'EXCLUSIVELY in image 1 (the selfie). The most common failure mode is: you draw a fashion-photo ' +
+  "model wearing the cap (copying the cap reference's model) instead of putting the cap on the " +
+  "user from image 1. This produces a 'product shoot with a different person', not a try-on. " +
+  'YOU MUST NEVER DO THIS. ' +
+  'If your generated person has DIFFERENT ethnicity / gender / age / hair / face shape from the ' +
+  'user in image 1, you have FAILED. The person in the output MUST visually match image 1\'s ' +
+  'person — same ethnicity, same gender, same age, same face shape, same hair style, same skin ' +
+  'tone. Image 1 is the ONLY source of the PERSON; cap references are ONLY a source of the CAP. ' +
+
+
 
   'RULE 1 — FREEZE THE HEAD & FACE (most important, non-negotiable): treat the entire head as a FIXED ' +
   'region copied pixel-for-pixel from image 1. ' +
@@ -590,7 +637,7 @@ export async function POST(req: NextRequest) {
       }
 
       if (attempt < MAX_QC_ATTEMPTS) {
-        retryHint = qc ? buildRetryHint(qc) : ''
+        retryHint = qc ? buildRetryHint(qc, attempt) : ''
         console.log(JSON.stringify({
           log:  'tryon.retry',
           from: attempt,
