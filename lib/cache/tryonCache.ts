@@ -17,7 +17,7 @@
 import crypto from 'node:crypto'
 import { kvAvailable, kvDel, kvGet, kvSet } from '@/lib/redis/kv'
 
-const KEY_PREFIX  = 'tcaps:tryon:v24:'  // 2026-06-07 bumped — invalidates v23 so TC61 (NÓN BÍNH NGỌ / TCAPS INFERNO) new hint takes effect — locks the signature flame horse graphic on the right side that Gemini was dropping.
+const KEY_PREFIX  = 'tcaps:tryon:v25:'  // 2026-06-07 bumped — invalidates v24 so TC43 brim claw-scratch strengthening (4 jagged diagonal scratches, large + visible, NOT subtle piping) takes effect.
 const TTL_SECONDS = 30 * 24 * 60 * 60     // 30 days
 
 interface KeyArgs {

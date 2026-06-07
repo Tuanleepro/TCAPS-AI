@@ -383,11 +383,18 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
       'RIGHT SIDE TAG: vertical "TCAPS" text on a small black tag, with ' +
       'a small metal eyelet next to it. Text colour + eyelet rim colour ' +
       'match the accent. ' +
-      'BRIM TOP — SIGNATURE GRAPHIC: FOUR DIAGONAL CLAW-MARK SCRATCHES ' +
-      '(parallel scratch lines, looking like 4 wolf-claw scratches across ' +
-      'the brim) printed on the brim top. The scratches are in the accent ' +
-      'colour (yellow / orange from image 2). This is a signature feature ' +
-      '— must appear. ' +
+      'BRIM TOP — SIGNATURE CLAW SCRATCHES (must not be dropped): FOUR ' +
+      'DIAGONAL CLAW-MARK SCRATCH LINES are printed prominently across ' +
+      'the brim top, like a WOLF SWIPED its claws across the brim. The ' +
+      'scratches are: 4 parallel diagonal lines, angled top-left to bottom-' +
+      'right, starting near the front-left of the brim and slashing down ' +
+      'toward the brim edge. Each scratch is a JAGGED / TAPERED line (not ' +
+      'a smooth stroke), in the accent colour (yellow for ĐEN VÀNG, ' +
+      'orange for ĐEN CAM). The scratches are LARGE and CLEARLY VISIBLE ' +
+      '— they are NOT a subtle piping or thin trim line. Without these ' +
+      'claw scratches the cap looks incomplete. Do NOT replace them with ' +
+      'a brim edge trim or piping — the trim is SEPARATE from the claw ' +
+      'scratches. ' +
       'CAP FIT: snug on the head, brim just above the eyebrows — NOT ' +
       'floating high. ' +
       'COLOUR PALETTE: black base + ONE accent colour from image 2 ' +
