@@ -129,6 +129,35 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
       'gold text + Spartan branding on a black baseball cap base.',
   },
 
+  // TC56 NÓN TCAPS FOR LIFE — owner observed Gemini rendering a generic
+  // smooth-front-panel cap, missing the cap's defining feature: the
+  // ENTIRE front panel is BLACK MESH with a visible honeycomb pattern,
+  // and the white text is printed OVER the mesh. The brim underside
+  // also has a large white cursive "Tcaps" signature script.
+  TC56: {
+    promptHint:
+      'TC56 NÓN TCAPS FOR LIFE — design verification: ' +
+      'CONSTRUCTION: this is an ALL-MESH TRUCKER CAP. The ENTIRE FRONT ' +
+      'PANEL is BLACK MESH with a visible HONEYCOMB / HEXAGONAL pattern ' +
+      'texture (not solid fabric). The back is also mesh. The mesh texture ' +
+      'MUST be visible on the front panel — do NOT render the front as a ' +
+      'smooth solid panel. This is the defining feature of TC56. ' +
+      'FRONT TEXT: white CURSIVE script "Tcaps" (stylised handwriting font) ' +
+      'large across the upper front, with block-letter "FOR LIFE" below it ' +
+      'in white. The text is printed OVER the mesh, so the mesh pattern ' +
+      'shows through and around the letters. ' +
+      'BRIM UNDERSIDE: a LARGE WHITE CURSIVE "Tcaps" signature script is ' +
+      'printed on the UNDERSIDE of the brim (visible when the brim is ' +
+      'tilted up or viewed from below). This is a signature detail — do ' +
+      'NOT leave the brim underside blank. ' +
+      'SIDE PANEL: small black rectangular label on the right side panel ' +
+      'near the brim, with small white icons (star + Tcaps logo elements). ' +
+      'BRIM TOP: solid black, plain. ' +
+      'OVERALL: this is a streetwear MESH trucker cap — the honeycomb mesh ' +
+      'texture is what makes it look "real". A smooth-fronted black cap ' +
+      'with just text is the WRONG output.',
+  },
+
   // TC57 NÓN TCAPS — owner observed Gemini rendering an over-simplified
   // cap with most luxury details missing (no gold border on TCAPS patch,
   // no gold eyelets, faint side stripes). The hint locks the metallic

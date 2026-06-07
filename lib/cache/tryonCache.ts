@@ -17,7 +17,7 @@
 import crypto from 'node:crypto'
 import { kvAvailable, kvDel, kvGet, kvSet } from '@/lib/redis/kv'
 
-const KEY_PREFIX  = 'tcaps:tryon:v11:'  // 2026-06-07 bumped — invalidates v10 so TC57 (NÓN TC57) cache clears for the new luxury-detail promptHint (gold border stripes, eyelets, leather brim trim).
+const KEY_PREFIX  = 'tcaps:tryon:v12:'  // 2026-06-07 bumped — invalidates v11 so TC56 cache clears for the new mesh-trucker promptHint (all-mesh front panel, honeycomb texture, brim-underside cursive Tcaps signature).
 const TTL_SECONDS = 30 * 24 * 60 * 60     // 30 days
 
 interface KeyArgs {
