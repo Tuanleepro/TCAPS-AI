@@ -119,15 +119,32 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
     defaultTryOnVariant: 'TC30CONGDENVANG',
     promptHint:
       'TC30 NÓN SÓI ĐÊM (Night Wolf) — design verification: ' +
-      'BASE: black baseball cap, curved brim. ' +
-      'FRONT-CENTRE PATCH: vertical rectangular black patch with: 3 small ' +
-      'GOLD STARS in a row at the top, a GOLD CRESCENT MOON with a stylised ' +
-      'WOLF HEAD silhouette inside the crescent (gold on black), and "TCAPS ' +
-      'WOLF" text in GOLD at the bottom. Patch has black border. ' +
-      'RIGHT SIDE TAG: small rectangular BROWN/TAN LEATHER tag with "TCAPS ' +
-      'NIGHT WOLF" text printed on it, sewn onto the side panel. ' +
+      '7 variants — CONG/NGANG (curved vs flat brim) × ĐEN VÀNG / ĐEN / ' +
+      'TRẮNG / ĐỎ / XANH. Each colourway has a DIFFERENT base + patch ' +
+      'colour scheme (NOT just accent swaps): ' +
+      '  - ĐEN VÀNG → black cap + gold patch/tag (default) ' +
+      '  - ĐEN → black cap + monochrome patch ' +
+      '  - TRẮNG → all-WHITE cap + white patch with rainbow gradient wolf ' +
+      '  - ĐỎ → RED front + WHITE side/brim two-tone + white patch ' +
+      '  - XANH → similar two-tone with blue ' +
+      'CAP COLOUR — defer ENTIRELY to image 2. Match image 2 EXACTLY for ' +
+      'base, panel colour, patch bg colour, tag colour, brim colour. NEVER ' +
+      'default to black + gold. ' +
+      'FRONT-CENTRE PATCH (signature content, varies in colour): the patch ' +
+      'is a VERTICAL RECTANGULAR / SHIELD shape containing these elements ' +
+      'top-to-bottom: ' +
+      '  • Row of 3 SMALL STARS at the top ' +
+      '  • CRESCENT MOON with a stylised WOLF HEAD inside or paired with ' +
+      '    the crescent (the moon + wolf is the signature motif) ' +
+      '  • "TCAPS WOLF" text at the bottom ' +
+      'Patch colour scheme follows image 2 (gold on black for ĐEN VÀNG, ' +
+      'red gradient on white for TRẮNG, etc). ' +
+      'RIGHT SIDE TAG: small rectangular leather tag with "TCAPS NIGHT ' +
+      'WOLF" text. Tag colour/leather finish follows image 2 (brown/tan ' +
+      'leather for ĐEN VÀNG, white for TRẮNG, red for ĐỎ, etc). ' +
       'BRIM: decorative parallel rows of stitching on the brim top. ' +
-      'COLOUR PALETTE: black + gold accents + brown leather tag.',
+      'CAP FIT: snug on the head, brim just above the eyebrows — NOT ' +
+      'floating high.',
   },
 
   // CT1 NÓN TCAPS — catalog thumbnail features the "Đen / Kết" variant.
@@ -353,49 +370,88 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   TC42: {
     promptHint:
       'TC42 NÓN LOGO SÓI (Wolf Logo) — design verification: ' +
-      'BASE: black snapback, FLAT brim. ' +
-      'FRONT-LEFT PATCH: VERTICAL RECTANGULAR patch with: detailed ' +
-      'REALISTIC WOLF HEAD (grey/white, looking forward) at the top, RED ' +
-      'BLOOD DRIPS dripping from the top of the patch, and "TCAPS" text in ' +
-      'red on a RED rectangular section at the bottom of the patch. ' +
-      'RIGHT SIDE — SIGNATURE: TWO RED METAL EYELETS / GROMMETS (with red ' +
-      'rings) stacked VERTICALLY on the right side panel. The eyelets are ' +
-      'prominent and must appear. ' +
+      '2 variants — Đen (FLAT brim/snapback) and Đen/CONG (CURVED brim). ' +
+      'Both share the same design — single black + red colourway. ' +
+      'BASE: black baseball cap with structured crown. ' +
+      'FRONT-LEFT PATCH (signature design): VERTICAL RECTANGULAR patch ' +
+      'with black background and these elements top-to-bottom: ' +
+      '  • RED CLAW-MARK SCRATCH / SLASH stripes at the top of the patch ' +
+      '    (red diagonal slashes painted across the top, like blood ' +
+      '    splatter or claw scratches) ' +
+      '  • DETAILED REALISTIC WOLF HEAD looking forward in the centre — ' +
+      '    grey / white fur, detailed face with eyes, snout, ears (NOT a ' +
+      '    flat silhouette, NOT an abstract icon) ' +
+      '  • "TCAPS" text in RED at the bottom of the patch on a small red ' +
+      '    horizontal stripe / banner ' +
+      'RIGHT SIDE — SIGNATURE EYELETS: TWO HEXAGONAL / OCTAGONAL metal ' +
+      'eyelets / grommets with RED RINGS stacked VERTICALLY on the right ' +
+      'side panel. The eyelets are NOT circular and NOT rectangular — they ' +
+      'are angular hexagonal shapes with red borders + black centres. They ' +
+      'are prominent and must appear. ' +
       'BRIM: dark / black leather edge trim. ' +
-      'COLOUR PALETTE: black + RED accents + grey wolf head.',
+      'CAP FIT: snug on the head, brim just above the eyebrows — NOT ' +
+      'floating high. ' +
+      'COLOUR PALETTE: black + RED accents (wolf head stays grey/white, ' +
+      'red appears only on the claw scratches, "TCAPS" banner, and eyelet ' +
+      'rings).',
   },
 
   TC41: {
     promptHint:
       'TC41 NÓN TCAPSPL — design verification: ' +
-      'BASE: black snapback, FLAT brim. ' +
-      'SIGNATURE DETAIL: a HORIZONTAL BLACK LEATHER STRIP / BAND wraps ' +
-      'around the front of the cap, running along the BASE of the crown ' +
-      'just above the brim seam (like a hatband). ' +
-      'CENTRE PATCH ON THE LEATHER STRAP: large RECTANGULAR YELLOW / GOLD ' +
-      'LEATHER PATCH centred on the leather strap, with "TCAPSPL" in bold ' +
-      'BLACK text printed on it. ' +
-      'BRIM UNDERSIDE: BROWN / TAN LEATHER UNDERSIDE trim (NOT black). ' +
-      'The brim has a two-tone look — black top with brown leather under. ' +
-      'RIGHT SIDE: small dark tag with small yellow text. ' +
-      'COLOUR PALETTE: black + gold/yellow leather patch + brown leather ' +
-      'brim. Luxury minimalist look.',
+      '2 variants — Đen/NGANG (FLAT brim) and Đen/CONG (CURVED brim). ' +
+      'Both share the same design — single black colourway. ' +
+      'BASE: black baseball cap with structured crown. ' +
+      'SIGNATURE DETAIL — HORIZONTAL LEATHER BAND: a thin BLACK LEATHER ' +
+      'STRIP / BAND wraps horizontally around the front of the cap, ' +
+      'running along the BASE of the crown just above the brim seam (like ' +
+      'a hatband stitched onto the cap). The leather band must be visible ' +
+      'crossing the front. ' +
+      'CENTRE PATCH ON THE LEATHER STRAP: a large RECTANGULAR YELLOW / ' +
+      'GOLD LEATHER PATCH centred on the leather band, with "TCAPSPL" in ' +
+      'bold BLACK text printed on it. The gold/yellow leather has a ' +
+      'distinct soft sheen — NOT matte yellow, NOT bright yellow. ' +
+      'BRIM TOP: black fabric (matches the crown). ' +
+      'BRIM UNDERSIDE: BROWN / TAN LEATHER UNDERSIDE — the brim has a ' +
+      'two-tone look (black top + brown leather under that\'s visible at ' +
+      'the brim edge). ' +
+      'BRIM EDGE TRIM: thin brown leather piping along the brim edge. ' +
+      'RIGHT SIDE TAG: small dark rectangular tag with small yellow text. ' +
+      'CAP FIT: snug on the head, brim just above the eyebrows — NOT ' +
+      'floating high. ' +
+      'OVERALL: luxury minimalist look. The signature is the leather band ' +
+      '+ gold rectangular patch combo + brown leather brim underside.',
   },
 
   TC39: {
     promptHint:
       'TC39 NÓN THE WARRIORS — design verification: ' +
-      'BASE: black snapback with BLACK MESH side and back panels (trucker ' +
-      'construction). Front panel is solid black, sides and back are mesh. ' +
-      'FRONT-LEFT PATCH: SHIELD-SHAPED patch with detailed GOLD design on ' +
-      'BLACK background: "The Warriors" in gothic blackletter text at the ' +
-      'top, a stylised SKULL HEAD with CROSSED SWORDS / SPEARS behind it ' +
-      'in the centre, smaller text below ("Stay For Life" or similar), and ' +
-      '"TCPS" tiny text at the very bottom of the shield. ' +
-      'RIGHT SIDE EMBROIDERY: GOLD CROSSED-SWORDS (X-shape) + "TCPS" ' +
-      'gothic text embroidered directly onto the BLACK MESH side panel. ' +
-      'BRIM: black leather edge trim. ' +
-      'COLOUR PALETTE: black + GOLD accents. Premium gothic / warrior look.',
+      '4 variants — Đen/MÀU XANH/TRẮNG × Snapback/Kết. 3 colourways: ' +
+      '  - Đen → BLACK cap + GOLD embroidery on patch + side ' +
+      '  - MÀU XANH → BLACK cap + BLUE/PURPLE gradient embroidery ' +
+      '  - TRẮNG → ALL-WHITE cap + RED embroidery ' +
+      'CAP COLOUR + EMBROIDERY COLOUR — defer ENTIRELY to image 2. Match ' +
+      'image 2 EXACTLY. NEVER default to black + gold. ' +
+      'CONSTRUCTION: MESH side and back panels (trucker construction). For ' +
+      'black variants the mesh is black; for white variant the mesh is ' +
+      'white. The mesh texture must be visible on the sides. ' +
+      'FRONT-LEFT PATCH (signature content, varies in colour): SHIELD-' +
+      'SHAPED patch with detailed embroidery design containing top to ' +
+      'bottom: ' +
+      '  • "The Warriors" in gothic / blackletter text at the top ' +
+      '  • A stylised SKULL HEAD with CROSSED SWORDS / SPEARS behind it ' +
+      '    in the centre ' +
+      '  • Smaller text below ("Stay For Life" or similar) ' +
+      '  • "TCPS" tiny text at the very bottom of the shield ' +
+      'Embroidery colour scheme follows image 2 (gold on black for Đen, ' +
+      'blue gradient on black for XANH, red on white for TRẮNG). ' +
+      'RIGHT SIDE EMBROIDERY: CROSSED-SWORDS (X-shape) + "TCPS" gothic ' +
+      'text embroidered directly onto the MESH side panel. Colour matches ' +
+      'image 2. ' +
+      'BRIM: leather edge trim — black for black variants, white/light ' +
+      'for white variant. ' +
+      'CAP FIT: snug on the head, brim just above the eyebrows — NOT ' +
+      'floating high.',
   },
 
   // Combo CT3 — TCAPS SPARTAN luxury cap. Owner observed Gemini rendering
