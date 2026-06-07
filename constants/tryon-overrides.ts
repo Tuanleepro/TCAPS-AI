@@ -175,6 +175,35 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   // Each hint locks the distinctive design elements Gemini was dropping
   // (patch shapes, signature graphics, materials, accent colours).
 
+  TC61: {
+    promptHint:
+      'TC61 NÓN BÍNH NGỌ (TCAPS INFERNO) — design verification: ' +
+      'Single variant — Lưỡi Cong (CURVED brim only). Black baseball cap, ' +
+      'structured crown. ' +
+      'FRONT-LEFT PATCH: CIRCULAR / round patch with black border, ' +
+      'containing: an ORANGE / RED SUN-DISC background, a WHITE / SILVER ' +
+      'HORSE HEAD silhouette overlaid in the centre of the sun, and a ' +
+      'black RIBBON BANNER across the bottom of the circle with "TCAPS ' +
+      'INFERNO" text in white. The patch is small-medium size, positioned ' +
+      'on the left front panel. ' +
+      'FRONT-RIGHT — SIGNATURE FLAME HORSE GRAPHIC (must not be dropped): ' +
+      'a LARGE WHITE / SILVER FLAME-HORSE silhouette is printed across the ' +
+      'right front + side panel — a galloping fire horse drawn in tribal / ' +
+      'tattoo line-art style, with flowing flame mane and tail trailing ' +
+      'behind. The illustration is BIG and PROMINENT (covers most of the ' +
+      'right side, extending from the front-right panel around to the side ' +
+      'panel). This flame horse is the defining feature of TC61 — it MUST ' +
+      'appear in the output. A cap with only the small left patch and no ' +
+      'flame horse is INCOMPLETE and WRONG. ' +
+      'RIGHT SIDE EYELET: small RED / ORANGE metal eyelet near the top of ' +
+      'the right side panel. ' +
+      'BRIM: black, curved (lưỡi cong). ' +
+      'CAP FIT: snug on the head, brim just above the eyebrows — NOT ' +
+      'floating high. ' +
+      'COLOUR PALETTE: black base + WHITE/SILVER line-art flame horse + ' +
+      'ORANGE/RED accent (sun disc in patch, eyelet ring).',
+  },
+
   TC68: {
     promptHint:
       'TC68 NÓN SPARTAN — design verification: ' +
