@@ -17,7 +17,7 @@
 import crypto from 'node:crypto'
 import { kvAvailable, kvDel, kvGet, kvSet } from '@/lib/redis/kv'
 
-const KEY_PREFIX  = 'tcaps:tryon:v21:'  // 2026-06-07 bumped — invalidates v20 so TC46 colour fix (was locked to RED for all 8 variants, now defers to image 2: ĐỎ=red/VÀNG=gold/XANH=blue/CAM=orange) takes effect.
+const KEY_PREFIX  = 'tcaps:tryon:v22:'  // 2026-06-07 bumped — invalidates v21 so TC43 re-audit fix takes effect (patch bg is BLACK not yellow, wolf head is detailed face in accent colour not geometric silhouette, mesh side panels, 4 claw scratches not 3).
 const TTL_SECONDS = 30 * 24 * 60 * 60     // 30 days
 
 interface KeyArgs {

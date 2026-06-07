@@ -317,18 +317,37 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   'NÓN TC43': {
     promptHint:
       'TC43 NÓN WOLF — design verification: ' +
-      'BASE: black snapback, FLAT brim. ' +
-      'FRONT-LEFT PATCH: SHIELD-SHAPED patch with YELLOW background and a ' +
-      'stylised BLACK WOLF HEAD inside (geometric / angular wolf face ' +
-      'design). ' +
-      'SIDE CORD: a YELLOW THIN CORD / PIPING runs along the side panel ' +
-      'seam from the front patch curving around the side. ' +
-      'RIGHT SIDE TAG: small black tag with vertical YELLOW "TCAPS" text + ' +
-      'small yellow rectangular metal eyelet near the tag. ' +
-      'BRIM TOP — SIGNATURE: THREE YELLOW DIAGONAL CLAW-MARK SCRATCHES ' +
-      '(parallel scratch lines) printed on the brim top, like a wolf claw ' +
-      'scratching across the brim. ' +
-      'COLOUR PALETTE: black + YELLOW accents.',
+      'BASE: black baseball cap with BLACK MESH side and back panels ' +
+      '(trucker construction, mesh visible on the sides). ' +
+      '4 variants — Snapback/Kết (FLAT vs CURVED brim) × ĐEN VÀNG / ĐEN ' +
+      'CAM (accent colour: yellow / orange). Brim shape from brimLock; ' +
+      'accent colour from image 2. ' +
+      'FRONT-LEFT PATCH (signature shape): SHIELD-SHAPED patch with ' +
+      'BLACK background (the patch bg is ALWAYS BLACK regardless of ' +
+      'variant). The patch has a thin border in the accent colour. ' +
+      'PATCH CONTENT — WOLF HEAD: a DETAILED REALISTIC WOLF FACE looking ' +
+      'forward, with prominent ears, snout, eyes, and fur shading (NOT a ' +
+      'flat geometric silhouette, NOT an angular abstract logo — a ' +
+      'recognisable detailed wolf portrait). The wolf head is rendered ' +
+      'in the ACCENT COLOUR (yellow for ĐEN VÀNG, orange for ĐEN CAM) — ' +
+      'match image 2 EXACTLY. ' +
+      'SIDE CORD: a thin CORD / PIPING runs along the side panel seam ' +
+      'from the front patch curving around. Cord colour matches the ' +
+      'accent (yellow / orange from image 2). ' +
+      'RIGHT SIDE TAG: vertical "TCAPS" text on a small black tag, with ' +
+      'a small metal eyelet next to it. Text colour + eyelet rim colour ' +
+      'match the accent. ' +
+      'BRIM TOP — SIGNATURE GRAPHIC: FOUR DIAGONAL CLAW-MARK SCRATCHES ' +
+      '(parallel scratch lines, looking like 4 wolf-claw scratches across ' +
+      'the brim) printed on the brim top. The scratches are in the accent ' +
+      'colour (yellow / orange from image 2). This is a signature feature ' +
+      '— must appear. ' +
+      'CAP FIT: snug on the head, brim just above the eyebrows — NOT ' +
+      'floating high. ' +
+      'COLOUR PALETTE: black base + ONE accent colour from image 2 ' +
+      '(yellow OR orange — never both). Applied to wolf head, side cord, ' +
+      'side text/eyelet, and brim claw scratches. NEVER default to a ' +
+      'fixed colour.',
   },
 
   TC42: {
