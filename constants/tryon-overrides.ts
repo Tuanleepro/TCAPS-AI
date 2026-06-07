@@ -50,6 +50,13 @@ export interface TryOnOverride {
    * returning a different one. The scraper checks this override and
    * skips overwriting imageUrl during SYNC_ONLY when set. */
   pinnedImageUrl?: string
+  /** Per-SKU text guidance appended to the Gemini prompt. Use when a cap
+   * has details that Gemini consistently misreads from photos alone
+   * (complex patches, intricate embroidery, ambiguous shapes). The hint
+   * is owner-curated prose — describe the design in concrete terms so
+   * Gemini can verify its output against the description rather than
+   * inventing details. Leave undefined for SKUs where photos suffice. */
+  promptHint?: string
 }
 
 export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
@@ -89,6 +96,27 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   // the array, which is "Đen / COMBO 2 NÓN" — that combo doesn't make
   // sense as a single try-on subject).
   'Combo CT1': { defaultTryOnVariant: 'COMBOCT1DENKET' },
+
+  // TC63 NÓN SAMURAI — owner observed Gemini misreading the complex
+  // Japanese-themed front patch (rendered as a generic square cherry-
+  // blossom design instead of the actual vertical kanji+wave layout).
+  // The hint describes the patch in concrete terms so Gemini has a
+  // text-based reference to cross-check its output.
+  TC63: {
+    promptHint:
+      'TC63 SAMURAI CAP — design verification: ' +
+      'FRONT PATCH is a VERTICAL RECTANGULAR patch (taller than wide, NOT square), gold-bordered. ' +
+      'Inside the rectangle, top to bottom: (1) a small red sun-disc / red circle near the top, ' +
+      '(2) two vertical Japanese kanji characters in the middle, ' +
+      '(3) a blue traditional wave pattern (seigaiha style) as the background fill, ' +
+      '(4) a small red square stamp near the bottom. ' +
+      'The patch is NOT a flower. NOT a cherry blossom. NOT a square. NOT abstract. ' +
+      'It is a tall vertical rectangle with kanji characters and Japanese wave patterns. ' +
+      'SIDE PANEL has a small gold dragon/serpent embroidery. ' +
+      'BRIM TOP has gold oriental decorative patterns. ' +
+      'BACK has a small gold patch with red sun + mountain silhouette, and a small gold samurai helmet embroidery on the side. ' +
+      'CAP base is BLACK with corduroy front + mesh back trucker style + curved brim.',
+  },
 }
 
 export function getTryOnMaxRefs(sku: string | undefined, fallback: number): number {
@@ -120,4 +148,11 @@ export function getTryOnColorOverride(
   // 'colorOverride' present and a string → explicit force.
   // 'colorOverride' absent → no opinion.
   return 'colorOverride' in ov ? ov.colorOverride : undefined
+}
+
+/** Resolve the per-SKU prompt hint, if any. Owner-curated text describing
+ *  details Gemini misreads from photos alone. */
+export function getTryOnPromptHint(sku: string | undefined): string | undefined {
+  if (!sku) return undefined
+  return TRYON_OVERRIDES[sku]?.promptHint
 }

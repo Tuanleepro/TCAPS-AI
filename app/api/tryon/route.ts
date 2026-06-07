@@ -3,6 +3,7 @@ import { scoreTryOn, type QcScore } from '@/lib/gemini/qcScore'
 import { appendUsageLog, type UsageLogEntry } from '@/lib/usage/log'
 import { getCachedTryOn, setCachedTryOn, tryonCacheKey } from '@/lib/cache/tryonCache'
 import { checkAndIncrementIp } from '@/lib/ratelimit/ipLimit'
+import { getTryOnPromptHint } from '@/constants/tryon-overrides'
 
 // 4 attempts × ~20s each (gen + QC) = ~80s. Pro plan allows up to 300s;
 // 180s gives headroom for slow QC + retries.
@@ -560,7 +561,13 @@ export async function POST(req: NextRequest) {
       ? ` MANDATORY BRIM LOCK: the cap's brim is ${productBrim === 'FLAT' ? 'FLAT and STRAIGHT (lưỡi ngang) — completely horizontal, NOT curved, NOT bent down at the sides' : 'CURVED (lưỡi cong) — bent down at the sides like a traditional baseball cap, NOT flat'}. The brim shape in the OUTPUT MUST be ${productBrim}. If any reference image appears to show the opposite brim shape, IGNORE that — this cap is ${productBrim}.`
       : ''
 
-    const prompt = basePrompt + colourLock + brimLock
+    // Per-SKU prompt hint — owner-curated text guidance for caps with
+    // design details Gemini misreads from photos alone (e.g. TC63 SAMURAI
+    // patch). See constants/tryon-overrides.ts.
+    const promptHintRaw = getTryOnPromptHint(typeof logBase.sku === 'string' ? logBase.sku : undefined)
+    const promptHint = promptHintRaw ? ` [PER-SKU DESIGN HINT] ${promptHintRaw}` : ''
+
+    const prompt = basePrompt + colourLock + brimLock + promptHint
     logBase.promptChars = prompt.length
 
     // ── Exact size/dimensions of the PERSON image actually sent to Gemini ──
