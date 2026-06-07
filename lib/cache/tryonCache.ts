@@ -17,7 +17,7 @@
 import crypto from 'node:crypto'
 import { kvAvailable, kvDel, kvGet, kvSet } from '@/lib/redis/kv'
 
-const KEY_PREFIX  = 'tcaps:tryon:v3:'   // 2026-06-07 bumped — invalidates v2 results that came from single-shot QC (pre auto-retry). Forces fresh runs through the new MAX_QC_ATTEMPTS=4 loop with retry hints.
+const KEY_PREFIX  = 'tcaps:tryon:v4:'   // 2026-06-07 bumped — invalidates v3 entries cached by the lenient QC (TC68 face-swap PASSed with identity≈85 from rater). New QC prompt + identity threshold 85 + fail-into-retry on infra fail.
 const TTL_SECONDS = 30 * 24 * 60 * 60     // 30 days
 
 interface KeyArgs {

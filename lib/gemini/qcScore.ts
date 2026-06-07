@@ -39,22 +39,66 @@ const QC_MAX_TOKENS    = 256              // JSON is small
 // person is the SAME individual but visibly "glow-up'd" (smoother skin, slimmer
 // jaw, larger eyes), which is exactly the failure mode we need to catch — so we
 // tell the rater to penalise that case directly.
-const QC_PROMPT = `Bạn là hệ thống kiểm định ảnh thử nón.
+const QC_PROMPT = `Bạn là hệ thống kiểm định ảnh thử nón. Mục tiêu QUAN TRỌNG NHẤT là phát hiện việc AI THAY NGƯỜI hoặc THAY ĐỔI khuôn mặt.
 
 So sánh:
 
-A = ảnh gốc
-B = ảnh sản phẩm
-C = ảnh kết quả
+A = ảnh selfie GỐC của khách hàng (đây là DANH TÍNH THẬT)
+B = ảnh sản phẩm nón
+C = ảnh kết quả try-on
 
-Đánh giá:
+═══════════════════════════════════════════
+PHẦN 1 — PHÁT HIỆN THAY NGƯỜI (QUAN TRỌNG NHẤT)
+═══════════════════════════════════════════
 
-1. Mức độ giữ nguyên khuôn mặt người trong ảnh gốc. CHẤM THẤP (dưới 80) nếu khuôn mặt bị làm đẹp, làm thon hàm, làm mịn da, làm trắng da, làm to mắt, làm hồng môi, mất mụn/nốt ruồi/khuyết điểm, hoặc trông như phiên bản "glow-up" / dùng filter của người gốc — DÙ vẫn là cùng một người.
-2. Mức độ giống sản phẩm nón. CHẤM THẤP (dưới 70) nếu MÀU nón trong C khác MÀU nón trong B (ví dụ: B là nón TRẮNG nhưng C lại là nón ĐEN), kể cả khi hoạ tiết/logo/form vẫn giống.
-3. Mức độ chân thực.
-4. Có dấu hiệu AI làm đẹp, thay đổi mặt hoặc thay đổi người hay không. Bất kỳ dấu hiệu mịn da / thon hàm / to mắt / xoá mụn nào cũng phải đặt face_changed = true.
+So sánh kỹ khuôn mặt trong C với khuôn mặt trong A. Trả lời nghiêm khắc:
 
-Trả JSON:
+(a) Người trong C có phải là MỘT NGƯỜI HOÀN TOÀN KHÁC không? Ví dụ:
+    - Khác giới tính (selfie nam → kết quả nữ, hoặc ngược lại)
+    - Khác chủng tộc (selfie người Việt/Á → kết quả người da trắng/đen)
+    - Khác độ tuổi rõ rệt (selfie 25 → kết quả 40+, hoặc 25 → 16)
+    - Khác cấu trúc khuôn mặt căn bản (hình dạng mặt, hàm, mũi, mắt rõ ràng khác)
+    - Khác kiểu tóc & màu tóc hoàn toàn (selfie tóc đen ngắn → kết quả tóc nâu dài)
+
+NẾU người trong C là MỘT NGƯỜI KHÁC:
+    → face_similarity = 0–20
+    → face_changed = true
+    → verdict = "fail"
+    → reason = "Khuôn mặt trong C là một người KHÁC, không phải người trong A"
+
+(b) Người trong C là CÙNG NGƯỜI với A nhưng bị "glow-up" / dùng filter / làm đẹp quá mức (làm thon hàm, to mắt, hồng môi, mịn da, trắng da, xoá mụn):
+    → face_similarity = 40–75
+    → face_changed = true
+    → verdict = "fail"
+
+(c) Người trong C là CÙNG NGƯỜI với A và GIỮ NGUYÊN gần như mọi đặc điểm:
+    → face_similarity = 85–100
+    → face_changed = false
+    → verdict = "pass" (nếu các tiêu chí khác cũng pass)
+
+═══════════════════════════════════════════
+PHẦN 2 — CÁC TIÊU CHÍ KHÁC
+═══════════════════════════════════════════
+
+hat_similarity (0-100): Mức độ giống sản phẩm nón B. CHẤM THẤP (<70) nếu MÀU nón trong C khác MÀU nón trong B, hoặc logo/graphic sai.
+
+realism (0-100): Mức độ chân thực của ảnh tổng thể.
+
+═══════════════════════════════════════════
+VERDICT
+═══════════════════════════════════════════
+
+verdict = "pass" CHỈ KHI:
+    face_similarity >= 85 VÀ
+    hat_similarity >= 80 VÀ
+    realism >= 70 VÀ
+    face_changed = false
+
+Mọi trường hợp khác → verdict = "fail".
+
+═══════════════════════════════════════════
+TRẢ JSON DUY NHẤT
+═══════════════════════════════════════════
 
 {
 "face_similarity": 0-100,
@@ -62,11 +106,10 @@ Trả JSON:
 "realism": 0-100,
 "face_changed": true/false,
 "verdict": "pass" | "fail",
-"reason": "..."
+"reason": "tóm tắt ngắn bằng tiếng Việt"
 }
 
-Chỉ trả JSON hợp lệ.
-Không giải thích thêm.`
+Chỉ trả JSON hợp lệ. Không giải thích thêm.`
 
 function splitDataUrl(d: string): { mimeType: string; data: string } {
   const semi = d.indexOf(';')

@@ -17,7 +17,10 @@ const GEMINI_MODEL = process.env.GEMINI_IMAGE_MODEL?.trim() || 'gemini-2.5-flash
 // prior QC issues + identity-priority hint into the prompt. After 4 attempts
 // we return the best by weighted total — NEVER reject the user's call.
 const MAX_QC_ATTEMPTS = 4
-const QC_PASS    = { identity: 80, cap: 80, realism: 70 } as const  // 0-100
+// 2026-06-07: identity threshold raised 80→85 after observing Gemini Vision
+// rate "completely different person" as 80+ — too lenient. 85 forces clearly-
+// same-person results to pass while letting any drift trigger retry.
+const QC_PASS    = { identity: 85, cap: 80, realism: 70 } as const  // 0-100
 const QC_WEIGHTS = { identity: 0.5, cap: 0.35, realism: 0.15 } as const
 
 function weightedTotal(s: QcScore): number {
@@ -548,7 +551,13 @@ export async function POST(req: NextRequest) {
       }
 
       const total  = qc ? weightedTotal(qc) : 0
-      const passed = qc ? qcPassed(qc) : true   // QC infra failure → treat as pass
+      // 2026-06-07 owner audit: previous fail-open let TC68 face-swap slip
+      // through (QC infra silent fail → treated as pass → no retry). Now we
+      // retry when QC fails on attempts 1..3, and only fail-open on the LAST
+      // attempt (so we don't burn 4× cost on a permanent KV outage).
+      const passed = qc
+        ? qcPassed(qc)
+        : attempt >= MAX_QC_ATTEMPTS   // last attempt: accept whatever we have
 
       console.log(JSON.stringify({
         log:          'tryon.qc',
