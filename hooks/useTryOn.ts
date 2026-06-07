@@ -337,6 +337,11 @@ export function useTryOn() {
       type GeminiResp = {
         resultUrl?: string; error?: string; model?: string
         elapsedMs?: number; modelText?: string
+        // QC + auto-retry loop fields (2026-06-07 server-side retry)
+        totalElapsedMs?: number    // sum across all attempts in the loop
+        attempts?:       number    // how many gen+QC rounds the server ran (1–4)
+        qcVerdict?:      'pass' | 'fail'
+        totalScore?:     number    // weighted total 0–10
         qc?: QcScore | null
         qcFailed?: boolean         // distinct from infra/Gemini errors — see below
       }
@@ -420,10 +425,13 @@ export function useTryOn() {
         throw new Error(lastErr || 'Gemini không trả về ảnh sau nhiều lần thử')
       }
 
-      console.log(`[TryOn] ✓ Done — AI render ${data.elapsedMs}ms`)
+      console.log(`[TryOn] ✓ Done — best=${data.elapsedMs}ms total=${data.totalElapsedMs ?? data.elapsedMs}ms attempts=${data.attempts ?? 1} verdict=${data.qcVerdict ?? 'n/a'} score=${data.totalScore ?? 'n/a'}`)
+      // Display TOTAL time (sum across all retry attempts) so the user sees
+      // when the auto-retry loop kicked in, not just the best attempt's gen time.
+      const displayMs = data.totalElapsedMs ?? data.elapsedMs ?? null
       setState(prev => ({
         ...prev, step: 'done', isProcessing: false,
-        resultUrl: data!.resultUrl!, enhanced: true, renderMs: data!.elapsedMs ?? null,
+        resultUrl: data!.resultUrl!, enhanced: true, renderMs: displayMs,
         qc: data!.qc ?? null,
       }))
 
