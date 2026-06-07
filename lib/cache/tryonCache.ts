@@ -17,7 +17,7 @@
 import crypto from 'node:crypto'
 import { kvAvailable, kvDel, kvGet, kvSet } from '@/lib/redis/kv'
 
-const KEY_PREFIX  = 'tcaps:tryon:v2:'   // 2026-06-06 bumped — invalidates v1 results generated under the 2-ref ceiling so customers see fresh outputs from the 20-ref pipeline
+const KEY_PREFIX  = 'tcaps:tryon:v3:'   // 2026-06-07 bumped — invalidates v2 results that came from single-shot QC (pre auto-retry). Forces fresh runs through the new MAX_QC_ATTEMPTS=4 loop with retry hints.
 const TTL_SECONDS = 30 * 24 * 60 * 60     // 30 days
 
 interface KeyArgs {
