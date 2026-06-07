@@ -70,6 +70,17 @@ const ORIGINAL_MAX_BYTES  = 10 * 1024 * 1024   // send original as-is up to ~10M
 const MAX_SEND_CHARS      = 15 * 1024 * 1024   // hard cap for the data URL we POST
 const MAX_CAP_IMAGES      = 20                 // 2026-06-06 owner: send ALL Pancake photos (each variant curated to ~2 photos in POS — front + brim underside). 20 is a safety ceiling; real galleries are smaller, e.g. TC46 has 13.
 
+// 2026-06-07 STRICT_VARIANT_MODE (owner): force-send ONLY the picked variant's
+// canonical image. Owner audit found that even with a strong cap-colour-
+// authority prompt, Gemini still leaked colour from sibling-variant photos
+// or non-variant gallery angles (TC68 NGANG/Đen rendered as a WHITE cap
+// because the gallery contained white-cap photos). Trade-off: lose detail
+// coverage (1 ref vs 3+). Gain: guaranteed correct colourway every time.
+//
+// When ON: garmentUrls = [leadImage] (the variant.image, or product.imageUrl
+// as fallback). Sibling variants and non-variant gallery photos are dropped.
+const STRICT_VARIANT_MODE = true
+
 
 /**
  * Sleep `ms`, but resolve early (returning `true`) if `abortRef.current`
@@ -309,11 +320,17 @@ export function useTryOn() {
       const safeGalleryAngles = (product?.images ?? []).filter(u =>
         /^https?:\/\//.test(u) && u !== leadImage && !otherVariantImages.has(u),
       )
-      const sourceImages = leadImage
-        ? [leadImage, ...safeGalleryAngles]
-        : product
-          ? filterImagesByVariant(product, detectedColor, detectedBrim)
-          : []
+      // STRICT_VARIANT_MODE: send ONLY the variant's canonical image. Keeps
+      // cap colour locked to whatever the customer picked, at the cost of
+      // multi-angle coverage. Owner accepted this trade-off after repeated
+      // colour-leak failures from gallery refs (TC68 BLACK→WHITE, etc).
+      const sourceImages = STRICT_VARIANT_MODE && leadImage
+        ? [leadImage]
+        : leadImage
+          ? [leadImage, ...safeGalleryAngles]
+          : product
+            ? filterImagesByVariant(product, detectedColor, detectedBrim)
+            : []
       // Per-SKU override: some products (TC39 etc.) have full-face model
       // galleries that bleed identity through to the customer. The override
       // file caps refs to 1 for those SKUs — see constants/tryon-overrides.ts.
@@ -327,6 +344,9 @@ export function useTryOn() {
       console.log('[TryOn] PERSON original :', `${person.origWidth}×${person.origHeight}px`, `${(person.origBytes / 1024).toFixed(0)}KB`)
       console.log('[TryOn] PERSON sent     :', `${person.sentWidth}×${person.sentHeight}px`, `${dataUrlKB(person.dataUrl)}KB`, `(${person.mode})`)
       console.log('[TryOn] CAP references  :', garmentUrls.length ? `${garmentUrls.length} url(s) (server-fetched, cap=${maxRefs})` : '1 uploaded file')
+      console.log('[TryOn] CAP mode        :', STRICT_VARIANT_MODE
+        ? `STRICT_VARIANT_MODE (variant.image only) — ${garmentUrls.length} ref`
+        : `NORMAL (lead + ${safeGalleryAngles.length} gallery angles)`)
       console.log('[TryOn] CAP variant pin :', pinnedVariant ? `${pinnedVariant.name ?? pinnedVariant.sku}` : 'none — using gallery filter')
       console.log('[TryOn] CAP colour-lock :',
         detectedColor

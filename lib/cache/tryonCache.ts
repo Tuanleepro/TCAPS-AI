@@ -17,7 +17,7 @@
 import crypto from 'node:crypto'
 import { kvAvailable, kvDel, kvGet, kvSet } from '@/lib/redis/kv'
 
-const KEY_PREFIX  = 'tcaps:tryon:v6:'   // 2026-06-07 bumped — invalidates v5 entries cached before the cap COLOUR AUTHORITY lock + per-failure-mode retry hints (face-only / cap-only / both / wrong-person). TC68 NGANG/Đen was rendering WHITE cap because non-variant gallery refs leaked colour.
+const KEY_PREFIX  = 'tcaps:tryon:v7:'   // 2026-06-07 bumped — invalidates v6 entries from before STRICT_VARIANT_MODE. Cap refs now = [variant.image] only (no gallery angles, no sibling colourways) so output cap colour is locked to whatever the customer picked.
 const TTL_SECONDS = 30 * 24 * 60 * 60     // 30 days
 
 interface KeyArgs {
