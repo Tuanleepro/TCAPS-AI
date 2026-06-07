@@ -209,18 +209,30 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   TC51: {
     promptHint:
       'TC51 NÓN MOTORCYCLE — design verification: ' +
-      'BASE: black snapback with FLAT brim (lưỡi ngang for NGANG variants). ' +
-      'FRONT-LEFT PATCH: HEXAGONAL patch with red biker rider figure (rider ' +
-      'wearing helmet, fist raised) + 5 RED STARS arched along the top of ' +
-      'the patch. Black background, red biker silhouette. ' +
-      'FRONT-RIGHT GRAPHIC — SIGNATURE: large SPORT MOTORCYCLE silhouette ' +
-      'in dark grey / black, prominently visible on the right front panel. ' +
-      'This motorcycle is a signature feature — do NOT drop it. ' +
-      'RIGHT SIDE BUTTON: small RED X button / accent near the top of the ' +
-      'side panel. ' +
-      'BRIM EDGE: red piping / cord along the brim edge. ' +
-      'BRIM TOP: small red rectangle markers on the front. ' +
-      'COLOUR PALETTE: black + RED accents.',
+      'BASE: black baseball cap. 6 variants — NGANG/CONG (flat vs curved ' +
+      'brim) × Đen/VÀNG/BẠC (accent colour: red / gold / silver-white). ' +
+      'Brim shape locked via brimLock; accent colour from image 2. ' +
+      'FRONT-LEFT PATCH (signature shape): HEXAGONAL patch (6-sided, NOT ' +
+      'rectangular, NOT shield) with a BIKER RIDER figure (rider wearing ' +
+      'a full-face helmet with raised fist) + 5 SMALL STARS arched along ' +
+      'the top inside the patch. ' +
+      'FRONT-RIGHT GRAPHIC (signature feature): large SPORT MOTORCYCLE ' +
+      'silhouette prominently printed on the right front panel. This ' +
+      'motorcycle is a defining design element — do NOT drop or shrink it. ' +
+      'RIGHT SIDE BUTTON: small X button / accent near the top of the side ' +
+      'panel. ' +
+      'BRIM EDGE PIPING: thin coloured cord runs along the brim edge. ' +
+      'BRIM TOP: small rectangle markers on the front of the brim top. ' +
+      'ACCENT COLOUR (varies per variant — MUST match image 2): ' +
+      '  - ĐEN variant → RED accents (red biker rider, red stars, red bike ' +
+      '    details, red brim piping, red X button) ' +
+      '  - VÀNG variant → GOLD / YELLOW accents on every accent element ' +
+      '  - BẠC variant → WHITE / SILVER accents (silver biker rider, ' +
+      '    silver stars, silver motorcycle, silver brim piping, silver X) ' +
+      'Image 2 is the absolute colour authority — match its accent colour ' +
+      'EXACTLY. NEVER default to red. NEVER swap colours between variants. ' +
+      'CAP FIT: snug on the head, brim just above the eyebrows — NOT ' +
+      'floating high, NOT tilted backwards.',
   },
 
   'CB TC49': {
@@ -258,19 +270,33 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
       'FRONT-CENTRE PATCH (signature design): SHIELD-SHAPED patch (heraldic ' +
       'shield with rounded/pointed bottom, NOT rectangular, NOT square). ' +
       'The patch is centred on the FRONT panel. ' +
-      'PATCH CONTENT: a detailed ROOSTER / CHICKEN illustration standing ' +
-      'in profile facing LEFT, with detailed feathers, raised tail plumes, ' +
-      'and prominent comb / wattle — Vietnamese folk-art / tranh dân gian ' +
-      'style. Below the rooster: "Tcaps" text in gothic / medieval script. ' +
-      'PATCH COLOUR: the rooster + "Tcaps" text are in ROSE-GOLD / COPPER ' +
-      'tones on a black patch background. NOT bright orange, NOT red — a ' +
-      'soft metallic rose-gold / copper finish. ' +
+      'PATCH CONTENT — ROOSTER (must be detailed, signature element): a ' +
+      'detailed Vietnamese folk-art / tranh dân gian ROOSTER illustration. ' +
+      '  • Pose: standing tall in profile facing LEFT, both legs visible, ' +
+      '    chest puffed forward, head raised proudly with beak slightly ' +
+      '    upward (crowing / proud rooster pose). ' +
+      '  • Tail: prominent CURVING TAIL with MULTIPLE LONG ARCHING PLUME ' +
+      '    FEATHERS sweeping up and back — this tail is iconic and must be ' +
+      '    drawn fully (NOT a stub tail, NOT simplified). ' +
+      '  • Comb: visible serrated COMB on top of the head + WATTLE under ' +
+      '    the beak. ' +
+      '  • Feathers: DETAILED feather patterns on body, wing, and tail — ' +
+      '    fine line work, NOT a flat silhouette. ' +
+      '  • Style: traditional Vietnamese folk-art (Đông Hồ / tranh dân ' +
+      '    gian aesthetic) — NOT a generic cartoon chicken, NOT a logo ' +
+      '    abstract icon. ' +
+      'BELOW THE ROOSTER inside the shield: "Tcaps" text in gothic / ' +
+      'medieval / blackletter script. ' +
+      'PATCH COLOUR: rooster + "Tcaps" text are in ROSE-GOLD / COPPER ' +
+      'metallic tones on a black patch background. Subtle metallic ' +
+      'finish — NOT bright orange, NOT bright red, NOT pure gold. ' +
       'RIGHT SIDE TAG: small RECTANGULAR tag with 2 mini rose-gold rooster ' +
       'icons + a small black eyelet next to it. ' +
       'CAP FIT: snug on the head, brim rests just above the eyebrows — NOT ' +
       'floating high. ' +
       'OVERALL: minimalist premium look — black cap + rose-gold rooster ' +
-      'shield patch as the focal point.',
+      'shield patch as the focal point. The rooster detail is what makes ' +
+      'this cap recognisable — render it faithfully, not simplified.',
   },
 
   'NÓN TC43': {
