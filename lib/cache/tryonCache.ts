@@ -17,7 +17,7 @@
 import crypto from 'node:crypto'
 import { kvAvailable, kvDel, kvGet, kvSet } from '@/lib/redis/kv'
 
-const KEY_PREFIX  = 'tcaps:tryon:v15:'  // 2026-06-07 bumped — invalidates v14 so the 13-SKU batch promptHint adds (TC68/67/52/51/49/45/46/43/42/41/39/30/CT1) take effect. Each cap now has owner-curated design verification.
+const KEY_PREFIX  = 'tcaps:tryon:v16:'  // 2026-06-07 bumped — invalidates v15 so the strengthened TC67 hint (graphic SIZE + VIBRANCY + cap FIT emphasis) takes effect.
 const TTL_SECONDS = 30 * 24 * 60 * 60     // 30 days
 
 interface KeyArgs {

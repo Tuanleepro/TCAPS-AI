@@ -164,12 +164,20 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
       'TC67 NÓN SKELETON — design verification: ' +
       'BASE: WHITE trucker cap (NOT black) with WHITE mesh back panels. ' +
       'Front panel is solid white, brim is white. ' +
-      'FRONT GRAPHIC — LARGE COLOURFUL: a stylised SKULL with a GOLD CROWN ' +
-      'on top, with a vibrant PAINT-SPLATTER / SPLASH effect bursting out ' +
-      'around the skull in ORANGE, BLUE, RED, and YELLOW colours. The ' +
-      'skull design is large and dominates the front panel. ' +
+      'FRONT GRAPHIC — LARGE COLOURFUL (size + vibrancy critical): a stylised ' +
+      'SKULL with a GOLD CROWN on top, with a vibrant PAINT-SPLATTER / ' +
+      'SPLASH effect bursting out around the skull in ORANGE, BLUE, RED, ' +
+      'and YELLOW colours. ' +
+      'GRAPHIC SIZE: the skull + crown + paint splash MUST be LARGE and ' +
+      'PROMINENT — it covers most of the front panel from near the top down ' +
+      'to near the brim. Do NOT render as a small accent or minor decal. ' +
+      'GRAPHIC COLOURS: the splash colours must be VIBRANT, SATURATED, and ' +
+      'POP brightly against the white base. The orange / red / blue / yellow ' +
+      'must look bold and lively — NOT muted, NOT pastel, NOT washed out. ' +
       'SIDE PATCH: small rectangular "TOYS" patch in yellow/red colours on ' +
       'the side panel. ' +
+      'CAP FIT: the cap must sit SNUG on the head — brim rests just above ' +
+      'the eyebrows, NOT floating high above the hair, NOT tilted backwards. ' +
       'COLOUR PALETTE: white base + multi-colour skull graphic. NOT a ' +
       'monochrome cap — the splash colours are signature.',
   },
