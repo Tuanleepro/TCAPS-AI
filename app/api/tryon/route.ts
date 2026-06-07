@@ -1,14 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { scoreTryOn, evaluateQc, QC_FAIL_MESSAGE, type QcScore } from '@/lib/gemini/qcScore'
+import { scoreTryOn, type QcScore } from '@/lib/gemini/qcScore'
 import { appendUsageLog, type UsageLogEntry } from '@/lib/usage/log'
 import { getCachedTryOn, setCachedTryOn, tryonCacheKey } from '@/lib/cache/tryonCache'
 import { checkAndIncrementIp } from '@/lib/ratelimit/ipLimit'
 
-export const maxDuration = 60
+// 4 attempts × ~20s each (gen + QC) = ~80s. Pro plan allows up to 300s;
+// 180s gives headroom for slow QC + retries.
+export const maxDuration = 180
 export const runtime = 'nodejs'
 
 const MAX_DATAURL_CHARS = 15 * 1024 * 1024   // allow full-quality person photos
 const GEMINI_MODEL = process.env.GEMINI_IMAGE_MODEL?.trim() || 'gemini-2.5-flash-image'
+
+// ── QC + Auto-Retry config (owner spec 2026-06-07) ─────────────────────────
+// MAX_QC_ATTEMPTS = 4 (1 initial + up to 3 retries). Each retry feeds the
+// prior QC issues + identity-priority hint into the prompt. After 4 attempts
+// we return the best by weighted total — NEVER reject the user's call.
+const MAX_QC_ATTEMPTS = 4
+const QC_PASS    = { identity: 80, cap: 80, realism: 70 } as const  // 0-100
+const QC_WEIGHTS = { identity: 0.5, cap: 0.35, realism: 0.15 } as const
+
+function weightedTotal(s: QcScore): number {
+  // Returns 0-10 scale.
+  return (s.face_similarity * QC_WEIGHTS.identity
+       +  s.hat_similarity  * QC_WEIGHTS.cap
+       +  s.realism         * QC_WEIGHTS.realism) / 10
+}
+
+function qcPassed(s: QcScore): boolean {
+  if (s.face_changed) return false
+  return s.face_similarity >= QC_PASS.identity
+      && s.hat_similarity  >= QC_PASS.cap
+      && s.realism         >= QC_PASS.realism
+}
+
+function buildRetryHint(s: QcScore): string {
+  const issues: string[] = []
+  if (s.face_changed) issues.push('the face from image 1 was changed or regenerated')
+  if (s.face_similarity < QC_PASS.identity) issues.push(`identity preservation = ${(s.face_similarity/10).toFixed(1)}/10 (target ≥ 8) — the user did not look like themselves`)
+  if (s.hat_similarity  < QC_PASS.cap)      issues.push(`cap accuracy = ${(s.hat_similarity /10).toFixed(1)}/10 (target ≥ 8) — cap detail did not match the product references`)
+  if (s.realism         < QC_PASS.realism)  issues.push(`realism = ${(s.realism            /10).toFixed(1)}/10 (target ≥ 7) — the output looked artificial`)
+  if (!issues.length) return ''
+  return ' [RETRY HINT] Previous attempt failed QC. Issues: ' + issues.join('; ')
+       + '. This attempt MUST prioritise preserving the FACE IDENTITY from image 1 above all else — keep original face pixels wherever possible, even if it means a slightly less polished cap or scene.'
+}
 
 // Try-on = put THIS cap on THIS person. The HEAD/FACE is a locked, untouchable
 // region copied from image 1 (identity must never drift); the cap design is
@@ -471,72 +506,125 @@ export async function POST(req: NextRequest) {
       refUrls:    garmentUrlsForLog,
     }))
 
-    const { dataUrl, elapsedMs, modelText } = await runGeminiTryOn(person, garments, prompt)
-    // Gemini returned an image — capture the metering. outputChars covers any
-    // text the model emitted alongside the image; numOutputImages=1 covers the
-    // image-output tokens (the dominant cost line in flash-image).
-    logBase.elapsedMs       = elapsedMs
-    logBase.numOutputImages = 1
-    logBase.outputChars     = (modelText ?? '').length
+    // ── QC + Auto-Retry loop ──────────────────────────────────────────────
+    // Up to MAX_QC_ATTEMPTS (4) tries. Each attempt: Gemini gen → Gemini Vision
+    // QC. If PASS, stop. If FAIL, augment the prompt with the QC issues +
+    // identity-priority hint, retry. After MAX_QC_ATTEMPTS, return the best
+    // attempt by weighted total. The user ALWAYS gets an image.
+    type Attempt = {
+      dataUrl:   string
+      qc:        QcScore | null
+      total:     number
+      elapsedMs: number
+      modelText: string
+      attempt:   number
+    }
+    let bestAttempt: Attempt | null = null
+    let retryHint   = ''
+    let qcVerdict: 'pass' | 'fail' = 'fail'
+    const qcApiKey  = process.env.GEMINI_API_KEY?.trim()
+    let totalElapsedMs = 0
 
-    // ── Quality control via Gemini Vision (≤10s, fail-open on infra error) ──
-    // Source of truth for pass/fail is `evaluateQc` (business-rule thresholds),
-    // NOT the model's own verdict field. If QC verdict is `fail`, we refuse to
-    // return the image and surface a friendly retry prompt — no auto-regen
-    // (per spec: user manually retries).
-    //
-    // Cost optimization: SKIP QC on retries (attempt > 1). Rationale per spec —
-    // the Gemini gen has already been billed by the time a retry succeeds, and
-    // QC was already evaluated on attempt 1; running it again on the retry
-    // doubles the QC line for negligible insight. Worst case a slightly-off
-    // result slips through on a retry (~0.1% of all calls) — acceptable.
-    const skipQc = (logBase.attempt ?? 1) > 1
-    let qc: QcScore | null = null
-    let qcVerdict: 'pass' | 'fail' = 'pass'
-    if (skipQc) {
-      console.log('[QC] SKIPPED (attempt > 1) — cost optimization')
-    } else {
+    for (let attempt = 1; attempt <= MAX_QC_ATTEMPTS; attempt++) {
+      const promptForAttempt = retryHint ? prompt + retryHint : prompt
+      console.log(`[ATTEMPT ${attempt}/${MAX_QC_ATTEMPTS}]${retryHint ? ' (with retry hint)' : ''}`)
+      const gen = await runGeminiTryOn(person, garments, promptForAttempt)
+      totalElapsedMs += gen.elapsedMs
+
+      // Run QC every attempt (no skipping — owner spec).
+      let qc: QcScore | null = null
       try {
-        const apiKey = process.env.GEMINI_API_KEY?.trim()
-        if (apiKey && garments[0]) {
+        if (qcApiKey && garments[0]) {
           qc = await scoreTryOn({
             originalDataUrl: person,
-            productDataUrl:  garments[0],    // one product reference is enough
-            resultDataUrl:   dataUrl,
-            apiKey,
+            productDataUrl:  garments[0],
+            resultDataUrl:   gen.dataUrl,
+            apiKey:          qcApiKey,
           })
-          qcVerdict = evaluateQc(qc)
-          console.log(`[QC] verdict=${qcVerdict} (model said: ${qc.verdict})  ${qc.reason ? '· ' + qc.reason : ''}`)
         }
       } catch (e) {
-        // Fail-OPEN: don't punish the user when our QC infra hiccups. The image
-        // still goes through, just without verified scores.
         console.warn('[QC] check failed (fail-open):', e instanceof Error ? e.message : e)
         qc = null
+      }
+
+      const total  = qc ? weightedTotal(qc) : 0
+      const passed = qc ? qcPassed(qc) : true   // QC infra failure → treat as pass
+
+      console.log(JSON.stringify({
+        log:          'tryon.qc',
+        attempt,
+        identity:     qc ? +(qc.face_similarity/10).toFixed(2) : null,
+        cap:          qc ? +(qc.hat_similarity /10).toFixed(2) : null,
+        realism:      qc ? +(qc.realism        /10).toFixed(2) : null,
+        total:        qc ? +total.toFixed(2) : null,
+        passed,
+        face_changed: qc?.face_changed ?? null,
+        modelVerdict: qc?.verdict ?? null,
+        reason:       qc?.reason ?? null,
+      }))
+
+      // Track the best so far by weighted total.
+      if (!bestAttempt || total > bestAttempt.total) {
+        bestAttempt = {
+          dataUrl:   gen.dataUrl,
+          qc, total,
+          elapsedMs: gen.elapsedMs,
+          modelText: gen.modelText,
+          attempt,
+        }
+      }
+
+      if (passed) {
         qcVerdict = 'pass'
+        console.log(`[ATTEMPT ${attempt}] PASSED — stopping retry loop`)
+        break
+      }
+
+      if (attempt < MAX_QC_ATTEMPTS) {
+        retryHint = qc ? buildRetryHint(qc) : ''
+        console.log(JSON.stringify({
+          log:  'tryon.retry',
+          from: attempt,
+          to:   attempt + 1,
+          hint: retryHint.slice(0, 240),
+        }))
       }
     }
 
-    if (qcVerdict === 'fail') {
-      flushLog({
-        status:   'qc_failed',
-        cacheHit: false,
-        error:    qc?.reason ?? 'QC failed',
-        qcScore:  qc ? Math.round((qc.face_similarity + qc.hat_similarity + qc.realism) / 3) / 100 : null,
-      })
-      return NextResponse.json({
-        qcFailed: true,
-        qc,
-        error:    QC_FAIL_MESSAGE,
-      })   // 200 so the client treats it as a known QC failure, not a network error
+    if (!bestAttempt) {
+      // Unreachable — runGeminiTryOn throws on infra failure.
+      throw new Error('Không có lần thử nào tạo được ảnh')
     }
 
-    // ── Cache write (fire-and-forget) ─────────────────────────────────────
-    // Only successful results land in cache. QC-failed images are not cached
-    // — that path returns early above so the user retries fresh, not from a
-    // sticky bad output. Fire-and-forget: cache write must NOT delay the
-    // user's response. Set failures (e.g. value larger than KV plan limit)
-    // are logged but not surfaced.
+    const dataUrl   = bestAttempt.dataUrl
+    const elapsedMs = bestAttempt.elapsedMs
+    const modelText = bestAttempt.modelText
+    const qc        = bestAttempt.qc
+
+    console.log(JSON.stringify({
+      log:           'tryon.bestAttempt',
+      attempt:       bestAttempt.attempt,
+      totalAttempts: bestAttempt.attempt === MAX_QC_ATTEMPTS ? MAX_QC_ATTEMPTS : bestAttempt.attempt,
+      total:         +bestAttempt.total.toFixed(2),
+      identity:      qc ? +(qc.face_similarity/10).toFixed(2) : null,
+      cap:           qc ? +(qc.hat_similarity /10).toFixed(2) : null,
+      realism:       qc ? +(qc.realism        /10).toFixed(2) : null,
+      qcVerdict,
+      totalElapsedMs,
+    }))
+
+    // Metering reflects the BEST attempt for cost attribution + the loop's
+    // total time for performance debugging.
+    logBase.elapsedMs       = totalElapsedMs
+    logBase.numOutputImages = 1
+    logBase.outputChars     = (modelText ?? '').length
+    logBase.attempt         = bestAttempt.attempt
+    logBase.capRefs         = garments.length
+
+    // ── Cache + return (always return best attempt) ─────────────────────────
+    // Even if QC verdict is `fail`, we cache + return the best result — the
+    // owner spec is "after 4 attempts return the highest-scored image", never
+    // reject. Cache the same image so repeat selfies with same SKU hit cache.
     setCachedTryOn(cacheKey, dataUrl).catch(e =>
       console.warn('[cache] set failed (fail-open):', e instanceof Error ? e.message : e),
     )
@@ -544,16 +632,20 @@ export async function POST(req: NextRequest) {
     flushLog({
       status:   'success',
       cacheHit: false,
-      qcScore: qc ? Math.round((qc.face_similarity + qc.hat_similarity + qc.realism) / 3) / 100 : null,
+      qcScore:  qc ? +(bestAttempt.total / 10).toFixed(3) : null,   // 0-1 normalized
     })
     return NextResponse.json({
-      resultUrl:   dataUrl,
-      backend:     'gemini',
-      model:       GEMINI_MODEL,
-      elapsedMs,
-      qc,                                   // null if QC infra failed (fail-open)
-      promptChars: prompt.length,
-      modelText:   modelText || undefined,
+      resultUrl:    dataUrl,
+      backend:      'gemini',
+      model:        GEMINI_MODEL,
+      elapsedMs,                                 // best attempt's render time
+      totalElapsedMs,                            // sum across all attempts in the loop
+      qc,                                        // null if QC infra failed (fail-open)
+      qcVerdict,                                 // 'pass' if any attempt passed, else 'fail' (best returned)
+      attempts:     bestAttempt.attempt,         // attempts run until break (or MAX if no pass)
+      totalScore:   +bestAttempt.total.toFixed(2),
+      promptChars:  prompt.length,
+      modelText:    modelText || undefined,
     })
 
   } catch (err) {
