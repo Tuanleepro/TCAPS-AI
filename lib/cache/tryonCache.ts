@@ -17,7 +17,7 @@
 import crypto from 'node:crypto'
 import { kvAvailable, kvDel, kvGet, kvSet } from '@/lib/redis/kv'
 
-const KEY_PREFIX  = 'tcaps:tryon:v16:'  // 2026-06-07 bumped — invalidates v15 so the strengthened TC67 hint (graphic SIZE + VIBRANCY + cap FIT emphasis) takes effect.
+const KEY_PREFIX  = 'tcaps:tryon:v17:'  // 2026-06-07 bumped — invalidates v16 so the TC52 colourway fix (was hard-coded gold, now defers to image 2 colour authority across 7 variants) takes effect.
 const TTL_SECONDS = 30 * 24 * 60 * 60     // 30 days
 
 interface KeyArgs {

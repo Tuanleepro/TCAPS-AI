@@ -188,15 +188,22 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
       'BASE: black baseball cap, curved brim. ' +
       'FRONT-CENTRE PATCH: large HERALDIC SHIELD-SHAPED patch (heraldic ' +
       'shield with pointed/rounded bottom — NOT a rectangle, NOT a square). ' +
-      'The patch is made of GOLD / BRONZE METALLIC LEATHER material. ' +
+      'The patch is made of METALLIC LEATHER material. ' +
+      'PATCH COLOUR: TC52 ships in 7 colourways — Vàng (gold), Xanh Lá ' +
+      '(green), Xanh Dương (blue), Bạc (silver), Đỏ (red), Cam (orange), ' +
+      'Tím (purple). The patch colour MUST match image 2 (the LEAD ref) ' +
+      'EXACTLY — if image 2 shows a RED patch, the output patch must be ' +
+      'RED. NEVER default to gold/yellow. NEVER swap colours between ' +
+      'colourways. Image 2 is the absolute colour authority for the patch. ' +
       'PATCH CONTENT: a KNIGHT on HORSEBACK charging right, with SWORD ' +
       'raised high and the horse REARING — rendered as a BLACK silhouette ' +
-      'inside the gold/bronze shield. "Tcaps" text in gothic / medieval ' +
-      'font at the bottom of the shield. ' +
-      'RIGHT SIDE TAG: small rectangular leather tag (gold/bronze) with ' +
-      'gold text on the side panel. ' +
-      'COLOUR PALETTE: black cap + GOLD/BRONZE METALLIC patch (premium ' +
-      'leather look).',
+      'inside the coloured shield. "Tcaps" text in gothic / medieval font ' +
+      'at the bottom of the shield. ' +
+      'RIGHT SIDE TAG: small rectangular leather tag on the side panel. ' +
+      'The tag colour also matches the patch colourway (red for ĐEN ĐỎ, ' +
+      'gold for ĐEN VÀNG, etc — match image 2). ' +
+      'COLOUR PALETTE: black cap + accent colour from image 2 (varies per ' +
+      'variant). Premium leather look.',
   },
 
   TC51: {
