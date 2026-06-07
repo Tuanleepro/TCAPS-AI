@@ -129,6 +129,35 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
       'gold text + Spartan branding on a black baseball cap base.',
   },
 
+  // TC57 NÓN TCAPS — owner observed Gemini rendering an over-simplified
+  // cap with most luxury details missing (no gold border on TCAPS patch,
+  // no gold eyelets, faint side stripes). The hint locks the metallic
+  // detail elements so the output looks "real" and not plain.
+  'NÓN TC57': {
+    promptHint:
+      'TC57 NÓN TCAPS — design verification: ' +
+      'BASE: black baseball cap, structured crown. ' +
+      'FRONT-RIGHT PATCH: vertical rectangular black patch with "TCAPS" text ' +
+      'in WHITE running vertically. The patch is FLANKED by TWO vertical GOLD ' +
+      'STRIPES — one gold stripe on the LEFT edge of the patch and one on the ' +
+      'RIGHT edge. These gold border stripes are a SIGNATURE detail and MUST ' +
+      'appear. The patch is NOT a plain rectangle. ' +
+      'SIDE PANELS: each side panel has 3 HORIZONTAL gold/yellow stripes ' +
+      '(military epaulette style — three thin gold horizontal lines stacked). ' +
+      'These stripes are clearly visible from the front-right and back-right ' +
+      'angles. ' +
+      'GOLD METAL EYELETS: the crown panels are decorated with MULTIPLE small ' +
+      'gold/orange RECTANGULAR METAL EYELETS / GROMMETS (decorative metal ' +
+      'pieces). At least 4–6 visible from front and side angles. These give ' +
+      'the cap its premium / luxury look. ' +
+      'BRIM: dark glossy / leather underside trim along the brim — the brim ' +
+      'has a two-tone look with a darker leather-like inner section. ' +
+      'BACK CLOSURE: gold "TCAPS" text on the back closure strap. ' +
+      'OVERALL: this is a LUXURY cap — gold border stripes + gold side ' +
+      'stripes + gold eyelets + leather brim trim must all be visible. Do ' +
+      'NOT render as a plain black cap with just a small patch.',
+  },
+
   // TC63 NÓN SAMURAI — owner observed Gemini misreading the complex
   // Japanese-themed front patch (rendered as a generic square cherry-
   // blossom design instead of the actual vertical kanji+wave layout).
