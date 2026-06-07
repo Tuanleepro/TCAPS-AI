@@ -320,12 +320,21 @@ export function useTryOn() {
       const safeGalleryAngles = (product?.images ?? []).filter(u =>
         /^https?:\/\//.test(u) && u !== leadImage && !otherVariantImages.has(u),
       )
-      // STRICT_VARIANT_MODE: send ONLY the variant's canonical image. Keeps
-      // cap colour locked to whatever the customer picked, at the cost of
-      // multi-angle coverage. Owner accepted this trade-off after repeated
-      // colour-leak failures from gallery refs (TC68 BLACK→WHITE, etc).
-      const sourceImages = STRICT_VARIANT_MODE && leadImage
-        ? [leadImage]
+      // STRICT_VARIANT_MODE: send ONLY photos belonging to the picked variant.
+      // Preferred path: variant.images[] (P2 — per-variant multi-angle bundle
+      // synced from Pancake's v.images array). Owner uploads multiple photos
+      // per variant in Pancake POS; scraper preserves the per-variant array;
+      // we send the entire array as cap refs — guaranteed same-colourway,
+      // multi-angle coverage.
+      // Fallback when variant.images is missing or has only the canonical:
+      // send just leadImage (single ref) to keep colour locked.
+      const variantImages = (pinnedVariant?.images ?? [])
+        .filter((u): u is string => typeof u === 'string' && /^https?:\/\//.test(u))
+      const strictRefs = variantImages.length > 0
+        ? variantImages
+        : (leadImage ? [leadImage] : [])
+      const sourceImages = STRICT_VARIANT_MODE
+        ? strictRefs
         : leadImage
           ? [leadImage, ...safeGalleryAngles]
           : product
@@ -345,7 +354,7 @@ export function useTryOn() {
       console.log('[TryOn] PERSON sent     :', `${person.sentWidth}×${person.sentHeight}px`, `${dataUrlKB(person.dataUrl)}KB`, `(${person.mode})`)
       console.log('[TryOn] CAP references  :', garmentUrls.length ? `${garmentUrls.length} url(s) (server-fetched, cap=${maxRefs})` : '1 uploaded file')
       console.log('[TryOn] CAP mode        :', STRICT_VARIANT_MODE
-        ? `STRICT_VARIANT_MODE (variant.image only) — ${garmentUrls.length} ref`
+        ? `STRICT (variant.images=${variantImages.length}, sent=${garmentUrls.length})`
         : `NORMAL (lead + ${safeGalleryAngles.length} gallery angles)`)
       console.log('[TryOn] CAP variant pin :', pinnedVariant ? `${pinnedVariant.name ?? pinnedVariant.sku}` : 'none — using gallery filter')
       console.log('[TryOn] CAP colour-lock :',

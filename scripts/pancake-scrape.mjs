@@ -133,13 +133,20 @@ function normalizeScraped(p) {
     : Array.isArray(p.variants) ? p.variants : []
   const v0 = variations[0] || null
   const images = collectGallery(p, variations)
-  const variants = variations.map((v) => ({
-    sku: v.barcode ?? v.custom_id ?? '',
-    name: v.name ?? (Array.isArray(v.fields) ? v.fields.map((f) => f.value).filter(Boolean).join(' / ') : '') ?? '',
-    price: num0(v.retail_price ?? v.price),
-    stock: num0(v.remain_quantity ?? v.quantity ?? v.total_quantity),
-    image: toUrlArray(v.images ?? v.image_url ?? [])[0] ?? '',
-  })).filter((v) => v.sku || v.name || v.price)
+  const variants = variations.map((v) => {
+    const vImages = toUrlArray(v.images ?? v.image_url ?? [])
+    return {
+      sku: v.barcode ?? v.custom_id ?? '',
+      name: v.name ?? (Array.isArray(v.fields) ? v.fields.map((f) => f.value).filter(Boolean).join(' / ') : '') ?? '',
+      price: num0(v.retail_price ?? v.price),
+      stock: num0(v.remain_quantity ?? v.quantity ?? v.total_quantity),
+      image: vImages[0] ?? '',
+      // Preserve ALL per-variant photos so STRICT_VARIANT_MODE can send the
+      // full angle bundle (front / back / inside / underbrim / ...) for THIS
+      // variant only — no sibling-colourway leak.
+      images: vImages,
+    }
+  }).filter((v) => v.sku || v.name || v.price)
   const stockSum = variations.reduce((s, v) => s + num0(v.remain_quantity ?? v.quantity ?? v.total_quantity), 0)
   return {
     pancakeId: p.id ?? p.product_id ?? p.display_id ?? '',
@@ -192,6 +199,11 @@ function serializeVariants(vs) {
     if (v.price) parts.push(`price: ${num0(v.price)}`)
     if (v.stock || v.stock === 0) parts.push(`stock: ${num0(v.stock)}`)
     if (v.image) parts.push(`image: ${qs(v.image)}`)
+    // 2026-06-07: serialize per-variant images[] so multi-angle refs survive
+    // the JSON → TS round-trip. Only write when there's MORE than the canonical.
+    if (Array.isArray(v.images) && v.images.length > 1) {
+      parts.push(`images: ${arr(v.images)}`)
+    }
     return `      { ${parts.join(', ')} }`
   }).join(',\n')}\n    ]`
 }
@@ -430,6 +442,13 @@ async function main() {
               if (!existingV) continue
               if (newV.stock || newV.stock === 0) existingV.stock = newV.stock
               if (newV.image && !isLocalPath(existingV.image)) existingV.image = newV.image
+              // 2026-06-07: sync per-variant multi-angle images. Same isLocalPath
+              // guard as `image` — never overwrite a locally-curated path.
+              if (Array.isArray(newV.images) && newV.images.length) {
+                if (!Array.isArray(existingV.images) || !existingV.images.some(isLocalPath)) {
+                  existingV.images = newV.images
+                }
+              }
             }
           }
         }

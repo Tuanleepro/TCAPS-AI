@@ -17,7 +17,7 @@
 import crypto from 'node:crypto'
 import { kvAvailable, kvDel, kvGet, kvSet } from '@/lib/redis/kv'
 
-const KEY_PREFIX  = 'tcaps:tryon:v7:'   // 2026-06-07 bumped — invalidates v6 entries from before STRICT_VARIANT_MODE. Cap refs now = [variant.image] only (no gallery angles, no sibling colourways) so output cap colour is locked to whatever the customer picked.
+const KEY_PREFIX  = 'tcaps:tryon:v8:'   // 2026-06-07 bumped — invalidates v7 (single variant.image refs) now that STRICT mode sends the full per-variant multi-angle bundle (variant.images[] from Pancake v.images). TC51 NGANG/Đen now sends 3 angle refs instead of 1.
 const TTL_SECONDS = 30 * 24 * 60 * 60     // 30 days
 
 interface KeyArgs {
