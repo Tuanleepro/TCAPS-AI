@@ -78,6 +78,20 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   // 20, which covers TC46's 13-photo gallery in full.
   TC46: {
     pinnedImageUrl: 'https://content.pancake.vn/2-2512/2025/12/8/ec2768ecb1c60190902f3199e71ad4d1dd4578af.jpg',
+    promptHint:
+      'TC46 DARK STALLION — design verification: ' +
+      'BASE: black snapback. ' +
+      'FRONT-LEFT PATCH: ARCHED / tombstone-shaped patch with RED background ' +
+      'and a black HORSE silhouette (rearing/galloping wild horse with mane). ' +
+      'Patch has black border. Not a square or rectangle. ' +
+      'SIDE CORD: a RED THIN CORD / PIPING runs along the side panel seam ' +
+      'from the front patch curving around the side. ' +
+      'RIGHT SIDE TEXT: "Dark Stallion" in RED Gothic / blackletter font, ' +
+      'oriented vertically along the side panel. ' +
+      'RIGHT SIDE EYELET: a red rectangular metal eyelet/grommet near the ' +
+      'bottom of the side panel. ' +
+      'BRIM: black leather edge trim. ' +
+      'COLOUR PALETTE: black + red accents.',
   },
 
   // TC30 NÓN SÓI ĐÊM TCAPS — owner picked CONG/ĐEN VÀNG (gold-badge black)
@@ -88,6 +102,17 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   TC30: {
     pinnedImageUrl:      'https://content.pancake.vn/2-2512/2025/12/11/181ac89e7432747255b8c29bc1491f86f22ce285.jpg',
     defaultTryOnVariant: 'TC30CONGDENVANG',
+    promptHint:
+      'TC30 NÓN SÓI ĐÊM (Night Wolf) — design verification: ' +
+      'BASE: black baseball cap, curved brim. ' +
+      'FRONT-CENTRE PATCH: vertical rectangular black patch with: 3 small ' +
+      'GOLD STARS in a row at the top, a GOLD CRESCENT MOON with a stylised ' +
+      'WOLF HEAD silhouette inside the crescent (gold on black), and "TCAPS ' +
+      'WOLF" text in GOLD at the bottom. Patch has black border. ' +
+      'RIGHT SIDE TAG: small rectangular BROWN/TAN LEATHER tag with "TCAPS ' +
+      'NIGHT WOLF" text printed on it, sewn onto the side panel. ' +
+      'BRIM: decorative parallel rows of stitching on the brim top. ' +
+      'COLOUR PALETTE: black + gold accents + brown leather tag.',
   },
 
   // CT1 NÓN TCAPS — catalog thumbnail features the "Đen / Kết" variant.
@@ -95,7 +120,189 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   // open on that variant by default (instead of the first variant in
   // the array, which is "Đen / COMBO 2 NÓN" — that combo doesn't make
   // sense as a single try-on subject).
-  'Combo CT1': { defaultTryOnVariant: 'COMBOCT1DENKET' },
+  'Combo CT1': {
+    defaultTryOnVariant: 'COMBOCT1DENKET',
+    promptHint:
+      'CT1 NÓN TCAPS — design verification: ' +
+      'BASE: black baseball cap, curved brim. ' +
+      'FRONT-CENTRE PATCH: CIRCULAR / ROUND black patch (not rectangular) ' +
+      'with: 3 small GOLD STARS in a row at the top, a stylised GOLD "t" ' +
+      'logo (lowercase "t" inside a crescent shape — the TCAPS signature ' +
+      'logo) in the centre, and "TCAPS" text in gold at the bottom. ' +
+      'BRIM UNDERSIDE: BLACK with REPEATING GOLD "TCAPS" text + small ' +
+      'TCAPS logo motifs printed across the entire underside (looks like a ' +
+      'leather pattern with gold print). This is a signature detail — do ' +
+      'NOT leave the brim underside plain. ' +
+      'BRIM EDGES: black leather trim. ' +
+      'COLOUR PALETTE: black + gold accents. Minimalist premium look.',
+  },
+
+  // ── Batch-added 2026-06-07 promptHints for owner-reported quality issues ──
+  // 13 SKUs: TC68, TC67, TC52, TC51, TC49, TC45, TC43, TC42, TC41, TC39.
+  // (TC46, TC30, Combo CT1 hints are folded into the entries above.)
+  // Each hint locks the distinctive design elements Gemini was dropping
+  // (patch shapes, signature graphics, materials, accent colours).
+
+  TC68: {
+    promptHint:
+      'TC68 NÓN SPARTAN — design verification: ' +
+      'BASE: black baseball cap, curved brim. ' +
+      'LEFT BRIM TOP: vertical ORANGE text "SPARTAN" in stylised rune/Greek ' +
+      'lettering, flanked by orange ornamental swirl flourishes. ' +
+      'SIDE PANEL MEDALLION: large CIRCULAR orange decorative motif with a ' +
+      'detailed TIGER HEAD facing forward and a SPEAR / WEAPON crossing ' +
+      'behind it, surrounded by a Greek-key (meander) border pattern. The ' +
+      'medallion is on the side panel near the front. ' +
+      'SECONDARY ORANGE SILHOUETTE: small orange bull/ram head icon near ' +
+      'the top of the side panel. ' +
+      'COLOUR PALETTE: black + ORANGE accents — bold Spartan / warrior ' +
+      'aesthetic.',
+  },
+
+  TC67: {
+    promptHint:
+      'TC67 NÓN SKELETON — design verification: ' +
+      'BASE: WHITE trucker cap (NOT black) with WHITE mesh back panels. ' +
+      'Front panel is solid white, brim is white. ' +
+      'FRONT GRAPHIC — LARGE COLOURFUL: a stylised SKULL with a GOLD CROWN ' +
+      'on top, with a vibrant PAINT-SPLATTER / SPLASH effect bursting out ' +
+      'around the skull in ORANGE, BLUE, RED, and YELLOW colours. The ' +
+      'skull design is large and dominates the front panel. ' +
+      'SIDE PATCH: small rectangular "TOYS" patch in yellow/red colours on ' +
+      'the side panel. ' +
+      'COLOUR PALETTE: white base + multi-colour skull graphic. NOT a ' +
+      'monochrome cap — the splash colours are signature.',
+  },
+
+  'NÓN TC52': {
+    promptHint:
+      'TC52 NÓN KỴ SĨ (Knight) — design verification: ' +
+      'BASE: black baseball cap, curved brim. ' +
+      'FRONT-CENTRE PATCH: large HERALDIC SHIELD-SHAPED patch (heraldic ' +
+      'shield with pointed/rounded bottom — NOT a rectangle, NOT a square). ' +
+      'The patch is made of GOLD / BRONZE METALLIC LEATHER material. ' +
+      'PATCH CONTENT: a KNIGHT on HORSEBACK charging right, with SWORD ' +
+      'raised high and the horse REARING — rendered as a BLACK silhouette ' +
+      'inside the gold/bronze shield. "Tcaps" text in gothic / medieval ' +
+      'font at the bottom of the shield. ' +
+      'RIGHT SIDE TAG: small rectangular leather tag (gold/bronze) with ' +
+      'gold text on the side panel. ' +
+      'COLOUR PALETTE: black cap + GOLD/BRONZE METALLIC patch (premium ' +
+      'leather look).',
+  },
+
+  TC51: {
+    promptHint:
+      'TC51 NÓN MOTORCYCLE — design verification: ' +
+      'BASE: black snapback with FLAT brim (lưỡi ngang for NGANG variants). ' +
+      'FRONT-LEFT PATCH: HEXAGONAL patch with red biker rider figure (rider ' +
+      'wearing helmet, fist raised) + 5 RED STARS arched along the top of ' +
+      'the patch. Black background, red biker silhouette. ' +
+      'FRONT-RIGHT GRAPHIC — SIGNATURE: large SPORT MOTORCYCLE silhouette ' +
+      'in dark grey / black, prominently visible on the right front panel. ' +
+      'This motorcycle is a signature feature — do NOT drop it. ' +
+      'RIGHT SIDE BUTTON: small RED X button / accent near the top of the ' +
+      'side panel. ' +
+      'BRIM EDGE: red piping / cord along the brim edge. ' +
+      'BRIM TOP: small red rectangle markers on the front. ' +
+      'COLOUR PALETTE: black + RED accents.',
+  },
+
+  'CB TC49': {
+    promptHint:
+      'TC49 NÓN MONOGRAM HỌA TIẾT — design verification: ' +
+      'CONSTRUCTION: TAPESTRY / JACQUARD WOVEN FABRIC base (NOT solid ' +
+      'fabric). The fabric has a visible PICTOGRAPHIC PATTERN with ' +
+      'stylised CARTOON CHARACTER FACES / HEADS woven into the fabric in ' +
+      'earth tones (pink, beige, blue, grey, brown). The woven texture is ' +
+      'a defining feature — must be visible. ' +
+      'BRIM: same tapestry fabric, with WHITE PIPING / TRIM along the brim ' +
+      'edges. ' +
+      'FRONT-CENTRE PATCH: WHITE CIRCULAR/ROUND patch with a metallic ' +
+      '"TC" / "t" TCAPS logo (gold or silver). ' +
+      'COLOUR PALETTE: earth tones (NOT pure black) — pink/beige/blue/' +
+      'grey woven pattern + white patch + white brim trim.',
+  },
+
+  TC45: {
+    promptHint:
+      'TC45 NÓN GÀ (Rooster) — design verification: ' +
+      'BASE: black baseball cap, curved brim. ' +
+      'FRONT-LEFT GRAPHIC: small detailed ROOSTER / CHICKEN illustration ' +
+      'in ORANGE / RED, drawn in Vietnamese folk-art / tranh dân gian ' +
+      'style — the rooster is standing in profile facing left, with ' +
+      'detailed feathers and tail plumes. Compact size, not large. ' +
+      'BELOW ROOSTER: small "Tcaps" text in ORANGE. ' +
+      'RIGHT SIDE: small red/orange rectangular tag. ' +
+      'OVERALL: simple, clean black cap with a small but detailed orange ' +
+      'rooster on the left front. Do NOT enlarge or simplify the rooster — ' +
+      'it must look like a hand-drawn folk illustration, not a generic icon.',
+  },
+
+  'NÓN TC43': {
+    promptHint:
+      'TC43 NÓN WOLF — design verification: ' +
+      'BASE: black snapback, FLAT brim. ' +
+      'FRONT-LEFT PATCH: SHIELD-SHAPED patch with YELLOW background and a ' +
+      'stylised BLACK WOLF HEAD inside (geometric / angular wolf face ' +
+      'design). ' +
+      'SIDE CORD: a YELLOW THIN CORD / PIPING runs along the side panel ' +
+      'seam from the front patch curving around the side. ' +
+      'RIGHT SIDE TAG: small black tag with vertical YELLOW "TCAPS" text + ' +
+      'small yellow rectangular metal eyelet near the tag. ' +
+      'BRIM TOP — SIGNATURE: THREE YELLOW DIAGONAL CLAW-MARK SCRATCHES ' +
+      '(parallel scratch lines) printed on the brim top, like a wolf claw ' +
+      'scratching across the brim. ' +
+      'COLOUR PALETTE: black + YELLOW accents.',
+  },
+
+  TC42: {
+    promptHint:
+      'TC42 NÓN LOGO SÓI (Wolf Logo) — design verification: ' +
+      'BASE: black snapback, FLAT brim. ' +
+      'FRONT-LEFT PATCH: VERTICAL RECTANGULAR patch with: detailed ' +
+      'REALISTIC WOLF HEAD (grey/white, looking forward) at the top, RED ' +
+      'BLOOD DRIPS dripping from the top of the patch, and "TCAPS" text in ' +
+      'red on a RED rectangular section at the bottom of the patch. ' +
+      'RIGHT SIDE — SIGNATURE: TWO RED METAL EYELETS / GROMMETS (with red ' +
+      'rings) stacked VERTICALLY on the right side panel. The eyelets are ' +
+      'prominent and must appear. ' +
+      'BRIM: dark / black leather edge trim. ' +
+      'COLOUR PALETTE: black + RED accents + grey wolf head.',
+  },
+
+  TC41: {
+    promptHint:
+      'TC41 NÓN TCAPSPL — design verification: ' +
+      'BASE: black snapback, FLAT brim. ' +
+      'SIGNATURE DETAIL: a HORIZONTAL BLACK LEATHER STRIP / BAND wraps ' +
+      'around the front of the cap, running along the BASE of the crown ' +
+      'just above the brim seam (like a hatband). ' +
+      'CENTRE PATCH ON THE LEATHER STRAP: large RECTANGULAR YELLOW / GOLD ' +
+      'LEATHER PATCH centred on the leather strap, with "TCAPSPL" in bold ' +
+      'BLACK text printed on it. ' +
+      'BRIM UNDERSIDE: BROWN / TAN LEATHER UNDERSIDE trim (NOT black). ' +
+      'The brim has a two-tone look — black top with brown leather under. ' +
+      'RIGHT SIDE: small dark tag with small yellow text. ' +
+      'COLOUR PALETTE: black + gold/yellow leather patch + brown leather ' +
+      'brim. Luxury minimalist look.',
+  },
+
+  TC39: {
+    promptHint:
+      'TC39 NÓN THE WARRIORS — design verification: ' +
+      'BASE: black snapback with BLACK MESH side and back panels (trucker ' +
+      'construction). Front panel is solid black, sides and back are mesh. ' +
+      'FRONT-LEFT PATCH: SHIELD-SHAPED patch with detailed GOLD design on ' +
+      'BLACK background: "The Warriors" in gothic blackletter text at the ' +
+      'top, a stylised SKULL HEAD with CROSSED SWORDS / SPEARS behind it ' +
+      'in the centre, smaller text below ("Stay For Life" or similar), and ' +
+      '"TCPS" tiny text at the very bottom of the shield. ' +
+      'RIGHT SIDE EMBROIDERY: GOLD CROSSED-SWORDS (X-shape) + "TCPS" ' +
+      'gothic text embroidered directly onto the BLACK MESH side panel. ' +
+      'BRIM: black leather edge trim. ' +
+      'COLOUR PALETTE: black + GOLD accents. Premium gothic / warrior look.',
+  },
 
   // Combo CT3 — TCAPS SPARTAN luxury cap. Owner observed Gemini rendering
   // this as a BUCKET HAT instead of a baseball cap — likely misreading

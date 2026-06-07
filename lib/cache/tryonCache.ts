@@ -17,7 +17,7 @@
 import crypto from 'node:crypto'
 import { kvAvailable, kvDel, kvGet, kvSet } from '@/lib/redis/kv'
 
-const KEY_PREFIX  = 'tcaps:tryon:v14:'  // 2026-06-07 bumped — invalidates v13 so TC55 (NÓN WUKONG) cache clears for the new arched-patch + crossed-staffs brim + orange-underside promptHint.
+const KEY_PREFIX  = 'tcaps:tryon:v15:'  // 2026-06-07 bumped — invalidates v14 so the 13-SKU batch promptHint adds (TC68/67/52/51/49/45/46/43/42/41/39/30/CT1) take effect. Each cap now has owner-curated design verification.
 const TTL_SECONDS = 30 * 24 * 60 * 60     // 30 days
 
 interface KeyArgs {
