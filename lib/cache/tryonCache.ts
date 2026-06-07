@@ -17,7 +17,7 @@
 import crypto from 'node:crypto'
 import { kvAvailable, kvDel, kvGet, kvSet } from '@/lib/redis/kv'
 
-const KEY_PREFIX  = 'tcaps:tryon:v13:'  // 2026-06-07 bumped — invalidates v12 so the strengthened brimLock takes effect (NGANG-pick was rendering CURVED). Old NGANG-curved cache entries get blown away.
+const KEY_PREFIX  = 'tcaps:tryon:v14:'  // 2026-06-07 bumped — invalidates v13 so TC55 (NÓN WUKONG) cache clears for the new arched-patch + crossed-staffs brim + orange-underside promptHint.
 const TTL_SECONDS = 30 * 24 * 60 * 60     // 30 days
 
 interface KeyArgs {

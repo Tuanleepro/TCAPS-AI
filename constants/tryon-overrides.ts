@@ -129,6 +129,39 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
       'gold text + Spartan branding on a black baseball cap base.',
   },
 
+  // TC55 NÓN WUKONG — owner observed Gemini simplifying the Wukong
+  // design (arched patch rendered as generic rectangle, crossed-staffs
+  // brim graphic dropped, orange underside lost). The hint locks each
+  // signature element.
+  'NÓN TC55': {
+    promptHint:
+      'TC55 NÓN WUKONG — design verification: ' +
+      'BASE: black baseball cap, structured crown. ' +
+      'FRONT PATCH SHAPE: ARCHED / TOMBSTONE-SHAPED patch — rounded curved ' +
+      'top + straight horizontal bottom (NOT a rectangle, NOT a square, ' +
+      'NOT a shield). Orange border outlining the arch shape. ' +
+      'FRONT PATCH CONTENT: black background, all design elements in ORANGE. ' +
+      'Around the arch border: text "WUKONG DESIGN TCAPS" following the curve. ' +
+      'Centre of the patch: a stylised WUKONG (Sun Wukong / Monkey King) ' +
+      'figure standing, holding a long STAFF / spear vertically, with armour ' +
+      'and a cape — orange line-art on black. Cloud motifs along the bottom ' +
+      'of the patch. ' +
+      'BRIM TOP — SIGNATURE GRAPHIC: TWO CROSSED ORANGE STAFFS (Wukong\'s ' +
+      'Ru Yi Bang / golden staffs) forming an X-shape across the brim top, ' +
+      'with decorative ornate pattern detail along each staff. Text "TCAPS" ' +
+      'printed in orange at the bottom-left of the brim top. This brim ' +
+      'graphic is a SIGNATURE feature — do NOT leave the brim plain. ' +
+      'BRIM UNDERSIDE: BRIGHT ORANGE colour with a LARGE BLACK WUKONG ' +
+      'SILHOUETTE (same Monkey King figure with staff). This is another ' +
+      'signature detail — the brim underside is ORANGE, not black. ' +
+      'SIDE PANELS: multiple ORANGE-RINGED METAL EYELETS / GROMMETS (small ' +
+      'rectangular vents with orange borders), 2 visible per side. ' +
+      'BACK: small TCAPS branding patch on the back closure. ' +
+      'COLOUR PALETTE: black cap + orange accents EVERYWHERE (patch border, ' +
+      'patch design, brim graphic, brim underside, eyelet rings) — orange ' +
+      'is the defining accent colour.',
+  },
+
   // TC56 NÓN TCAPS FOR LIFE — owner observed Gemini rendering a generic
   // smooth-front-panel cap, missing the cap's defining feature: the
   // ENTIRE front panel is BLACK MESH with a visible honeycomb pattern,
