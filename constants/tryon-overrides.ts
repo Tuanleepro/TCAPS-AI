@@ -80,18 +80,33 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
     pinnedImageUrl: 'https://content.pancake.vn/2-2512/2025/12/8/ec2768ecb1c60190902f3199e71ad4d1dd4578af.jpg',
     promptHint:
       'TC46 DARK STALLION — design verification: ' +
-      'BASE: black snapback. ' +
-      'FRONT-LEFT PATCH: ARCHED / tombstone-shaped patch with RED background ' +
-      'and a black HORSE silhouette (rearing/galloping wild horse with mane). ' +
-      'Patch has black border. Not a square or rectangle. ' +
-      'SIDE CORD: a RED THIN CORD / PIPING runs along the side panel seam ' +
-      'from the front patch curving around the side. ' +
-      'RIGHT SIDE TEXT: "Dark Stallion" in RED Gothic / blackletter font, ' +
-      'oriented vertically along the side panel. ' +
-      'RIGHT SIDE EYELET: a red rectangular metal eyelet/grommet near the ' +
-      'bottom of the side panel. ' +
-      'BRIM: black leather edge trim. ' +
-      'COLOUR PALETTE: black + red accents.',
+      'BASE: black baseball cap. 8 variants — NGANG/CONG (flat vs curved ' +
+      'brim) × ĐỎ/VÀNG/XANH/CAM (accent colour: red / gold / blue / orange). ' +
+      'Brim shape locked via brimLock; accent colour from image 2. ' +
+      'FRONT-LEFT PATCH (signature shape): ARCHED / TOMBSTONE-shaped patch ' +
+      '(rounded curved top + straight horizontal bottom — NOT a rectangle, ' +
+      'NOT a square, NOT a shield). Patch has black thin border. ' +
+      'PATCH CONTENT: a BLACK HORSE silhouette REARING / GALLOPING wildly ' +
+      'with FLOWING MANE and TAIL (full of motion, wild stallion pose). ' +
+      'The horse silhouette is always BLACK regardless of variant. ' +
+      'PATCH BACKGROUND: this is the variant accent colour — MUST match ' +
+      'image 2 EXACTLY. ĐỎ → red bg, VÀNG → gold/metallic bg, XANH → blue ' +
+      'bg, CAM → orange bg. ' +
+      'SIDE CORD: a thin CORD / PIPING runs along the side panel seam from ' +
+      'the front patch curving around. The cord colour matches the accent ' +
+      '(red for ĐỎ, gold for VÀNG, blue for XANH, orange for CAM — match ' +
+      'image 2). ' +
+      'RIGHT SIDE TEXT: "Dark Stallion" in Gothic / blackletter font, ' +
+      'oriented vertically along the side panel. Text colour matches the ' +
+      'accent (image 2). ' +
+      'RIGHT SIDE EYELET: a rectangular metal eyelet/grommet near the side ' +
+      'text. Eyelet/border colour matches the accent. ' +
+      'BRIM: black leather edge trim (consistent across all variants). ' +
+      'CAP FIT: snug on the head, brim just above the eyebrows — NOT ' +
+      'floating high. ' +
+      'COLOUR PALETTE: black base + ONE accent colour from image 2 applied ' +
+      'consistently across patch bg, side cord, side text, side eyelet. ' +
+      'NEVER mix accent colours. NEVER default to red.',
   },
 
   // TC30 NÓN SÓI ĐÊM TCAPS — owner picked CONG/ĐEN VÀNG (gold-badge black)

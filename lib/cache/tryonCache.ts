@@ -17,7 +17,7 @@
 import crypto from 'node:crypto'
 import { kvAvailable, kvDel, kvGet, kvSet } from '@/lib/redis/kv'
 
-const KEY_PREFIX  = 'tcaps:tryon:v20:'  // 2026-06-07 bumped — invalidates v19 so TC51 colour fix (was locked to RED for all 6 variants, now defers to image 2: ĐEN=red/VÀNG=gold/BẠC=silver) + TC45 rooster detail strengthening take effect.
+const KEY_PREFIX  = 'tcaps:tryon:v21:'  // 2026-06-07 bumped — invalidates v20 so TC46 colour fix (was locked to RED for all 8 variants, now defers to image 2: ĐỎ=red/VÀNG=gold/XANH=blue/CAM=orange) takes effect.
 const TTL_SECONDS = 30 * 24 * 60 * 60     // 30 days
 
 interface KeyArgs {
