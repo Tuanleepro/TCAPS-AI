@@ -45,12 +45,12 @@ function buildRetryHint(s: QcScore, attempt: number): string {
   if (s.realism         < QC_PASS.realism)  issues.push(`realism = ${(s.realism            /10).toFixed(1)}/10 (target ≥ 7)`)
   if (!issues.length) return ''
 
-  // Detect the "wrong person" case — face_similarity < 50 means QC saw a
-  // different individual, not just glow-up. Escalate accordingly.
+  // Classify the failure mode so we can give Gemini the RIGHT instruction
+  // for this specific retry — not just "preserve identity" every time.
+  const facePoor    = s.face_changed || s.face_similarity < QC_PASS.identity
+  const capPoor     = s.hat_similarity  < QC_PASS.cap
   const wrongPerson = s.face_similarity < 50
 
-  // Severity scales with attempt number. Each successive retry tells Gemini
-  // the failure mode is REPEATED and demands progressively stricter behaviour.
   const severity =
     attempt === 1 ? 'PREVIOUS ATTEMPT FAILED'
   : attempt === 2 ? 'TWO PREVIOUS ATTEMPTS FAILED — this is recurring'
@@ -64,18 +64,35 @@ function buildRetryHint(s: QcScore, attempt: number): string {
   if (s.reason) lines.push(` QC rater said: "${s.reason}".`)
 
   if (wrongPerson) {
-    // Wrong-person case — escalate hard. This is the TC68 failure mode.
+    // Wrong-person case (face_similarity < 50). The TC68 face-swap failure.
     lines.push(
-      ' CRITICAL FAILURE MODE: the person in your last output was a DIFFERENT individual from image 1 — likely the MODEL from a cap reference photo, not the user.',
-      ' YOU MUST NOT do this again. The person in image 1 is the user. Look at image 1 carefully:',
+      ' CRITICAL FAILURE MODE — WRONG PERSON: the person in your last output was a DIFFERENT individual from image 1, likely the MODEL from a cap reference photo, not the user.',
+      ' YOU MUST NOT do this again. Look at image 1 carefully:',
       ' note their ethnicity, gender, age, face shape, hair, skin tone. The output MUST show THAT PERSON wearing the cap.',
       ' If any cap reference contains a model — IGNORE that model completely. The person comes ONLY from image 1.',
     )
-  } else {
+  } else if (!facePoor && capPoor) {
+    // Face OK, cap wrong — usually a colour or detail leak from sibling refs.
     lines.push(
-      ' This attempt MUST prioritise preserving the FACE IDENTITY from image 1 above all else.',
-      ' Keep original face pixels wherever possible. Do not beautify, do not slim, do not whiten.',
-      ' A slightly less polished cap on the SAME person is a success.',
+      ' FAILURE MODE — CAP COLOUR/DETAIL DRIFT: the face from image 1 is preserved correctly. The CAP in the output does not match image 2 (the LEAD cap reference).',
+      ' This attempt MUST fix the cap while keeping the face EXACTLY as in your last output.',
+      ' CAP COLOUR: use image 2 as the absolute colour authority. If image 2 is a BLACK cap, the output cap MUST be BLACK. If image 2 is WHITE, output WHITE. NEVER swap base colours.',
+      ' If subsequent cap references (image 3+) show different colourways, those are STRUCTURE references only — use them for shape/logo/stitching, NOT for colour.',
+      ' CAP DESIGN: reproduce every detail from image 2 exactly — logo, embroidery, patches, graphics, brim shape, side details, stitching, eyelets.',
+    )
+  } else if (facePoor && capPoor) {
+    // Both wrong — identity first per priority order, but mention cap too.
+    lines.push(
+      ' Both IDENTITY and CAP failed. Priority order: 1) preserve face from image 1, 2) match cap to image 2.',
+      ' Identity: keep original face pixels — same ethnicity, gender, age, face shape, hair.',
+      ' Cap: match image 2 exactly — base colour, logo, graphics, stitching, brim shape.',
+    )
+  } else {
+    // Face poor but cap OK (glow-up case). Push identity.
+    lines.push(
+      ' FAILURE MODE — IDENTITY DRIFT: the face was changed/beautified/glow-up.',
+      ' This attempt MUST preserve the face from image 1 — no slimming, no whitening, no smoothing, no eye enlargement.',
+      ' Keep original face pixels wherever possible.',
     )
   }
   return lines.join('')
@@ -103,7 +120,22 @@ const TRYON_PROMPT =
   'person — same ethnicity, same gender, same age, same face shape, same hair style, same skin ' +
   'tone. Image 1 is the ONLY source of the PERSON; cap references are ONLY a source of the CAP. ' +
 
-
+  '╔══ CAP COLOUR AUTHORITY (read second) ══╗ ' +
+  'IMAGE 2 (the FIRST cap reference) is the absolute COLOUR authority for the cap. The cap in the ' +
+  'output MUST have the SAME base colour, the SAME accent colours, the SAME brim colour, the SAME ' +
+  'mesh colour (if any), the SAME button/closure colour, the SAME piping colour, and the SAME ' +
+  'colour blocking as image 2. ' +
+  'If the customer picked the BLACK colourway (variant "Đen"), image 2 will be a BLACK cap — your ' +
+  'output cap MUST be BLACK. If they picked WHITE, image 2 is WHITE → output WHITE. If they ' +
+  'picked GOLD/SILVER/etc, match exactly. NEVER swap the base colour. ' +
+  'Subsequent cap references (image 3, 4, ...) may show DIFFERENT colourways of the same cap ' +
+  'model — for example, image 2 = BLACK version, image 3 = WHITE version, image 4 = SILVER ' +
+  'version. Use images 3+ ONLY for STRUCTURE (shape, logo position, stitching, panel layout, ' +
+  'underbrim graphics). NEVER use images 3+ to decide the cap COLOUR. The colour comes EXCLUSIVELY ' +
+  'from image 2. ' +
+  "If your output cap's base colour differs from image 2's base colour, you have FAILED Rule 2. " +
+  'A black output cap when image 2 is a white cap is a FAILURE. A white output cap when image 2 ' +
+  "is a black cap is a FAILURE. Match image 2's colour exactly. " +
 
   'RULE 1 — FREEZE THE HEAD & FACE (most important, non-negotiable): treat the entire head as a FIXED ' +
   'region copied pixel-for-pixel from image 1. ' +
