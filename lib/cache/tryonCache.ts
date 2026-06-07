@@ -17,7 +17,7 @@
 import crypto from 'node:crypto'
 import { kvAvailable, kvDel, kvGet, kvSet } from '@/lib/redis/kv'
 
-const KEY_PREFIX  = 'tcaps:tryon:v25:'  // 2026-06-07 bumped — invalidates v24 so TC43 brim claw-scratch strengthening (4 jagged diagonal scratches, large + visible, NOT subtle piping) takes effect.
+const KEY_PREFIX  = 'tcaps:tryon:v26:'  // 2026-06-07 bumped — invalidates v25 so TC67 re-audit fix (signature SKELETON graffiti on brim underside + blue-glowing eye sockets + 3 variants colour-defer) takes effect.
 const TTL_SECONDS = 30 * 24 * 60 * 60     // 30 days
 
 interface KeyArgs {

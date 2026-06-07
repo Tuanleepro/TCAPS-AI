@@ -223,24 +223,53 @@ export const TRYON_OVERRIDES: Record<string, TryOnOverride> = {
   TC67: {
     promptHint:
       'TC67 NÓN SKELETON — design verification: ' +
-      'BASE: WHITE trucker cap (NOT black) with WHITE mesh back panels. ' +
-      'Front panel is solid white, brim is white. ' +
-      'FRONT GRAPHIC — LARGE COLOURFUL (size + vibrancy critical): a stylised ' +
-      'SKULL with a GOLD CROWN on top, with a vibrant PAINT-SPLATTER / ' +
-      'SPLASH effect bursting out around the skull in ORANGE, BLUE, RED, ' +
-      'and YELLOW colours. ' +
-      'GRAPHIC SIZE: the skull + crown + paint splash MUST be LARGE and ' +
-      'PROMINENT — it covers most of the front panel from near the top down ' +
-      'to near the brim. Do NOT render as a small accent or minor decal. ' +
-      'GRAPHIC COLOURS: the splash colours must be VIBRANT, SATURATED, and ' +
-      'POP brightly against the white base. The orange / red / blue / yellow ' +
-      'must look bold and lively — NOT muted, NOT pastel, NOT washed out. ' +
+      '3 variants — NGANG/TRẮNG, NGANG/ĐEN, CONG/TRẮNG. Brim shape locked ' +
+      'via brimLock. Base colour from image 2 (white for TRẮNG, black for ' +
+      'ĐEN). For BLACK variant, mesh panels are black; for WHITE variants ' +
+      'mesh is white. ' +
+
+      'FRONT SKULL GRAPHIC (signature, must be detailed, vibrant, large): ' +
+      'a stylised SKULL with a GOLD CROWN on top of the head, surrounded ' +
+      'by a vibrant PAINT-SPLATTER / SPLASH burst in ORANGE, BLUE, RED, ' +
+      'PINK, and YELLOW. ' +
+      'SKULL DETAILS (must not simplify): ' +
+      '  • GOLD/YELLOW CROWN with small jewels/points on top of the skull ' +
+      '  • BRIGHT BLUE GLOWING EYE SOCKETS — the eyes have a luminous ' +
+      '    electric-blue glow inside them (this is signature, NOT plain ' +
+      '    black/empty eye sockets) ' +
+      '  • Blue glow also visible in the teeth/jaw area (gums + nasal hole) ' +
+      '  • Detailed teeth with shading ' +
+      '  • Stylised street-art / graffiti illustration style — bold black ' +
+      '    outlines + colour washes, NOT a cartoon skull, NOT a simple icon ' +
+      'GRAPHIC SIZE: skull + crown + paint splash covers MOST of the front ' +
+      'panel — large + prominent, NOT a small decal. ' +
+      'GRAPHIC COLOURS: vibrant, saturated, POP brightly. NOT muted, NOT ' +
+      'pastel. ' +
+
+      'BRIM UNDERSIDE — SIGNATURE GRAFFITI (must not be dropped): the ' +
+      'UNDERSIDE of the brim has a LARGE COLOURFUL "SKELETON" GRAFFITI ' +
+      'TEXT printed across it — bold street-art lettering with bubble/' +
+      'splash effect in multi-colour (red, orange, yellow, blue, pink, ' +
+      'black outlines), matching the front skull graffiti style. The ' +
+      'lettering is dimensional and prominent. For FLAT-brim variants ' +
+      '(NGANG) this underside graphic is VISIBLE when the cap is worn — ' +
+      'must appear in the output. Do NOT leave the brim underside blank ' +
+      'or just white/black. ' +
+
+      'INSIDE / SWEATBAND: small black tag with "SKELETON" text + small ' +
+      'Vietnam flag patch on the inside (inside details may not be ' +
+      'visible in most try-on angles but mention for completeness). ' +
+
       'SIDE PATCH: small rectangular "TOYS" patch in yellow/red colours on ' +
-      'the side panel. ' +
-      'CAP FIT: the cap must sit SNUG on the head — brim rests just above ' +
-      'the eyebrows, NOT floating high above the hair, NOT tilted backwards. ' +
-      'COLOUR PALETTE: white base + multi-colour skull graphic. NOT a ' +
-      'monochrome cap — the splash colours are signature.',
+      'the side panel near the brim. ' +
+
+      'CAP FIT: snug on the head, brim rests just above the eyebrows — ' +
+      'NOT floating high, NOT tilted backwards. ' +
+
+      'COLOUR PALETTE: base colour from image 2 (white or black) + multi-' +
+      'colour graffiti skull + multi-colour graffiti "SKELETON" brim ' +
+      'underside. NOT monochrome — the explosive multi-colour graffiti ' +
+      'is the defining feature.',
   },
 
   'NÓN TC52': {
