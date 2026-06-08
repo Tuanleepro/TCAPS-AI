@@ -13,11 +13,15 @@ export const runtime = 'nodejs'
 const MAX_DATAURL_CHARS = 15 * 1024 * 1024   // allow full-quality person photos
 const GEMINI_MODEL = process.env.GEMINI_IMAGE_MODEL?.trim() || 'gemini-2.5-flash-image'
 
-// ── QC + Auto-Retry config (owner spec 2026-06-07) ─────────────────────────
-// MAX_QC_ATTEMPTS = 4 (1 initial + up to 3 retries). Each retry feeds the
-// prior QC issues + identity-priority hint into the prompt. After 4 attempts
+// ── QC + Auto-Retry config (owner spec 2026-06-07, tightened 2026-06-08) ───
+// MAX_QC_ATTEMPTS = 3 (1 initial + up to 2 retries). Each retry feeds the
+// prior QC issues + identity-priority hint into the prompt. After 3 attempts
 // we return the best by weighted total — NEVER reject the user's call.
-const MAX_QC_ATTEMPTS = 4
+// History: was 4 attempts; reduced to 3 on 2026-06-08 after analysis showed
+// attempt 4 rarely passes when attempts 1-3 all fail (same failure mode
+// recurs). Saves 25% worst-case cost (~$0.04 per face-leak session) with
+// minimal pass-rate impact (~1-2 percentage points).
+const MAX_QC_ATTEMPTS = 3
 // 2026-06-07: identity threshold raised 80→85 after observing Gemini Vision
 // rate "completely different person" as 80+ — too lenient. 85 forces clearly-
 // same-person results to pass while letting any drift trigger retry.
@@ -52,10 +56,14 @@ function buildRetryHint(s: QcScore, attempt: number): string {
   const capPoor     = s.hat_similarity  < QC_PASS.cap
   const wrongPerson = s.face_similarity < 50
 
+  // Severity escalates with attempt number. With MAX_QC_ATTEMPTS=3, attempt
+  // values that reach this function are 1 (→ retry as attempt 2) or 2 (→
+  // retry as attempt 3, which is the last). The attempt=3 branch is dead
+  // code now (no retry triggered after the final attempt) but kept for
+  // safety if MAX_QC_ATTEMPTS is bumped back up.
   const severity =
     attempt === 1 ? 'PREVIOUS ATTEMPT FAILED'
-  : attempt === 2 ? 'TWO PREVIOUS ATTEMPTS FAILED — this is recurring'
-  : attempt === 3 ? 'THREE PREVIOUS ATTEMPTS FAILED — last chance'
+  : attempt === 2 ? 'TWO PREVIOUS ATTEMPTS FAILED — last chance'
   :                 'PREVIOUS ATTEMPTS REPEATEDLY FAILED'
 
   const lines: string[] = [
